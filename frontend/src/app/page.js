@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <>
       <NearContext.Provider value={{ signedAccountId, wallet }}>
-        <div>Hello testing statistics</div>
+        <div>Hello there</div>
       </NearContext.Provider>
     </>
   );
