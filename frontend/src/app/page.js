@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { NearContext } from "./context";
 import { Wallet } from "./Wallets/near";
 import { CounterContract, NetworkId } from "./config";
+import LandingPage from "./components/LandingPage";
 
 
 const wallet = new Wallet({
@@ -23,7 +24,7 @@ export default function Home() {
   return (
     <>
       <NearContext.Provider value={{ signedAccountId, wallet }}>
-        <div>Hello testing statistics</div>
+        <LandingPage />
       </NearContext.Provider>
     </>
   );
