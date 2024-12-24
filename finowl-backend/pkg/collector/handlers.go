@@ -1,11 +1,14 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
 )
+
+const test = ``
 
 func (b *Bot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore bot's own messages
@@ -43,4 +46,22 @@ func (b *Bot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			len(tweet.Content),
 		)
 	}
+
+	// Gather tweets
+	b.mu.Lock()
+	b.tweetBatch = append(b.tweetBatch, m.Content) // Collect the tweet content
+	if len(b.tweetBatch) >= b.batchSize {
+		// Send the batch to the AI
+		response, err := b.ai.SendPrompt(context.Background(), fmt.Sprintf("%v tweets: %v", test, b.tweetBatch))
+		if err != nil {
+			log.Printf("Error sending tweets to AI: %v", err)
+		} else {
+			// Output the AI's response
+			fmt.Println("AI Response:", response)
+		}
+		// Clear the batch after processing
+		b.tweetBatch = nil
+	}
+	b.mu.Unlock()
+
 }
