@@ -12,16 +12,16 @@ import (
 
 type Bot struct {
 	session    *discordgo.Session
-	channelID  string
+	channelIDs map[string]string
 	analyzer   *analyzer.TweetAnalyzer // Add this field
 	ai         *ai.ClaudeClient        // Assuming you have a ClaudeClient instance
-	tweetBatch []string                // Slice to hold tweets
+	tweetBatch map[string][]string     // Slice to hold tweets
 	batchSize  int                     // Number of tweets to gather
 	mu         sync.Mutex              // Mutex for concurrent access
-
+	config     Config
 }
 
-func NewBot(token, channelID string) (*Bot, error) {
+func NewBot(token string, channelID map[string]string, config Config, aiKey string) (*Bot, error) {
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
 		return nil, err
@@ -30,20 +30,19 @@ func NewBot(token, channelID string) (*Bot, error) {
 	// Create a new analyzer instance
 	tweetAnalyzer := analyzer.NewTweetAnalyzer()
 
-	key := ""
-
-	aiCLIENT, err := ai.NewClaudeClient(key, claude.Claude3Haiku, 256, false, true)
+	aiCLIENT, err := ai.NewClaudeClient(aiKey, claude.Claude3Dot5SonnetLatest, 256, false, true)
 	if err != nil {
 		log.Fatalf("Failed to create AI client: %v", err)
 	}
 
 	return &Bot{
 		session:    session,
-		channelID:  channelID,
+		channelIDs: channelID,
 		analyzer:   tweetAnalyzer,
 		ai:         aiCLIENT,
-		tweetBatch: make([]string, 0),
-		batchSize:  25, // Set the batch size to 25
+		tweetBatch: make(map[string][]string),
+		batchSize:  5, // Set the batch size to 5
+		config:     config,
 	}, nil
 }
 
