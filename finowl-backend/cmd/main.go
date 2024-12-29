@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v2"
 )
 
 func main() {
@@ -18,14 +19,27 @@ func main() {
 	}
 
 	token := os.Getenv("DISCORD_BOT_TOKEN")
-	channelID := os.Getenv("DISCORD_CHANNEL_ID")
+	aikey := os.Getenv("CLAUDE_API")
+	alphaChannelID := os.Getenv("DISCORD_ALPHA_CHANNEL_ID")
+	MacroNewsChannelID := os.Getenv("DISCORD_Macro_News_CHANNEL_ID")
 
-	if token == "" || channelID == "" {
+	if token == "" || alphaChannelID == "" || MacroNewsChannelID == "" {
 		log.Fatal("DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID must be set")
 	}
 
+	myMap := make(map[string]string)
+
+	myMap[collector.AlphaTrenches] = alphaChannelID
+	myMap[collector.MacroNews] = MacroNewsChannelID
+
+	// Load the configuration
+	config, err := LoadConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
 	// Initialize collector bot
-	bot, err := collector.NewBot(token, channelID)
+	bot, err := collector.NewBot(token, myMap, *config, aikey)
 	if err != nil {
 		log.Fatal("Error creating bot:", err)
 	}
@@ -44,4 +58,19 @@ func main() {
 
 	// Cleanly close down the Discord session
 	bot.Close()
+}
+
+// LoadConfig reads the config.yaml file and unmarshals it into the Config struct
+func LoadConfig(filePath string) (*collector.Config, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading config file: %w", err)
+	}
+
+	var config collector.Config
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("error unmarshaling config: %w", err)
+	}
+
+	return &config, nil
 }
