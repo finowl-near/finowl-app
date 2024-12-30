@@ -51,14 +51,14 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 	)
 
 	if tweet.IsValid {
-		fmt.Printf("\n=== Valid Tweet Detected in %s ===\n", category)
-		fmt.Printf("From: %s\n", tweet.Author)
-		fmt.Printf("Time: %s\n", tweet.Timestamp.Format("2006-01-02 15:04:05"))
-		fmt.Printf("Content: %s\n", tweet.Content)
-		fmt.Printf("Length: %d characters\n", len(tweet.Content))
-		fmt.Printf("========================\n")
+		b.logger.Printf("\n=== VALID TWEET DETECTED in %s ===\n", category)
+		b.logger.Printf("From: %s\n", tweet.Author)
+		b.logger.Printf("Time: %s\n", tweet.Timestamp.Format("2006-01-02 15:04:05"))
+		b.logger.Printf("Content: %s\n", tweet.Content)
+		b.logger.Printf("Length: %d characters\n", len(tweet.Content))
+		b.logger.Printf("========================\n")
 	} else {
-		log.Printf("Invalid tweet in %s from %s: too short (%d characters)\n",
+		b.logger.Printf("INVALID TWEET in %s from %s: too short (%d characters)\n",
 			category,
 			tweet.Author,
 			len(tweet.Content),
@@ -73,12 +73,12 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 		// Send the batch to the AI
 		response, err := b.ai.SendPrompt(context.Background(), fmt.Sprintf("%v tweets: %v", b.config.Prompts[category].Prompt, b.tweetBatch[category]))
 		if err != nil {
-			log.Printf("Error sending tweets to AI for category %s: %v", category, err)
+			b.logger.Printf("ERROR sending tweets to AI for category %s: %v", category, err)
 		} else {
 			// Output the AI's response
-			fmt.Printf("\n=== AI Response for %s ===\n", category)
-			fmt.Println(response)
-			fmt.Printf("========================\n")
+			b.logger.Printf("\n=== AI RESPONSE for %s ===\n", category)
+			b.logger.Println(response)
+			b.logger.Printf("========================\n")
 		}
 		// Clear the batch after processing
 		b.tweetBatch[category] = nil

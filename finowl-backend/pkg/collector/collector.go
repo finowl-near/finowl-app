@@ -4,6 +4,7 @@ import (
 	"finowl-backend/pkg/ai"
 	"finowl-backend/pkg/analyzer"
 	"log"
+	"os"
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
@@ -19,9 +20,16 @@ type Bot struct {
 	batchSize  int                     // Number of tweets to gather
 	mu         sync.Mutex              // Mutex for concurrent access
 	config     Config
+	logger     *log.Logger // Add a logger field
+
 }
 
 func NewBot(token string, channelID map[string]string, config Config, aiKey string) (*Bot, error) {
+	logFile, err := os.OpenFile("finowl.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Error opening log file: %v", err)
+	}
+
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
 		return nil, err
@@ -35,14 +43,17 @@ func NewBot(token string, channelID map[string]string, config Config, aiKey stri
 		log.Fatalf("Failed to create AI client: %v", err)
 	}
 
+	// Create a new logger
+	logger := log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	return &Bot{
 		session:    session,
 		channelIDs: channelID,
 		analyzer:   tweetAnalyzer,
 		ai:         aiCLIENT,
 		tweetBatch: make(map[string][]string),
-		batchSize:  5, // Set the batch size to 5
+		batchSize:  2, // Set the batch size to 5
 		config:     config,
+		logger:     logger,
 	}, nil
 }
 
