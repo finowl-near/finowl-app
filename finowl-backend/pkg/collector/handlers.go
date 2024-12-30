@@ -1,8 +1,6 @@
 package collector
 
 import (
-	"context"
-	"fmt"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -52,11 +50,14 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 
 	if tweet.IsValid {
 		b.logger.Printf("\n=== VALID TWEET DETECTED in %s ===\n", category)
+		b.logger.Printf("ID: %s\n", tweet.ID)
 		b.logger.Printf("From: %s\n", tweet.Author)
 		b.logger.Printf("Time: %s\n", tweet.Timestamp.Format("2006-01-02 15:04:05"))
 		b.logger.Printf("Content: %s\n", tweet.Content)
-		b.logger.Printf("Length: %d characters\n", len(tweet.Content))
-		b.logger.Printf("========================\n")
+		b.logger.Printf("Links: %s\n", tweet.Links)
+		b.logger.Printf("Tickers: %s\n", tweet.Tickers)
+
+		b.logger.Printf("=================================================\n")
 	} else {
 		b.logger.Printf("INVALID TWEET in %s from %s: too short (%d characters)\n",
 			category,
@@ -69,19 +70,19 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 	b.mu.Lock()
 	b.tweetBatch[category] = append(b.tweetBatch[category], m.Content) // Collect the tweet content
 
-	if len(b.tweetBatch[category]) >= b.batchSize {
-		// Send the batch to the AI
-		response, err := b.ai.SendPrompt(context.Background(), fmt.Sprintf("%v tweets: %v", b.config.Prompts[category].Prompt, b.tweetBatch[category]))
-		if err != nil {
-			b.logger.Printf("ERROR sending tweets to AI for category %s: %v", category, err)
-		} else {
-			// Output the AI's response
-			b.logger.Printf("\n=== AI RESPONSE for %s ===\n", category)
-			b.logger.Println(response)
-			b.logger.Printf("========================\n")
-		}
-		// Clear the batch after processing
-		b.tweetBatch[category] = nil
-	}
-	b.mu.Unlock()
+	// if len(b.tweetBatch[category]) >= b.batchSize {
+	// 	// Send the batch to the AI
+	// 	response, err := b.ai.SendPrompt(context.Background(), fmt.Sprintf("%v tweets: %v", b.config.Prompts[category].Prompt, b.tweetBatch[category]))
+	// 	if err != nil {
+	// 		b.logger.Printf("ERROR sending tweets to AI for category %s: %v", category, err)
+	// 	} else {
+	// 		// Output the AI's response
+	// 		b.logger.Printf("\n=== AI RESPONSE for %s ===\n", category)
+	// 		b.logger.Println(response)
+	// 		b.logger.Printf("========================\n")
+	// 	}
+	// 	// Clear the batch after processing
+	// 	b.tweetBatch[category] = nil
+	// }
+	// b.mu.Unlock()
 }

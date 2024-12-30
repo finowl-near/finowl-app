@@ -3,6 +3,8 @@ package analyzer
 import (
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -30,11 +32,14 @@ func CleanAuthorName(authorName string) string {
 
 // Tweet represents a processed tweet with relevant information
 type Tweet struct {
+	ID        string
 	Content   string
 	RawAuthor string // Original author string
 	Author    string // Cleaned author name
 	Timestamp time.Time
 	IsValid   bool
+	Links     []string
+	Tickers   []string
 }
 
 // TweetAnalyzer handles tweet content analysis
@@ -59,9 +64,6 @@ func CleanTweetContent(content string) string {
 		}
 	}
 
-	// Remove @mentions
-	// content = regexp.MustCompile(`@\S+`).ReplaceAllString(content, "")
-
 	// Remove any trailing whitespace
 	content = strings.TrimSpace(content)
 
@@ -78,13 +80,69 @@ func CleanTweetContent(content string) string {
 	return strings.Join(cleanWords, " ")
 }
 
+// ExtractLinks extracts all links from the tweet content based on the specified patterns
+func ExtractLinks(content string) []string {
+	var links []string
+
+	// Split the content by spaces to find patterns
+	words := strings.Fields(content)
+	for _, word := range words {
+		// Check if the word starts with "[Tweeted](" or "[Retweeted]("
+		if strings.HasPrefix(word, "[Tweeted](") || strings.HasPrefix(word, "[Retweeted](") {
+			// Extract the link from the word
+			start := strings.Index(word, "(")
+			end := strings.Index(word, ")")
+			if start != -1 && end != -1 && end > start {
+				link := word[start+1 : end] // Extract the URL
+				links = append(links, link) // Add the link to the array
+			}
+		}
+	}
+
+	return links
+}
+
+// ExtractTickers extracts all token tickers from the tweet content
+func ExtractTickers(content string) []string {
+	var tickers []string
+
+	// Split the content into words
+	words := strings.Fields(content)
+	for _, word := range words {
+		// Check if the word starts with '$' and is followed by alphanumeric characters
+		if strings.HasPrefix(word, "$") {
+			// Remove any trailing punctuation (e.g., commas, periods)
+			ticker := strings.Trim(word, ".,!?;:")
+			// Add the ticker to the list if it's not already present
+			if !contains(tickers, ticker) {
+				tickers = append(tickers, ticker)
+			}
+		}
+	}
+
+	return tickers
+}
+
+// Helper function to check if a slice contains a string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 // ProcessMessage analyzes a message and returns a Tweet if valid
 func (ta *TweetAnalyzer) ProcessMessage(content, authorName string, timestamp time.Time) *Tweet {
 	tweet := Tweet{
+		ID:        uuid.New().String(),
 		Content:   CleanTweetContent(content),
 		Author:    CleanAuthorName(authorName),
 		Timestamp: timestamp,
 		IsValid:   false,
+		Links:     ExtractLinks(content),
+		Tickers:   ExtractTickers(content),
 	}
 
 	if ValidateTweetContent(content) {
