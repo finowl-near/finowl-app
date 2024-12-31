@@ -87,8 +87,11 @@ func ExtractLinks(content string) []string {
 	// Split the content by spaces to find patterns
 	words := strings.Fields(content)
 	for _, word := range words {
-		// Check if the word starts with "[Tweeted](" or "[Retweeted]("
-		if strings.HasPrefix(word, "[Tweeted](") || strings.HasPrefix(word, "[Retweeted](") {
+		// Check if the word starts with "[Tweeted](" or "[Retweeted](" or "[Replying](" or "[Quoted]("
+		if strings.HasPrefix(word, "[Tweeted](") ||
+			strings.HasPrefix(word, "[Retweeted](") ||
+			strings.HasPrefix(word, "[Replying](") ||
+			strings.HasPrefix(word, "[Quoted](") {
 			// Extract the link from the word
 			start := strings.Index(word, "(")
 			end := strings.Index(word, ")")
