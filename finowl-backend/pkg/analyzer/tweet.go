@@ -105,27 +105,6 @@ func ExtractLinks(content string) []string {
 	return links
 }
 
-// ExtractTickers extracts all token tickers from the tweet content
-func ExtractTickers(content string) []string {
-	var tickers []string
-
-	// Split the content into words
-	words := strings.Fields(content)
-	for _, word := range words {
-		// Check if the word starts with '$' and is followed by alphanumeric characters
-		if strings.HasPrefix(word, "$") {
-			// Remove any trailing punctuation (e.g., commas, periods)
-			ticker := strings.Trim(word, ".,!?;:")
-			// Add the ticker to the list if it's not already present
-			if !contains(tickers, ticker) {
-				tickers = append(tickers, ticker)
-			}
-		}
-	}
-
-	return tickers
-}
-
 // Helper function to check if a slice contains a string
 func contains(slice []string, item string) bool {
 	for _, s := range slice {
