@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq" // Import the PostgreSQL driver
+	_ "github.com/lib/pq"
 )
 
 // Tweet represents the structure of a tweet to be stored in the database
