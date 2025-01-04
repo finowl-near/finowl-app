@@ -117,3 +117,7 @@ func (s *Storer) GetTweetByID(id string) (*Tweet, error) {
 
 	return &tweet, nil
 }
+
+func (s *Storer) DB() *sql.DB {
+	return s.db
+}
