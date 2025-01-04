@@ -8,9 +8,19 @@ import (
 )
 
 const (
+	// Discord related constants
 	envDiscordBotToken    = "DISCORD_BOT_TOKEN"
-	envClaudeAPIKey       = "CLAUDE_API"
 	envMacroNewsChannelID = "DISCORD_Macro_News_CHANNEL_ID"
+
+	// AI API related constants
+	envClaudeAPIKey = "CLAUDE_API"
+
+	// Database related constants
+	envDBHost     = "FINOWL_DB_HOST"
+	envDBPort     = "FINOWL_DB_PORT"
+	envDBUser     = "FINOWL_DB_USER"
+	envDBPassword = "FINOWL_DB_PASSWORD"
+	envDBName     = "FINOWL_DB_NAME"
 )
 
 // loadEnvVars loads environment variables from the .env file and retrieves required ones.
@@ -20,9 +30,19 @@ func LoadEnvVars() map[string]string {
 	}
 
 	return map[string]string{
+		// Discord related vars
 		"token":         os.Getenv(envDiscordBotToken),
-		"aikey":         os.Getenv(envClaudeAPIKey),
 		"macroNewsChan": os.Getenv(envMacroNewsChannelID),
+
+		// AI API related constants
+		"aikey": os.Getenv(envClaudeAPIKey),
+
+		// Database related vars
+		"dbHost":     os.Getenv(envDBHost),
+		"dbPort":     os.Getenv(envDBPort),
+		"dbUser":     os.Getenv(envDBUser),
+		"dbPassword": os.Getenv(envDBPassword),
+		"dbName":     os.Getenv(envDBName),
 	}
 }
 

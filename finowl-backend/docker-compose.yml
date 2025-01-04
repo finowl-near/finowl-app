@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    container_name: finowl-app
+    depends_on:
+      - db
+    environment:
+      - FINOWL_DB_HOST=db
+      - FINOWL_DB_PORT=5432
+      - FINOWL_DB_USER=finowl_user
+      - FINOWL_DB_PASSWORD=finowl_pass
+      - FINOWL_DB_NAME=finowl_db
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./influencers.yaml:/app/influencers.yaml
+      - ./logs:/app/logs
+    networks:
+      - finowl-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: finowl-db
+    environment:
+      - POSTGRES_USER=finowl_user
+      - POSTGRES_PASSWORD=finowl_pass
+      - POSTGRES_DB=finowl_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - finowl-network
+
+volumes:
+  postgres_data:
+
+networks:
+  finowl-network:
+    driver: bridge
