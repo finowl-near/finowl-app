@@ -33,7 +33,7 @@ yarn-error.log*
 .env*
 
 # log files
-.*log
+*.log
 # vercel
 .vercel
 
