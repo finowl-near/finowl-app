@@ -52,6 +52,14 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 		b.logger.Printf("\n=== VALID TWEET DETECTED in %s ===\n", category)
 		b.logger.Printf("ID: %s\n", tweet.ID)
 		b.logger.Printf("From: %s\n", tweet.Author)
+
+		influencer, twitterName := b.influencers.FindInfluencer(tweet.Author)
+		if influencer != nil {
+			b.logger.Printf("Found Influencer: Twitter: %s, Tier: %d, Category: %s", twitterName, influencer.Tier, influencer.Category)
+		} else {
+			b.logger.Printf("No match found for query: %s", tweet.Author)
+		}
+
 		b.logger.Printf("Time: %s\n", tweet.Timestamp.Format("2006-01-02 15:04:05"))
 		b.logger.Printf("Content: %s\n", tweet.Content)
 		b.logger.Printf("Links: %s\n", tweet.Links)

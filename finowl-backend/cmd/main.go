@@ -2,6 +2,7 @@ package main
 
 import (
 	"finowl-backend/pkg/collector"
+	"finowl-backend/pkg/influencer"
 	"fmt"
 	"log"
 	"os"
@@ -20,16 +21,16 @@ func main() {
 
 	token := os.Getenv("DISCORD_BOT_TOKEN")
 	aikey := os.Getenv("CLAUDE_API")
-	alphaChannelID := os.Getenv("DISCORD_ALPHA_CHANNEL_ID")
+	// alphaChannelID := os.Getenv("DISCORD_ALPHA_CHANNEL_ID")
 	MacroNewsChannelID := os.Getenv("DISCORD_Macro_News_CHANNEL_ID")
 
-	if token == "" || alphaChannelID == "" || MacroNewsChannelID == "" {
+	if token == "" || MacroNewsChannelID == "" {
 		log.Fatal("DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID must be set")
 	}
 
 	myMap := make(map[string]string)
 
-	myMap[collector.AlphaTrenches] = alphaChannelID
+	// myMap[collector.AlphaTrenches] = alphaChannelID
 	myMap[collector.MacroNews] = MacroNewsChannelID
 
 	// Load the configuration
@@ -38,8 +39,11 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	// Initialize influencer rankings
+	influencerRankings := influencer.InitInfluencers("influencers.yaml")
+
 	// Initialize collector bot
-	bot, err := collector.NewBot(token, myMap, *config, aikey)
+	bot, err := collector.NewBot(token, myMap, *config, aikey, *influencerRankings)
 	if err != nil {
 		log.Fatal("Error creating bot:", err)
 	}

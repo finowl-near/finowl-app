@@ -40,7 +40,7 @@ func isMonetaryValue(ticker string) bool {
 
 	// Check for suffixes like k, M, B (case-insensitive)
 	lastChar := tickerWithoutDollar[len(tickerWithoutDollar)-1]
-	if lastChar == 'k' || lastChar == 'K' || lastChar == 'M' || lastChar == 'm' || lastChar == 'B' || lastChar == 'b' {
+	if lastChar == 'k' || lastChar == 'K' || lastChar == 'M' || lastChar == 'm' || lastChar == 'B' || lastChar == 'b' || lastChar == 'T' || lastChar == 't' {
 		// Ensure the rest of the string is a valid number (integer or decimal)
 		numberPart := tickerWithoutDollar[:len(tickerWithoutDollar)-1]
 		return isValidNumber(numberPart)
