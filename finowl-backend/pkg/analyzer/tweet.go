@@ -57,7 +57,7 @@ func NewTweetAnalyzer() *TweetAnalyzer {
 
 func CleanTweetContent(content string) string {
 	// Remove [Tweeted] or [Retweeted] pattern and everything after it
-	patterns := []string{"[Tweeted]", "[Retweeted]", "[▻]"}
+	patterns := []string{"[Tweeted]", "[Retweeted]", "[Replying]", "[Quoted]", "[▻]"}
 	for _, pattern := range patterns {
 		if idx := strings.Index(content, pattern); idx != -1 {
 			content = content[:idx]
