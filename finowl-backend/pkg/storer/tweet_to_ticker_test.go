@@ -28,7 +28,7 @@ func TestConvertTweetToTicker(t *testing.T) {
 	// Check the values of the converted Ticker
 	expectedTicker := ticker.Ticker{
 		TickerSymbol:    "$AIXBT",
-		Category:        "Alpha",                         // Category is empty
+		Category:        "Trenches",                      // Category is empty
 		MindshareScore:  17.64290755116443,               // Mindshare score is 0
 		LastMentionedAt: parseTimestamp(tweet.Timestamp), // Parse the timestamp
 		MentionDetails: ticker.MentionDetails{
