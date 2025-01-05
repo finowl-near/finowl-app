@@ -10,7 +10,7 @@ import (
 type Ticker struct {
 	TickerSymbol    string         `json:"ticker_symbol"`
 	Category        string         `json:"category"`
-	MindshareScore  int            `json:"mindshare_score"`
+	MindshareScore  float64        `json:"mindshare_score"`
 	LastMentionedAt time.Time      `json:"last_mentioned_at"`
 	MentionDetails  MentionDetails `json:"mention_details"`
 }
