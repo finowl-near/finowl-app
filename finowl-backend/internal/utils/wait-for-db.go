@@ -23,4 +23,5 @@ func WaitForDB(dataSourceName string, maxAttempts int) error {
 		time.Sleep(time.Second * 2)
 	}
 	return fmt.Errorf("could not connect to database after %d attempts: %v", maxAttempts, err)
+
 }

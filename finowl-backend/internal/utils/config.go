@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"finowl-backend/pkg/collector"
 	"finowl-backend/pkg/influencer"
 	"fmt"
 	"log"
@@ -11,13 +10,13 @@ import (
 )
 
 // LoadConfig reads the config.yaml file and unmarshals it into the Config struct.
-func LoadConfig(filePath string) (*collector.Config, error) {
+func LoadConfig(filePath string) (*Prompt, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
-	var config collector.Config
+	var config Prompt
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
 	}
@@ -26,7 +25,7 @@ func LoadConfig(filePath string) (*collector.Config, error) {
 }
 
 // mustLoadConfig reads and parses the configuration file. Exits on error.
-func MustLoadConfig(filePath string) *collector.Config {
+func MustLoadConfig(filePath string) *Prompt {
 	config, err := LoadConfig(filePath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)

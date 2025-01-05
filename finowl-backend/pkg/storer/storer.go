@@ -4,8 +4,10 @@ package storer
 import (
 	"database/sql"
 	"encoding/json"
+	"finowl-backend/pkg/analyzer"
 	"fmt"
 	"log"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -120,4 +122,50 @@ func (s *Storer) GetTweetByID(id string) (*Tweet, error) {
 
 func (s *Storer) DB() *sql.DB {
 	return s.db
+}
+
+// TransformToStorerTweet transforms a Tweet into a storer.Tweet format for database storage.
+func TransformToStorerTweet(input analyzer.Tweet) Tweet {
+	return Tweet{
+		ID:        input.ID,
+		Author:    input.Author,
+		Timestamp: input.Timestamp.Format(time.RFC3339), // Convert to ISO 8601 format
+		Content:   input.Content,
+		Links:     input.Links,
+		Tickers:   input.Tickers,
+	}
+}
+
+// CreateTables creates the necessary tables for the application.
+// It ensures that the "tweets" and "Tickers" tables exist in the database.
+func CreateTables(storer *Storer) error {
+	// Create the 'tweets' table if it doesn't exist
+	_, err := storer.db.Exec(`
+		CREATE TABLE IF NOT EXISTS tweets (
+			id UUID PRIMARY KEY,
+			author VARCHAR(255),
+			timestamp TIMESTAMP,
+			content TEXT,
+			links JSONB,
+			tickers JSONB
+		)`)
+	if err != nil {
+		return fmt.Errorf("failed to create tweets table: %w", err)
+	}
+
+	// Create the 'Tickers' table if it doesn't exist
+	_, err = storer.db.Exec(`
+		CREATE TABLE IF NOT EXISTS Tickers (
+			ticker_symbol VARCHAR(10) PRIMARY KEY,
+			category VARCHAR(20) CHECK (category IN ('High Alpha', 'Alpha', 'Trenches')),
+			mindshare_score INT,
+			last_mentioned_at TIMESTAMP,
+			mention_details JSONB
+		)`)
+	if err != nil {
+		return fmt.Errorf("failed to create Tickers table: %w", err)
+	}
+
+	// Return nil if both tables are created successfully
+	return nil
 }

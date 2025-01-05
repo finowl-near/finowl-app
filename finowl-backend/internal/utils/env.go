@@ -1,70 +1,101 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
+// Constants for environment variable keys
 const (
 	// Discord related constants
-	envDiscordBotToken    = "DISCORD_BOT_TOKEN"
-	envMacroNewsChannelID = "DISCORD_Macro_News_CHANNEL_ID"
+	discordTokenKey = "DISCORD_BOT_TOKEN"
+	channelIDKey    = "DISCORD_Macro_News_CHANNEL_ID"
 
 	// AI API related constants
-	envClaudeAPIKey = "CLAUDE_API"
+	claudeAPIKeyKey = "CLAUDE_API"
 
 	// Database related constants
-	envDBHost     = "FINOWL_DB_HOST"
-	envDBPort     = "FINOWL_DB_PORT"
-	envDBUser     = "FINOWL_DB_USER"
-	envDBPassword = "FINOWL_DB_PASSWORD"
-	envDBName     = "FINOWL_DB_NAME"
+	dbHostKey     = "FINOWL_DB_HOST"
+	dbPortKey     = "FINOWL_DB_PORT"
+	dbUserKey     = "FINOWL_DB_USER"
+	dbPasswordKey = "FINOWL_DB_PASSWORD"
+	dbNameKey     = "FINOWL_DB_NAME"
 )
 
-// loadEnvVars loads environment variables from the .env file and retrieves required ones.
-func LoadEnvVars() map[string]string {
+// AppConfig holds all the environment configuration for the application
+type AppConfig struct {
+	DiscordToken string
+	ChannelID    string
+	ClaudeAPIKey string
+	DBHost       string
+	DBPort       string
+	DBUser       string
+	DBPassword   string
+	DBName       string
+}
+
+// LoadAppConfig loads and validates the environment variables from the .env file.
+func LoadAppConfig() (*AppConfig, error) {
+	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Error loading .env file: %v", err)
 	}
 
-	return map[string]string{
-		// Discord related vars
-		"token":         os.Getenv(envDiscordBotToken),
-		"macroNewsChan": os.Getenv(envMacroNewsChannelID),
-
-		// AI API related constants
-		"aikey": os.Getenv(envClaudeAPIKey),
-
-		// Database related vars
-		"dbHost":     os.Getenv(envDBHost),
-		"dbPort":     os.Getenv(envDBPort),
-		"dbUser":     os.Getenv(envDBUser),
-		"dbPassword": os.Getenv(envDBPassword),
-		"dbName":     os.Getenv(envDBName),
+	// Initialize the AppConfig struct and populate it with environment variables
+	config := &AppConfig{
+		DiscordToken: os.Getenv(discordTokenKey),
+		ChannelID:    os.Getenv(channelIDKey),
+		ClaudeAPIKey: os.Getenv(claudeAPIKeyKey),
+		DBHost:       os.Getenv(dbHostKey),
+		DBPort:       os.Getenv(dbPortKey),
+		DBUser:       os.Getenv(dbUserKey),
+		DBPassword:   os.Getenv(dbPasswordKey),
+		DBName:       os.Getenv(dbNameKey),
 	}
+
+	// Validate that all required environment variables are set
+	if err := validateConfig(config); err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }
 
-// validateEnvVars ensures all required environment variables are set.
-func ValidateEnvVars(vars map[string]string) {
-	if vars["token"] == "" || vars["macroNewsChan"] == "" {
-		log.Fatal("Environment variables DISCORD_BOT_TOKEN and DISCORD_Macro_News_CHANNEL_ID must be set")
+// validateConfig checks that all required environment variables are present
+func validateConfig(config *AppConfig) error {
+	if config.DiscordToken == "" {
+		return fmt.Errorf("environment variable %s is required but not set", discordTokenKey)
 	}
+	if config.ChannelID == "" {
+		return fmt.Errorf("environment variable %s is required but not set", channelIDKey)
+	}
+	if config.ClaudeAPIKey == "" {
+		return fmt.Errorf("environment variable %s is required but not set", claudeAPIKeyKey)
+	}
+	if config.DBHost == "" {
+		return fmt.Errorf("environment variable %s is required but not set", dbHostKey)
+	}
+	if config.DBPort == "" {
+		return fmt.Errorf("environment variable %s is required but not set", dbPortKey)
+	}
+	if config.DBUser == "" {
+		return fmt.Errorf("environment variable %s is required but not set", dbUserKey)
+	}
+	if config.DBPassword == "" {
+		return fmt.Errorf("environment variable %s is required but not set", dbPasswordKey)
+	}
+	if config.DBName == "" {
+		return fmt.Errorf("environment variable %s is required but not set", dbNameKey)
+	}
+	return nil
 }
 
-// LoadEnv loads the environment variables from a .env file.
-func LoadEnv() {
-	if err := godotenv.Load(); err != nil {
-		log.Printf("Error loading .env file: %v", err)
-	}
-}
-
-// GetRequiredEnv retrieves the value of a required environment variable.
-func GetRequiredEnv(key string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		log.Fatalf("Environment variable %s must be set", key)
-	}
-	return value
+type Prompt struct {
+	Prompts map[string]struct {
+		Prompt string   `yaml:"prompt"`
+		Coins  []string `yaml:"coins"`
+	} `yaml:"prompts"`
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	_ "github.com/lib/pq" // Import the PostgreSQL driver
@@ -23,11 +24,35 @@ type Ticker struct {
 type MentionDetail struct {
 	Tier      int    `json:"tier"`
 	TweetLink string `json:"tweet_link"`
+	Content   string `json:"content"`
 }
 
 // MentionDetails represents the overall mention details structure
 type MentionDetails struct {
 	Influencers map[string]MentionDetail `json:"influencers"`
+}
+
+// InsertTickersBatch processes a batch of tickers, inserting or updating each one into the database.
+// It will call InsertTicker for each ticker and handle errors appropriately.
+func (s *Storer) InsertTickersBatch(tickers []Ticker) error {
+	// Early exit if no tickers are provided
+	if len(tickers) == 0 {
+		return fmt.Errorf("no tickers provided for batch insert")
+	}
+
+	// Iterate over each ticker in the batch and process it individually
+	for i, ticker := range tickers {
+		// Call InsertTicker for each ticker and handle errors
+		if err := s.InsertTicker(ticker); err != nil {
+			// Log error with context for better troubleshooting
+			log.Printf("Error inserting/updating ticker at index %d (Ticker Symbol: %s): %v", i, ticker.TickerSymbol, err)
+			// Return the error to stop further processing
+			return fmt.Errorf("failed to insert/update ticker at index %d (Ticker Symbol: %s): %w", i, ticker.TickerSymbol, err)
+		}
+	}
+
+	// Successfully processed all tickers
+	return nil
 }
 
 // InsertTicker inserts a new ticker into the database or updates it if it already exists
