@@ -38,6 +38,9 @@ func isMonetaryValue(ticker string) bool {
 	// Remove the dollar sign for easier checks
 	tickerWithoutDollar := ticker[1:]
 
+	// Remove any trailing characters like "+" or other non-numeric suffixes
+	tickerWithoutDollar = strings.TrimRight(tickerWithoutDollar, "+")
+
 	// Check for suffixes like k, M, B (case-insensitive)
 	lastChar := tickerWithoutDollar[len(tickerWithoutDollar)-1]
 	if lastChar == 'k' || lastChar == 'K' || lastChar == 'M' || lastChar == 'm' || lastChar == 'B' || lastChar == 'b' || lastChar == 'T' || lastChar == 't' {

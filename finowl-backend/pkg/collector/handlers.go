@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"finowl-backend/pkg/storer"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -12,13 +13,6 @@ const (
 	PortfolioInsights = "PortfolioInsights"
 	AlphaTrenches     = "AlphaTrenches"
 )
-
-type Config struct {
-	Prompts map[string]struct {
-		Prompt string   `yaml:"prompt"`
-		Coins  []string `yaml:"coins"`
-	} `yaml:"prompts"`
-}
 
 func (b *Bot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore bot's own messages
@@ -49,6 +43,15 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 	)
 
 	if tweet.IsValid {
+
+		tt := storer.TransformToStorerTweet(*tweet)
+
+		b.storer.InsertTweet(tt)
+
+		tickers := storer.ConvertTweetsToTickers([]storer.Tweet{tt}, b.influencers)
+
+		b.storer.InsertTickersBatch(tickers)
+
 		b.logger.Printf("\n=== VALID TWEET DETECTED in %s ===\n", category)
 		b.logger.Printf("ID: %s\n", tweet.ID)
 		b.logger.Printf("From: %s\n", tweet.Author)

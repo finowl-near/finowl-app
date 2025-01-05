@@ -1,6 +1,7 @@
 package storer
 
 import (
+	"finowl-backend/pkg/influencer"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func TestConvertTweetToTicker(t *testing.T) {
 	}
 
 	// Convert the Tweet to Tickers
-	tickers := ConvertTweetsToTickers([]Tweet{tweet})
+	tickers := ConvertTweetsToTickers([]Tweet{tweet}, influencer.InfluencerRankings{})
 
 	// Check if we got the expected number of tickers
 	if len(tickers) != 1 {
@@ -34,6 +35,7 @@ func TestConvertTweetToTicker(t *testing.T) {
 				tweet.Author: {
 					Tier:      0,              // Tier is 0
 					TweetLink: tweet.Links[0], // First link from the tweet
+					Content:   tweet.Content,
 				},
 			},
 		},

@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"database/sql"
+	"finowl-backend/pkg/storer"
 	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -17,7 +18,7 @@ type DBConfig struct {
 }
 
 // InitDB initializes and returns a database connection
-func InitDB(cfg DBConfig) (*sql.DB, error) {
+func InitDB(cfg DBConfig) (*storer.Storer, error) {
 
 	dataSourceName := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -28,26 +29,28 @@ func InitDB(cfg DBConfig) (*sql.DB, error) {
 		cfg.DBName,
 	)
 
-	db, err := sql.Open("postgres", dataSourceName)
-	if err != nil {
-		return nil, fmt.Errorf("error opening database: %v", err)
-	}
-
-	// Test the connection
+	// Wait for database to be ready
 	if err := WaitForDB(dataSourceName, 30); err != nil {
-		return nil, fmt.Errorf("database connection failed: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	return db, nil
+	storerClient, err := storer.NewStorer(dataSourceName)
+	if err != nil {
+		return nil, fmt.Errorf("error initializing storer: %v", err)
+	}
+
+	storer.CreateTables(storerClient)
+
+	return storerClient, nil
 }
 
 // NewDBConfig creates a new database configuration from environment variables
-func NewDBConfig(envVars map[string]string) DBConfig {
+func NewDBConfig(config AppConfig) DBConfig {
 	return DBConfig{
-		Host:     envVars["dbHost"],
-		Port:     envVars["dbPort"],
-		User:     envVars["dbUser"],
-		Password: envVars["dbPassword"],
-		DBName:   envVars["dbName"],
+		Host:     config.DBHost,
+		Port:     config.DBPort,
+		User:     config.DBUser,
+		Password: config.DBPassword,
+		DBName:   config.DBName,
 	}
 }
