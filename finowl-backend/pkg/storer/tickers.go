@@ -55,7 +55,7 @@ func (s *Storer) getExistingTicker(symbol string) (*ticker.Ticker, error) {
 	var mentionDetailsString string
 
 	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details 
-             FROM Tickers WHERE ticker_symbol = $1`
+             FROM Tickers_1_0 WHERE ticker_symbol = $1`
 
 	err := s.db.QueryRow(query, symbol).Scan(
 		&ticker.TickerSymbol,
@@ -83,7 +83,7 @@ func (s *Storer) createNewTicker(ticker ticker.Ticker) error {
 		return fmt.Errorf("failed to marshal mention details: %w", err)
 	}
 
-	query := `INSERT INTO Tickers (ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details)
+	query := `INSERT INTO Tickers_1_0 (ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details)
              VALUES ($1, $2, $3, $4, $5)`
 
 	_, err = s.db.Exec(query,
@@ -129,7 +129,7 @@ func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.
 		return fmt.Errorf("failed to marshal updated mention details: %w", err)
 	}
 
-	query := `UPDATE Tickers 
+	query := `UPDATE Tickers_1_0
              SET last_mentioned_at = $1, 
                  mention_details = $2,
                  mindshare_score = $3,

@@ -155,10 +155,10 @@ func CreateTables(storer *Storer) error {
 
 	// Create the 'Tickers' table if it doesn't exist
 	_, err = storer.db.Exec(`
-		CREATE TABLE IF NOT EXISTS Tickers (
+		CREATE TABLE IF NOT EXISTS Tickers_1_0 (
 			ticker_symbol VARCHAR(10) PRIMARY KEY,
 			category VARCHAR(20) CHECK (category IN ('High Alpha', 'Alpha', 'Trenches')),
-			mindshare_score INT,
+			mindshare_score DECIMAL(10,2),  -- Changed from INT to DECIMAL
 			last_mentioned_at TIMESTAMP,
 			mention_details JSONB
 		)`)
