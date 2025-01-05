@@ -2,32 +2,39 @@ package storer
 
 import (
 	"finowl-backend/pkg/influencer"
+	"finowl-backend/pkg/ticker"
 	"log"
 	"time"
+)
+
+const (
+	// DefaultInfluencerTier represents the default tier assigned to influencers
+	// when no specific tier is specified. Tier 3 is the base level.
+	DefaultInfluencerTier = 3
 )
 
 // ConvertTweetsToTickers converts a slice of Tweets to a slice of Tickers
 func ConvertTweetsToTickers(
 	tweets []Tweet,
 	influencers influencer.InfluencerRankings,
-) []Ticker {
-	var tickers []Ticker
+) []ticker.Ticker {
+	var tickers []ticker.Ticker
 
 	for _, tweet := range tweets {
-		tier := 0
+		tier := DefaultInfluencerTier
 		influencer, _ := influencers.FindInfluencer(tweet.Author)
 		if influencer != nil {
 			tier = influencer.Tier
 		}
 		for _, tickerSymbol := range tweet.Tickers {
 			// Create a new Ticker for each ticker symbol
-			ticker := Ticker{
+			ticker := ticker.Ticker{
 				TickerSymbol:    tickerSymbol,
 				Category:        "Alpha",                         // Default category as "Alpha"
-				MindshareScore:  50,                              // Default mindshare score
+				MindshareScore:  10,                              // Default mindshare score
 				LastMentionedAt: parseTimestamp(tweet.Timestamp), // Parse the timestamp
-				MentionDetails: MentionDetails{
-					Influencers: map[string]MentionDetail{
+				MentionDetails: ticker.MentionDetails{
+					Influencers: map[string]ticker.MentionDetail{
 						tweet.Author: {
 							Tier:      tier,                      // Default tier value
 							TweetLink: getFirstLink(tweet.Links), // Get the first link from the tweet's links

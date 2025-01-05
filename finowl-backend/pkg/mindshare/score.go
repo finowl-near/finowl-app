@@ -1,7 +1,7 @@
 package mindshare
 
 import (
-	"finowl-backend/pkg/storer"
+	"finowl-backend/pkg/ticker"
 	"fmt"
 	"math"
 )
@@ -13,9 +13,9 @@ type Mindshare struct {
 }
 
 // CalculateMindshare computes final mindshare score and category from existing and new mentions
-func CalculateMindshare(existing, new storer.MentionDetails) (*Mindshare, error) {
+func CalculateMindshare(existing, new ticker.MentionDetails) (*Mindshare, error) {
 	// Merge mention details
-	mergedDetails := mergeMentionDetails(existing, new)
+	mergedDetails := MergeMentionDetails(existing, new)
 
 	// Calculate score
 	score, err := CalculateScore(mergedDetails, TotalTierCounts)
@@ -36,10 +36,10 @@ func CalculateMindshare(existing, new storer.MentionDetails) (*Mindshare, error)
 }
 
 // Helper function to merge existing and new mention details
-func mergeMentionDetails(existing, new storer.MentionDetails) storer.MentionDetails {
+func MergeMentionDetails(existing, new ticker.MentionDetails) ticker.MentionDetails {
 	// If existing map is nil, initialize it
 	if existing.Influencers == nil {
-		existing.Influencers = make(map[string]storer.MentionDetail)
+		existing.Influencers = make(map[string]ticker.MentionDetail)
 	}
 
 	// Update or add new mentions to existing map
@@ -51,7 +51,7 @@ func mergeMentionDetails(existing, new storer.MentionDetails) storer.MentionDeta
 }
 
 // // Helper function to calculate the score
-// func calculateScore(details storer.MentionDetails) (float64, error) {
+// func calculateScore(details ticker.MentionDetails) (float64, error) {
 // 	if len(details.Influencers) == 0 {
 // 		return 0, fmt.Errorf("no influencer mentions found")
 // 	}
@@ -113,7 +113,7 @@ var TotalTierCounts = map[int]int{
 	3: 33, // All tier 3 influencers
 }
 
-func CalculateScore(details storer.MentionDetails, totalTierCounts map[int]int) (float64, error) {
+func CalculateScore(details ticker.MentionDetails, totalTierCounts map[int]int) (float64, error) {
 	if len(details.Influencers) == 0 {
 		return 0, fmt.Errorf("no influencer mentions found")
 	}
@@ -145,10 +145,18 @@ func CalculateScore(details storer.MentionDetails, totalTierCounts map[int]int) 
 
 	// Apply bonuses for tier 1 influencers
 	if tier1Count > 0 {
-		rawScore *= 1.2 // Base bonus for tier 1 presence
+		rawScore *= 5.5 // Base bonus for tier 1 presence
 	}
 	if tier1Count > 1 {
 		rawScore *= 1.3 // Additional bonus for multiple tier 1s
+	}
+
+	// Apply bonuses for tier 1 influencers
+	if tier2Count > 0 {
+		rawScore *= 3.9 // Base bonus for tier 1 presence
+	}
+	if tier2Count > 1 {
+		rawScore *= 1.6 // Additional bonus for multiple tier 1s
 	}
 
 	// Calculate the theoretical maximum raw score based on 25% thresholds

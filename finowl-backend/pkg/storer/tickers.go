@@ -4,37 +4,17 @@ package storer
 import (
 	"database/sql"
 	"encoding/json"
+	"finowl-backend/pkg/mindshare"
+	"finowl-backend/pkg/ticker"
 	"fmt"
 	"log"
-	"time"
 
 	_ "github.com/lib/pq" // Import the PostgreSQL driver
 )
 
-// Ticker represents the structure of a ticker to be stored in the database
-type Ticker struct {
-	TickerSymbol    string         `json:"ticker_symbol"`
-	Category        string         `json:"category"`
-	MindshareScore  int            `json:"mindshare_score"`
-	LastMentionedAt time.Time      `json:"last_mentioned_at"`
-	MentionDetails  MentionDetails `json:"mention_details"`
-}
-
-// MentionDetail represents the details of a mention for a specific influencer
-type MentionDetail struct {
-	Tier      int    `json:"tier"`
-	TweetLink string `json:"tweet_link"`
-	Content   string `json:"content"`
-}
-
-// MentionDetails represents the overall mention details structure
-type MentionDetails struct {
-	Influencers map[string]MentionDetail `json:"influencers"`
-}
-
 // InsertTickersBatch processes a batch of tickers, inserting or updating each one into the database.
 // It will call InsertTicker for each ticker and handle errors appropriately.
-func (s *Storer) InsertTickersBatch(tickers []Ticker) error {
+func (s *Storer) InsertTickersBatch(tickers []ticker.Ticker) error {
 	// Early exit if no tickers are provided
 	if len(tickers) == 0 {
 		return fmt.Errorf("no tickers provided for batch insert")
@@ -56,7 +36,7 @@ func (s *Storer) InsertTickersBatch(tickers []Ticker) error {
 }
 
 // InsertTicker handles the main flow of ticker insertion/update
-func (s *Storer) InsertTicker(ticker Ticker) error {
+func (s *Storer) InsertTicker(ticker ticker.Ticker) error {
 	existing, err := s.getExistingTicker(ticker.TickerSymbol)
 	if err != nil && err != sql.ErrNoRows {
 		return fmt.Errorf("failed to check existing ticker: %w", err)
@@ -70,8 +50,8 @@ func (s *Storer) InsertTicker(ticker Ticker) error {
 }
 
 // getExistingTicker retrieves an existing ticker from the database
-func (s *Storer) getExistingTicker(symbol string) (*Ticker, error) {
-	var ticker Ticker
+func (s *Storer) getExistingTicker(symbol string) (*ticker.Ticker, error) {
+	var ticker ticker.Ticker
 	var mentionDetailsString string
 
 	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details 
@@ -97,7 +77,7 @@ func (s *Storer) getExistingTicker(symbol string) (*Ticker, error) {
 }
 
 // createNewTicker inserts a new ticker into the database
-func (s *Storer) createNewTicker(ticker Ticker) error {
+func (s *Storer) createNewTicker(ticker ticker.Ticker) error {
 	mentionDetailsJSON, err := json.Marshal(ticker.MentionDetails)
 	if err != nil {
 		return fmt.Errorf("failed to marshal mention details: %w", err)
@@ -117,11 +97,27 @@ func (s *Storer) createNewTicker(ticker Ticker) error {
 	return err
 }
 
+// TotalTierCounts represents the total number of influencers per tier
+var TotalTierCounts = map[int]int{
+	1: 5,  // CZ, Sreeram, Balaji, cygaar, YQ
+	2: 15, // Andrew Kang, overdose, crash, Bull.BnB, etc.
+	3: 33, // All tier 3 influencers
+}
+
 // updateExistingTicker updates an existing ticker with new information
-func (s *Storer) updateExistingTicker(existing *Ticker, newTicker Ticker) error {
+func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.Ticker) error {
 	// Merge mention details
 	for influencer, detail := range newTicker.MentionDetails.Influencers {
 		existing.MentionDetails.Influencers[influencer] = detail
+	}
+
+	mergedDetails := mindshare.MergeMentionDetails(existing.MentionDetails, newTicker.MentionDetails)
+
+	// Calculate score
+	score, err := mindshare.CalculateScore(mergedDetails, TotalTierCounts)
+	if err != nil {
+		fmt.Printf("failed to calculate score: %v", err)
+		return nil
 	}
 
 	// Here we'll add the mindshare calculation later
@@ -143,8 +139,8 @@ func (s *Storer) updateExistingTicker(existing *Ticker, newTicker Ticker) error 
 	_, err = s.db.Exec(query,
 		newTicker.LastMentionedAt,
 		mentionDetailsJSON,
-		existing.MindshareScore, // Updated score
-		existing.Category,       // Updated category
+		score,             // Updated score
+		existing.Category, // Updated category
 		existing.TickerSymbol,
 	)
 
@@ -152,11 +148,11 @@ func (s *Storer) updateExistingTicker(existing *Ticker, newTicker Ticker) error 
 }
 
 // GetTicker retrieves a ticker from the database based on its symbol
-func (s *Storer) GetTicker(tickerSymbol string) (*Ticker, error) {
+func (s *Storer) GetTicker(tickerSymbol string) (*ticker.Ticker, error) {
 	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details FROM Tickers WHERE ticker_symbol = $1`
 	row := s.db.QueryRow(query, tickerSymbol)
 
-	var ticker Ticker
+	var ticker ticker.Ticker
 	var mentionDetailsJSON string
 
 	if err := row.Scan(&ticker.TickerSymbol, &ticker.Category, &ticker.MindshareScore, &ticker.LastMentionedAt, &mentionDetailsJSON); err != nil {

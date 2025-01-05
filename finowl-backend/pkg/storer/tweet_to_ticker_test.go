@@ -2,6 +2,7 @@ package storer
 
 import (
 	"finowl-backend/pkg/influencer"
+	"finowl-backend/pkg/ticker"
 	"testing"
 )
 
@@ -25,15 +26,15 @@ func TestConvertTweetToTicker(t *testing.T) {
 	}
 
 	// Check the values of the converted Ticker
-	expectedTicker := Ticker{
+	expectedTicker := ticker.Ticker{
 		TickerSymbol:    "$AIXBT",
 		Category:        "Alpha",                         // Category is empty
-		MindshareScore:  50,                              // Mindshare score is 0
+		MindshareScore:  10,                              // Mindshare score is 0
 		LastMentionedAt: parseTimestamp(tweet.Timestamp), // Parse the timestamp
-		MentionDetails: MentionDetails{
-			Influencers: map[string]MentionDetail{
+		MentionDetails: ticker.MentionDetails{
+			Influencers: map[string]ticker.MentionDetail{
 				tweet.Author: {
-					Tier:      0,              // Tier is 0
+					Tier:      3,              // Tier is 0
 					TweetLink: tweet.Links[0], // First link from the tweet
 					Content:   tweet.Content,
 				},
