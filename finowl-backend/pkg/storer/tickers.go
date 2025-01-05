@@ -111,12 +111,9 @@ func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.
 		existing.MentionDetails.Influencers[influencer] = detail
 	}
 
-	mergedDetails := mindshare.MergeMentionDetails(existing.MentionDetails, newTicker.MentionDetails)
-
-	// Calculate score
-	score, err := mindshare.CalculateScore(mergedDetails, TotalTierCounts)
+	mindShare, err := mindshare.CalculateMindshare(existing.MentionDetails, newTicker.MentionDetails)
 	if err != nil {
-		fmt.Printf("failed to calculate score: %v", err)
+		fmt.Printf("failed to calculate mindShare: %v", err)
 		return nil
 	}
 
@@ -139,8 +136,8 @@ func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.
 	_, err = s.db.Exec(query,
 		newTicker.LastMentionedAt,
 		mentionDetailsJSON,
-		score,             // Updated score
-		existing.Category, // Updated category
+		mindShare.Score,    // Updated score
+		mindShare.Category, // Updated category
 		existing.TickerSymbol,
 	)
 

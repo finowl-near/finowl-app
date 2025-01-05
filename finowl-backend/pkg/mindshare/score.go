@@ -24,7 +24,7 @@ func CalculateMindshare(existing, new ticker.MentionDetails) (*Mindshare, error)
 	}
 
 	// Determine category
-	category, err := determineCategory(score)
+	category, err := DetermineCategory(score)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine category: %w", err)
 	}
@@ -50,49 +50,16 @@ func MergeMentionDetails(existing, new ticker.MentionDetails) ticker.MentionDeta
 	return existing
 }
 
-// // Helper function to calculate the score
-// func calculateScore(details ticker.MentionDetails) (float64, error) {
-// 	if len(details.Influencers) == 0 {
-// 		return 0, fmt.Errorf("no influencer mentions found")
-// 	}
-
-// 	tierWeights := map[string]float64{
-// 		"S": 1.0,
-// 		"A": 0.8,
-// 		"B": 0.6,
-// 		"C": 0.4,
-// 	}
-
-// 	var weightedSum float64
-// 	var totalMentions int
-
-// 	for _, mention := range details.Influencers {
-// 		weight, exists := tierWeights["2"]
-// 		if !exists {
-// 			return 0, fmt.Errorf("invalid tier found: %s", strconv.Itoa(mention.Tier))
-// 		}
-// 		weightedSum += weight
-// 		totalMentions++
-// 	}
-
-// 	// Normalize score to 0-100 range
-// 	score := (weightedSum / float64(totalMentions)) * 100
-
-// 	return score, nil
-// }
-
 // Helper function to determine category from score
-func determineCategory(score float64) (string, error) {
-	if score < 0 || score > 100 {
-		return "", fmt.Errorf("invalid score: %f (must be between 0 and 100)", score)
+func DetermineCategory(score float64) (string, error) {
+	if score < 0 {
+		return "", fmt.Errorf("invalid score: %f (must be non-negative)", score)
 	}
 
 	switch {
-	case score >= 80:
+	case score > 600:
 		return "High Alpha", nil
-	case score >= 50:
-		return "Medium Impact", nil
-	case score >= 20:
+	case score > 200:
 		return "Alpha", nil
 	default:
 		return "Trenches", nil
