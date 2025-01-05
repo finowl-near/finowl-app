@@ -10,10 +10,15 @@ func ExtractTickers(content string) []string {
 	// Split the content into words
 	words := strings.Fields(content)
 	for _, word := range words {
-		// Check if the word starts with '$' and is followed by alphanumeric characters
+		// Check if the word starts with '$'
 		if strings.HasPrefix(word, "$") {
 			// Remove any trailing punctuation (e.g., commas, periods)
 			ticker := strings.Trim(word, ".,!?;:")
+
+			// Skip words that are only '$', '$$', '$$$', etc.
+			if len(ticker) == 1 || strings.Trim(ticker, "$") == "" {
+				continue
+			}
 
 			// Check if the ticker is a monetary value
 			if isMonetaryValue(ticker) {
@@ -40,6 +45,18 @@ func isMonetaryValue(ticker string) bool {
 
 	// Remove any trailing characters like "+" or other non-numeric suffixes
 	tickerWithoutDollar = strings.TrimRight(tickerWithoutDollar, "+")
+
+	// Remove commas in numbers (e.g., $10,000 becomes 10000)
+	tickerWithoutDollar = strings.ReplaceAll(tickerWithoutDollar, ",", "")
+
+	if len(tickerWithoutDollar) > 2 {
+		lastTwoChars := strings.ToLower(tickerWithoutDollar[len(tickerWithoutDollar)-2:])
+		if lastTwoChars == "mn" || lastTwoChars == "bn" {
+			// Ensure the rest of the string is a valid number
+			numberPart := tickerWithoutDollar[:len(tickerWithoutDollar)-2]
+			return isValidNumber(numberPart)
+		}
+	}
 
 	// Check for suffixes like k, M, B (case-insensitive)
 	lastChar := tickerWithoutDollar[len(tickerWithoutDollar)-1]
