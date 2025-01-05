@@ -55,64 +55,100 @@ func (s *Storer) InsertTickersBatch(tickers []Ticker) error {
 	return nil
 }
 
-// InsertTicker inserts a new ticker into the database or updates it if it already exists
+// InsertTicker handles the main flow of ticker insertion/update
 func (s *Storer) InsertTicker(ticker Ticker) error {
-	// Marshal the MentionDetails into JSON
+	existing, err := s.getExistingTicker(ticker.TickerSymbol)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("failed to check existing ticker: %w", err)
+	}
+
+	if err == sql.ErrNoRows {
+		return s.createNewTicker(ticker)
+	}
+
+	return s.updateExistingTicker(existing, ticker)
+}
+
+// getExistingTicker retrieves an existing ticker from the database
+func (s *Storer) getExistingTicker(symbol string) (*Ticker, error) {
+	var ticker Ticker
+	var mentionDetailsString string
+
+	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details 
+             FROM Tickers WHERE ticker_symbol = $1`
+
+	err := s.db.QueryRow(query, symbol).Scan(
+		&ticker.TickerSymbol,
+		&ticker.Category,
+		&ticker.MindshareScore,
+		&ticker.LastMentionedAt,
+		&mentionDetailsString,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal([]byte(mentionDetailsString), &ticker.MentionDetails); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal mention details: %w", err)
+	}
+
+	return &ticker, nil
+}
+
+// createNewTicker inserts a new ticker into the database
+func (s *Storer) createNewTicker(ticker Ticker) error {
 	mentionDetailsJSON, err := json.Marshal(ticker.MentionDetails)
 	if err != nil {
 		return fmt.Errorf("failed to marshal mention details: %w", err)
 	}
 
-	// Check if the ticker already exists
-	var existingTicker Ticker
-	queryCheck := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details FROM Tickers WHERE ticker_symbol = $1`
-	var mentionDetailsString string // Use a string to hold the JSONB data
-	err = s.db.QueryRow(queryCheck, ticker.TickerSymbol).Scan(&existingTicker.TickerSymbol, &existingTicker.Category, &existingTicker.MindshareScore, &existingTicker.LastMentionedAt, &mentionDetailsString)
+	query := `INSERT INTO Tickers (ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details)
+             VALUES ($1, $2, $3, $4, $5)`
 
-	if err == sql.ErrNoRows {
-		// Ticker does not exist, insert a new one
-		queryInsert := `
-			INSERT INTO Tickers (ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details)
-			VALUES ($1, $2, $3, $4, $5)`
+	_, err = s.db.Exec(query,
+		ticker.TickerSymbol,
+		ticker.Category,
+		ticker.MindshareScore,
+		ticker.LastMentionedAt,
+		mentionDetailsJSON,
+	)
 
-		_, err = s.db.Exec(queryInsert, ticker.TickerSymbol, ticker.Category, ticker.MindshareScore, ticker.LastMentionedAt, mentionDetailsJSON)
-		if err != nil {
-			return fmt.Errorf("failed to insert ticker: %w", err)
-		}
-	} else if err != nil {
-		return fmt.Errorf("failed to check if ticker exists: %w", err)
-	} else {
-		// Ticker exists, update it
-		// Unmarshal existing mention details from the JSON string
-		var existingMentionDetails MentionDetails
-		if err := json.Unmarshal([]byte(mentionDetailsString), &existingMentionDetails); err != nil {
-			return fmt.Errorf("failed to unmarshal existing mention details: %w", err)
-		}
+	return err
+}
 
-		// Append new mention details
-		for influencer, detail := range ticker.MentionDetails.Influencers {
-			existingMentionDetails.Influencers[influencer] = detail
-		}
-
-		// Marshal updated mention details
-		updatedMentionDetailsJSON, err := json.Marshal(existingMentionDetails)
-		if err != nil {
-			return fmt.Errorf("failed to marshal updated mention details: %w", err)
-		}
-
-		// Update the ticker
-		queryUpdate := `
-			UPDATE Tickers 
-			SET last_mentioned_at = $1, mention_details = $2 
-			WHERE ticker_symbol = $3`
-
-		_, err = s.db.Exec(queryUpdate, ticker.LastMentionedAt, updatedMentionDetailsJSON, ticker.TickerSymbol)
-		if err != nil {
-			return fmt.Errorf("failed to update ticker: %w", err)
-		}
+// updateExistingTicker updates an existing ticker with new information
+func (s *Storer) updateExistingTicker(existing *Ticker, newTicker Ticker) error {
+	// Merge mention details
+	for influencer, detail := range newTicker.MentionDetails.Influencers {
+		existing.MentionDetails.Influencers[influencer] = detail
 	}
 
-	return nil
+	// Here we'll add the mindshare calculation later
+	// existing.MindshareScore = mindshare.Calculate(existing.MentionDetails)
+	// existing.Category = mindshare.DetermineCategory(existing.MindshareScore)
+
+	mentionDetailsJSON, err := json.Marshal(existing.MentionDetails)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated mention details: %w", err)
+	}
+
+	query := `UPDATE Tickers 
+             SET last_mentioned_at = $1, 
+                 mention_details = $2,
+                 mindshare_score = $3,
+                 category = $4
+             WHERE ticker_symbol = $5`
+
+	_, err = s.db.Exec(query,
+		newTicker.LastMentionedAt,
+		mentionDetailsJSON,
+		existing.MindshareScore, // Updated score
+		existing.Category,       // Updated category
+		existing.TickerSymbol,
+	)
+
+	return err
 }
 
 // GetTicker retrieves a ticker from the database based on its symbol
