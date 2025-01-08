@@ -1,0 +1,67 @@
+import Image from "next/image";
+import React from "react";
+import prIcon from "@/app/assets/svg/ProfileIcon.svg";
+import StarIcon from "./Icons/StarIcon";
+import {
+  ArrowPathRoundedSquareIcon,
+  CheckBadgeIcon,
+} from "@heroicons/react/24/solid";
+import { HeartIcon } from "@heroicons/react/24/outline";
+import ChatIcon from "./Icons/ChatIcon";
+
+export default function PopularPost() {
+  return (
+    <div className="p-4 h-[fit-content] relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
+      <div className="absolute top-2 right-0 w-32 h-8 bg-[#D8E864] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
+      <div>
+        <div className="flex items-start justify-between">
+          <div className="flex">
+            <Image
+              className="w-9"
+              src={prIcon}
+              alt="pr icon"
+              width={undefined}
+              height={undefined}
+            />
+            <div className="ml-2">
+              <div className="flex">
+                <p className="text-white font-bold text-md">Frank</p>
+                <CheckBadgeIcon className="w-4" color="#D8E864" />
+              </div>
+              <p className="text-[#D0D0D0] font-bold text-sm leading-none">
+                @frankdegods
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center rounded-[4px] p-1 bg-[#D8E8644D] w-[fit-content]">
+            <StarIcon />
+            <p className="text-[#D8E864] ml-1 text-[12px] font-bold">
+              Popular post
+            </p>
+          </div>
+        </div>
+        <div>
+          <p className="text-white font-[400] text-sm my-2">
+            People are going to realize that it is
+            <br /> really difficult to dump{" "}
+            <span className="text-[#D8E864]">$degod</span>...
+          </p>
+        </div>
+        <div className="flex gap-5">
+          <div className="flex items-center">
+            <ChatIcon />
+            <p className="text-white text-[12px] ml-1">326</p>
+          </div>
+          <div className="flex items-center">
+            <ArrowPathRoundedSquareIcon className="w-4" color="#D8E864" />
+            <p className="text-white text-[12px] ml-1">312</p>
+          </div>
+          <div className="flex items-center">
+            <HeartIcon className="w-4" color="#D8E864" />
+            <p className="text-white text-[12px] ml-1">1.4k</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
