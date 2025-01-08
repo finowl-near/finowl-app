@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@near-wallet-selector/core": "^8.9.14",
     "@near-wallet-selector/here-wallet": "^8.9.14",
     "@near-wallet-selector/modal-ui": "^8.9.14",
