@@ -1,36 +1,69 @@
-# Finowl: Your Autonomous AI Financial Advisor
+# FinOwl 🦉  
+**Your AI Financial Advisor for Smarter Cryptocurrency Investments**  
 
-## Overview
+FinOwl is an autonomous AI-powered financial advisor designed to empower cryptocurrency users with actionable investment insights. By leveraging advanced market trend analysis, influencer sentiment tracking, and mindshare evaluation, FinOwl bridges the gap between complex market data and data-driven investment strategies.
 
-Finowl is a cutting-edge financial analysis tool designed to help investors manage their investments effectively and autonomously. By eliminating emotional biases and providing disciplined, data-driven strategies, Finowl empowers users to achieve their financial goals while adapting to market dynamics in real-time.
+---
 
-## Problem Statement
+## 🚀 **Purpose and Goals**  
+FinOwl’s mission is to simplify cryptocurrency investing by offering:  
+- **Market Trend Analysis**: Analyzing market movements and identifying key narratives.  
+- **Influencer Sentiment Tracking**: Following top influencers to detect trending tokens.  
+- **Mindshare Evaluation**: Gauging the hype and popularity of crypto projects.  
+- **AI-Driven Strategies**: Suggesting actionable strategies like dollar-cost averaging (DCA) or trading narrative-based tokens.  
 
-Investors worldwide face critical challenges in managing their investments, including:
+Our vision is to create an autonomous AI capable of suggesting and executing strategies tailored to user preferences and market conditions.
 
-- **Emotional Decision-Making**: Panic-selling during downturns or impulsive buying during bull runs often leads to losses.
-- **Information Overload**: The constant influx of financial news and market noise makes it difficult to separate actionable insights from distractions.
-- **Lack of Access**: Many retail investors lack access to professional financial advisors or the technical know-how to build effective strategies.
+---
 
-## Solution
+## 🌍 **Serving NEAR Users**  
+FinOwl integrates deeply with the NEAR ecosystem to deliver unique benefits for its users:  
+1. **NEAR Intents for Token Swaps**:  
+   Seamlessly execute token swaps and purchases directly on the NEAR blockchain using intents.  
 
-Finowl addresses these issues by offering a fully autonomous AI financial advisor that provides:
+2. **Exclusive Trend Feeds**:  
+   A feed summarizing the latest market trends, emerging projects, and narratives is updated in real time.  
+   - **For AI Algorithms**: This data informs investment strategies.  
+   - **For Users**: Offers a curated overview without the need to track hundreds of influencers.  
+   Accessible exclusively to NEAR users, requiring wallet authentication for access.  
 
-- **Real-Time Strategy Assistance**: Monitors market trends and analyzes news to help users craft personalized investment strategies.
-- **Emotion-Free Execution**: Executes agreed-upon strategies autonomously, preventing impulsive changes.
-- **Continuous Optimization**: Retrains using the latest market data to ensure strategies remain effective.
+---
 
-## How It Works
+## 🔧 **Current Progress**  
+- **Backend**: Fully operational with robust tweet analysis and market trend tracking.  
+- **Dockerized Infrastructure**: Ensures scalability and stability.  
+- **Refined Algorithms**: Optimized scoring models and database handling.  
 
-Finowl’s workflow is intuitive and accessible to investors at all levels:
+---
 
-1. **User Input**: Users provide their financial goals, risk tolerance, and investment horizon.
-2. **AI Analysis**: The AI scans millions of data points to identify opportunities and risks.
-3. **Strategy Assistance**: Finowl suggests a detailed strategy based on the analysis.
-4. **Autonomous Execution**: The AI executes the strategy using blockchain-integrated smart contracts.
-5. **Continuous Monitoring**: The AI adapts to market shifts and notifies users of necessary adjustments.
+## 📅 **Next Steps**  
+- Implement AI-driven investment strategy suggestions.  
+- Develop NEAR-based smart contracts for autonomous token trading.  
+- Build a user-friendly frontend for seamless interaction with the platform.  
 
-## Project Structure
+---
+## 🌟 **Ecosystem Impact**  
+- **Empowering Investors**: Helps users make informed decisions with curated insights and actionable strategies.  
+- **Driving NEAR Adoption**: By leveraging NEAR intents and offering exclusive features for NEAR users, FinOwl directly contributes to the ecosystem’s growth.  
+- **Market Awareness**: Keeps users informed about trends and opportunities without overwhelming them with data.
+
+---
+
+## 🎯 **Use Cases**  
+1. **Trend Monitoring**: NEAR users can access exclusive market trend feeds to stay updated.  
+2. **AI Investment Strategies**: Receive personalized, actionable strategies based on data-driven insights.  
+3. **Autonomous Trading**: Execute trades on NEAR blockchain using smart contracts.  
+
+---
+# Project Structure
+---
+
+## 🛠️ **Tech Stack**  
+- **Backend**: Go, Docker  
+- **Database**: PostgreSQL  
+- **Web Application Frontend**: React, Next.js  
+- **Blockchain**: NEAR Protocol (Smart Contracts in WASM)  
+- **AI/ML**: Sentiment Analysis and Scoring Algorithms using Claude/OpenAI APIs  
 
 ### Directories
 
@@ -41,38 +74,5 @@ Finowl’s workflow is intuitive and accessible to investors at all levels:
 - **frontend**: The user interface for data visualization and interaction.
 - **package-lock.json**: Dependency management for the frontend application.
 
-## Backend Setup
-
-The backend is built using Go and utilizes PostgreSQL for data storage. The backend service is containerized using Docker for easy deployment.
-
-### Docker Compose
-
-To run the backend service, use the provided `docker-compose.yml` file
-
-### Environment Variables
-
-The backend service requires the following environment variables:
-
-- `FINOWL_DB_HOST`: Hostname of the database service (default: `db`).
-- `FINOWL_DB_PORT`: Port for the database connection (default: `5432`).
-- `FINOWL_DB_USER`: Username for the database (default: `finowl_user`).
-- `FINOWL_DB_PASSWORD`: Password for the database (default: `finowl_pass`).
-- `FINOWL_DB_NAME`: Name of the database (default: `finowl_db`).
-
-### Running the Backend
-
-To start the backend service, navigate to the `finowl-backend` directory and run:
-````docker-compose up --build```
-
-
-### Running Unit Tests
-
-Unit tests can be run to ensure the functionality of the backend. To execute the tests, use the following command:
-````go test ./...```
-
-
-## Conclusion
-
-Finowl is designed to empower investors by providing a disciplined, data-driven approach to investment management. With its autonomous AI capabilities, users can navigate the complexities of the financial markets with confidence.
 
 For more information, please refer to the documentation or contact the development team.
