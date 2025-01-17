@@ -8,11 +8,12 @@ import (
 
 // Ticker represents the structure of a ticker to be stored in the database
 type Ticker struct {
-	TickerSymbol    string         `json:"ticker_symbol"`
-	Category        string         `json:"category"`
-	MindshareScore  float64        `json:"mindshare_score"`
-	LastMentionedAt time.Time      `json:"last_mentioned_at"`
-	MentionDetails  MentionDetails `json:"mention_details"`
+	TickerSymbol     string         `json:"ticker_symbol"`
+	Category         string         `json:"category"`
+	MindshareScore   float64        `json:"mindshare_score"`
+	LastMentionedAt  time.Time      `json:"last_mentioned_at"`
+	FirstMentionedAt time.Time      `json:"first_mentioned_at"`
+	MentionDetails   MentionDetails `json:"mention_details"`
 }
 
 // MentionDetail represents the details of a mention for a specific influencer

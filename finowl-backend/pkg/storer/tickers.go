@@ -83,14 +83,15 @@ func (s *Storer) createNewTicker(ticker ticker.Ticker) error {
 		return fmt.Errorf("failed to marshal mention details: %w", err)
 	}
 
-	query := `INSERT INTO Tickers_1_0 (ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details)
-             VALUES ($1, $2, $3, $4, $5)`
+	query := `INSERT INTO Tickers_1_0 (ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details)
+             VALUES ($1, $2, $3, $4, $5, $6)`
 
 	_, err = s.db.Exec(query,
 		ticker.TickerSymbol,
 		ticker.Category,
 		ticker.MindshareScore,
 		ticker.LastMentionedAt,
+		ticker.FirstMentionedAt,
 		mentionDetailsJSON,
 	)
 

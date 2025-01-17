@@ -8,24 +8,23 @@ import (
 	"finowl-backend/pkg/storer"
 	"log"
 	"os"
-	"sync"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/psanford/claude"
 )
 
 type Bot struct {
-	session     *discordgo.Session
-	channelIDs  map[string]string
-	analyzer    *analyzer.TweetAnalyzer
-	ai          *ai.ClaudeClient
-	tweetBatch  map[string][]string
-	batchSize   int
-	mu          sync.Mutex
-	config      utils.Prompt
-	influencers influencer.InfluencerRankings
-	storer      *storer.Storer
-	logger      *log.Logger
+	session      *discordgo.Session
+	channelIDs   map[string]string
+	analyzer     *analyzer.TweetAnalyzer
+	ai           *ai.ClaudeClient
+	tweetBatch   map[string][]string
+	currentBatch []string
+	batchSize    int
+	config       utils.Prompt
+	influencers  influencer.InfluencerRankings
+	storer       *storer.Storer
+	logger       *log.Logger
 }
 
 // channelMapping := map[string]string{

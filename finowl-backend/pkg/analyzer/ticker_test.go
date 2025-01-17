@@ -28,7 +28,7 @@ func TestExtractTickers(t *testing.T) {
 		{"$btc $Eth $ltc", []string{"$btc", "$Eth", "$ltc"}},
 		{"$BTC123 $ETH456", []string{"$BTC123", "$ETH456"}},
 		{"$10 $1k $10k $100k $1m $100B+", []string{}},
-		{"$ $$$ $10,000 $$ $5Bn", []string{}},
+		{"$ $$$ $NODE) $5k/mo $2-3B", []string{}},
 	}
 
 	for _, test := range tests {
