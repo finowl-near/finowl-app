@@ -1,8 +1,13 @@
 package collector
 
 import (
+	"context"
+	"finowl-backend/pkg/analyzer"
+	"finowl-backend/pkg/mindshare"
 	"finowl-backend/pkg/storer"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -36,64 +41,109 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 		return
 	}
 
-	tweet := b.analyzer.ProcessMessage(
-		m.Content,
-		m.Author.Username,
-		m.Timestamp,
-	)
+	tweet := b.analyzer.ProcessMessage(m.Content, m.Author.Username, m.Timestamp)
 
 	if tweet.IsValid {
-
-		tt := storer.TransformToStorerTweet(*tweet)
-
-		b.storer.InsertTweet(tt)
-
-		tickers := storer.ConvertTweetsToTickers([]storer.Tweet{tt}, b.influencers)
-
-		b.storer.InsertTickersBatch(tickers)
-
-		b.logger.Printf("\n=== VALID TWEET DETECTED in %s ===\n", category)
-		b.logger.Printf("ID: %s\n", tweet.ID)
-		b.logger.Printf("From: %s\n", tweet.Author)
-
-		influencer, twitterName := b.influencers.FindInfluencer(tweet.Author)
-		if influencer != nil {
-			b.logger.Printf("Found Influencer: Twitter: %s, Tier: %d, Category: %s", twitterName, influencer.Tier, influencer.Category)
-		} else {
-			b.logger.Printf("No match found for query: %s", tweet.Author)
-		}
-
-		b.logger.Printf("Time: %s\n", tweet.Timestamp.Format("2006-01-02 15:04:05"))
-		b.logger.Printf("Content: %s\n", tweet.Content)
-		b.logger.Printf("Links: %s\n", tweet.Links)
-		b.logger.Printf("Tickers: %s\n", tweet.Tickers)
-
-		b.logger.Printf("=================================================\n")
+		b.processValidTweet(category, m, tweet, false)
 	} else {
-		b.logger.Printf("INVALID TWEET in %s from %s: too short (%d characters)\n",
-			category,
-			tweet.Author,
-			len(tweet.Content),
-		)
+		b.logInvalidTweet(category, tweet)
+	}
+}
+
+// processValidTweet handles the logic for valid tweets
+func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, tweet *analyzer.Tweet, generateSummary bool) {
+
+	b.writeSummariesOnce()
+	tt := storer.TransformToStorerTweet(*tweet)
+
+	b.storer.InsertTweet(tt)
+	tickers := storer.ConvertTweetsToTickers([]storer.Tweet{tt}, b.influencers)
+	b.storer.InsertTickersBatch(tickers)
+
+	b.logInfluencerInfo(tweet.Author)
+
+	// Collect the formatted tweet content
+	b.collectFormattedTweet(category, m)
+
+	// Check if we need to generate a summary
+	if generateSummary && len(b.tweetBatch[category]) > 50 {
+
+		// Pass the new batch to generateSummary
+		b.generateSummary(category, b.currentBatch)
+
+		b.currentBatch = []string{}
+	}
+}
+
+// writeSummariesOnce writes summaries to a file only once
+func (b *Bot) writeSummariesOnce() {
+	staticOnce := false
+	if !staticOnce {
+		err := b.storer.WriteSummariesToFile("summary.txt")
+		if err != nil {
+			fmt.Println("failed to write summaries .........")
+		}
+		staticOnce = true
+	}
+}
+
+// logInfluencerInfo logs information about the influencer
+func (b *Bot) logInfluencerInfo(author string) {
+	influencer, twitterName := b.influencers.FindInfluencer(author)
+	if influencer != nil {
+		b.logger.Printf("Found Influencer: Twitter: %s, Tier: %d, Category: %s", twitterName, influencer.Tier, influencer.Category)
+	} else {
+		b.logger.Printf("No match found for query: %s", author)
+	}
+}
+
+// collectFormattedTweet formats and collects the tweet content
+func (b *Bot) collectFormattedTweet(category string, m *discordgo.MessageCreate) {
+	formattedTweet := fmt.Sprintf("%s: %s", m.Author.Username, m.Content)
+	b.tweetBatch[category] = append(b.tweetBatch[category], formattedTweet)
+	b.currentBatch = append(b.currentBatch, formattedTweet)
+
+}
+
+// logInvalidTweet logs information about invalid tweets
+func (b *Bot) logInvalidTweet(category string, tweet *analyzer.Tweet) {
+	b.logger.Printf("INVALID TWEET in %s from %s: too short (%d characters)\n",
+		category,
+		tweet.Author,
+		len(tweet.Content),
+	)
+}
+
+// generateSummary generates a summary from the collected tweets
+func (b *Bot) generateSummary(category string, tweets []string) {
+	b.logger.Printf("Generating summary for category: %s", category)
+
+	// Send the batch to the AI with the correct prompt
+	response, err := b.ai.SendPrompt(context.Background(), fmt.Sprintf("%v tweets: %v", b.config.Prompts[category].Prompt, tweets))
+	if err != nil {
+		b.logger.Printf("ERROR sending tweets to AI for category %s: %v", category, err)
+		return
 	}
 
-	// Gather tweets
-	b.mu.Lock()
-	b.tweetBatch[category] = append(b.tweetBatch[category], m.Content) // Collect the tweet content
+	// Prepare the summary content
+	summaryContent := response
 
-	// if len(b.tweetBatch[category]) >= b.batchSize {
-	// 	// Send the batch to the AI
-	// 	response, err := b.ai.SendPrompt(context.Background(), fmt.Sprintf("%v tweets: %v", b.config.Prompts[category].Prompt, b.tweetBatch[category]))
-	// 	if err != nil {
-	// 		b.logger.Printf("ERROR sending tweets to AI for category %s: %v", category, err)
-	// 	} else {
-	// 		// Output the AI's response
-	// 		b.logger.Printf("\n=== AI RESPONSE for %s ===\n", category)
-	// 		b.logger.Println(response)
-	// 		b.logger.Printf("========================\n")
-	// 	}
-	// 	// Clear the batch after processing
-	// 	b.tweetBatch[category] = nil
-	// }
-	// b.mu.Unlock()
+	b.logger.Printf("Summary response: %s", summaryContent)
+
+	// Create a new summary object
+	summary := &mindshare.Summary{
+		Time:    time.Now(),
+		Content: summaryContent,
+	}
+
+	// Insert the summary into the database
+	err = b.storer.InsertSummary(summary)
+	if err != nil {
+		b.logger.Printf("ERROR inserting summary into DB for category %s: %v", category, err)
+	} else {
+		b.logger.Printf("Inserted summary with ID: %s for category %s", summary.ID, category)
+	}
+
+	// Clear the batch after processing
+	b.tweetBatch[category] = nil
 }

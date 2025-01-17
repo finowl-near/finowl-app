@@ -25,6 +25,11 @@ func ExtractTickers(content string) []string {
 				continue // Skip this ticker if it's a monetary value
 			}
 
+			// New condition to check if ticker contains only valid characters
+			if !isValidTicker(ticker[1:]) { // Check only the part after '$'
+				continue // Skip this ticker if it contains invalid characters
+			}
+
 			// Add the ticker to the list if it's not already present
 			if !contains(tickers, ticker) {
 				tickers = append(tickers, ticker)
@@ -33,6 +38,16 @@ func ExtractTickers(content string) []string {
 	}
 
 	return tickers
+}
+
+// isValidTicker checks if a ticker is composed only of letters and numbers
+func isValidTicker(ticker string) bool {
+	for _, char := range ticker {
+		if !((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+			return false // Invalid character found
+		}
+	}
+	return true // All characters are valid
 }
 
 func isMonetaryValue(ticker string) bool {

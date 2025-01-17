@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"finowl-backend/pkg/analyzer"
+	"finowl-backend/pkg/mindshare"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -160,12 +162,42 @@ func CreateTables(storer *Storer) error {
 			category VARCHAR(20) CHECK (category IN ('High Alpha', 'Alpha', 'Trenches')),
 			mindshare_score DECIMAL(10,2),  -- Changed from INT to DECIMAL
 			last_mentioned_at TIMESTAMP,
+			first_mentioned_at TIMESTAMP,
 			mention_details JSONB
 		)`)
 	if err != nil {
 		return fmt.Errorf("failed to create Tickers table: %w", err)
 	}
+	// Create the 'Summaries' table if it doesn't exist
+	_, err = storer.db.Exec(`
+		CREATE TABLE IF NOT EXISTS Summaries (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			timestamp TIMESTAMP NOT NULL,
+			content TEXT NOT NULL
+		)`)
+	if err != nil {
+		return fmt.Errorf("failed to create Summaries table: %w", err)
+	}
 
-	// Return nil if both tables are created successfully
+	// Return nil if all tables are created successfully
+	return nil
+}
+
+// InsertSummary inserts a new summary into the database
+func (s *Storer) InsertSummary(summary *mindshare.Summary) error {
+	// If ID is empty, generate a new UUID
+	if summary.ID == "" {
+		summary.ID = uuid.New().String() // Generate a new UUID
+	}
+
+	query := `
+        INSERT INTO Summaries (id, timestamp, content)
+        VALUES ($1, $2, $3)`
+
+	_, err := s.db.Exec(query, summary.ID, summary.Time, summary.Content)
+	if err != nil {
+		return fmt.Errorf("failed to insert summary: %w", err)
+	}
+
 	return nil
 }

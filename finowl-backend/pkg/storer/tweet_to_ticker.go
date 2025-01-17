@@ -6,6 +6,7 @@ import (
 	"finowl-backend/pkg/ticker"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,7 @@ func ConvertTweetsToTickers(
 		if influencer != nil {
 			tier = influencer.Tier
 		}
-		mentionDetials := ticker.MentionDetails{
+		mentionDetails := ticker.MentionDetails{
 			Influencers: map[string]ticker.MentionDetail{
 				tweet.Author: {
 					Tier:      tier,                      // Default tier value
@@ -37,19 +38,25 @@ func ConvertTweetsToTickers(
 				},
 			},
 		}
-		mindShare, err := mindshare.CalculateMindshare(mentionDetials, ticker.MentionDetails{})
+		timeStamp := parseTimestamp(tweet.Timestamp) // Parse the timestamp
+
+		mindShare, err := mindshare.CalculateMindshare(mentionDetails, ticker.MentionDetails{})
 		if err != nil {
 			fmt.Printf("failed to calculate mindShare: %v", err)
 			return nil
 		}
 
 		for _, tickerSymbol := range tweet.Tickers {
+			// Convert ticker symbol to uppercase
+			tickerSymbol = strings.ToUpper(tickerSymbol)
+
 			// Create a new Ticker for each ticker symbol
 			ticker := ticker.Ticker{
-				TickerSymbol:    tickerSymbol,
-				Category:        mindShare.Category,
-				MindshareScore:  mindShare.Score,
-				LastMentionedAt: parseTimestamp(tweet.Timestamp), // Parse the timestamp
+				TickerSymbol:     tickerSymbol,
+				Category:         mindShare.Category,
+				MindshareScore:   mindShare.Score,
+				LastMentionedAt:  timeStamp, // Parse the timestamp
+				FirstMentionedAt: timeStamp, // Corrected field name
 				MentionDetails: ticker.MentionDetails{
 					Influencers: map[string]ticker.MentionDetail{
 						tweet.Author: {
