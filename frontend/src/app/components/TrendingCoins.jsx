@@ -9,7 +9,7 @@ import BigFireIcon from "./Icons/BigFireIcon";
 export default function TrendingCoins() {
   return (
     <>
-      <div className=" w-[320px] relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
+      <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
         <div className="absolute top-2 right-0 w-32 h-8 bg-[#D8E864] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
         <div className="flex items-center p-4 cursor-pointer justify-between">
           <div className="flex items-center">
