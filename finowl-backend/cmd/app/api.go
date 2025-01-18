@@ -56,7 +56,7 @@ func newServer(cfg serverConfig) (*server, error) {
 }
 
 func (s *server) getTickers(page int, pageSize int) ([]ticker.Ticker, error) {
-	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details FROM tickers_1_0 LIMIT $1 OFFSET $2`
+	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details FROM tickers_1_0 LIMIT $1 OFFSET $2`
 	rows, err := s.db.Query(query, pageSize, pageSize*page)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errGetTickers, err)
@@ -67,7 +67,7 @@ func (s *server) getTickers(page int, pageSize int) ([]ticker.Ticker, error) {
 		var t ticker.Ticker
 		var mentionDetailsJSON string
 
-		if err := rows.Scan(&t.TickerSymbol, &t.Category, &t.MindshareScore, &t.LastMentionedAt, &mentionDetailsJSON); err != nil {
+		if err := rows.Scan(&t.TickerSymbol, &t.Category, &t.MindshareScore, &t.LastMentionedAt, &t.FirstMentionedAt, &mentionDetailsJSON); err != nil {
 			return nil, fmt.Errorf("%w: %w", errGetTickers, err)
 		}
 
