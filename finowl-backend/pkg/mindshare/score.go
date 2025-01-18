@@ -59,7 +59,7 @@ func DetermineCategory(score float64) (string, error) {
 	switch {
 	case score > 600:
 		return "High Alpha", nil
-	case score > 200:
+	case score > 250:
 		return "Alpha", nil
 	default:
 		return "Trenches", nil
@@ -118,12 +118,17 @@ func CalculateScore(details ticker.MentionDetails, totalTierCounts map[int]int) 
 		rawScore *= 1.3 // Additional bonus for multiple tier 1s
 	}
 
-	// Apply bonuses for tier 1 influencers
+	// Apply bonuses for tier 2 influencers
 	if tier2Count > 0 {
 		rawScore *= 3.9 // Base bonus for tier 1 presence
 	}
 	if tier2Count > 1 {
-		rawScore *= 1.6 // Additional bonus for multiple tier 1s
+		rawScore *= 1.6 // Additional bonus for multiple tier 2s
+	}
+
+	// Apply bonuses for tier 3 influencers
+	if tier3Count > 2 {
+		rawScore *= 1.3 // Additional bonus for multiple tier 3s
 	}
 
 	// Calculate the theoretical maximum raw score based on 25% thresholds
@@ -138,9 +143,9 @@ func CalculateScore(details ticker.MentionDetails, totalTierCounts map[int]int) 
 	normalizedScore := (rawScore / theoreticalMaxRawScore) * MaxScore
 
 	// Cap at MaxScore
-	if normalizedScore > MaxScore {
-		normalizedScore = MaxScore
-	}
+	// if normalizedScore > MaxScore {
+	// 	normalizedScore = MaxScore
+	// }
 
 	return normalizedScore, nil
 }

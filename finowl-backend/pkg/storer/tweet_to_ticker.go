@@ -22,7 +22,6 @@ func ConvertTweetsToTickers(
 	influencers influencer.InfluencerRankings,
 ) []ticker.Ticker {
 	var tickers []ticker.Ticker
-
 	for _, tweet := range tweets {
 		tier := DefaultInfluencerTier
 		influencer, _ := influencers.FindInfluencer(tweet.Author)
@@ -50,9 +49,14 @@ func ConvertTweetsToTickers(
 			// Convert ticker symbol to uppercase
 			tickerSymbol = strings.ToUpper(tickerSymbol)
 
+			// Check if the ticker is excluded
+			if isTickerExcluded(tickerSymbol[1:]) {
+				continue // Skip this ticker if it is in the excluded list
+			}
+
 			// Create a new Ticker for each ticker symbol
 			ticker := ticker.Ticker{
-				TickerSymbol:     tickerSymbol,
+				TickerSymbol:     tickerSymbol[1:],
 				Category:         mindShare.Category,
 				MindshareScore:   mindShare.Score,
 				LastMentionedAt:  timeStamp, // Parse the timestamp
