@@ -2,4 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+
+tr:last-child td:first-child {
+    border-bottom-left-radius: 20px;
+}
+tr:last-child td:last-child {
+    border-bottom-right-radius: 20px;
+}
+
+tr td {
+    border-bottom: solid 2px #292929;
+}
 

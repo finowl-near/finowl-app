@@ -1,9 +1,12 @@
-import React from 'react'
+import React from "react";
+import LogoIcon from "./Icons/LogoIcon";
 
 export default function Header() {
   return (
     <>
-        <p className='text-3xl font-bold text-white p-4'>Finowl</p>
+      <div className="p-4">
+        <LogoIcon />
+      </div>
     </>
-  )
+  );
 }

@@ -18,7 +18,9 @@ export default function RootLayout({ children }) {
       <body
         className={` ${rethinkSans.className} bg-black antialiased`}
       >
-        {children}
+       <div className="mx-auto max-w-[1400px]">
+          {children}
+        </div>
       </body>
     </html>
   );
