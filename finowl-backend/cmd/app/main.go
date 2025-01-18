@@ -29,6 +29,16 @@ func main() {
 	// Initialize bot
 	bot := mustInitializeBot(*appConfig, config, influencerRankings)
 
+	cfg := utils.NewDBConfig(*appConfig)
+	go RunAPIServer(serverConfig{
+		dbHost:     cfg.Host,
+		dbPort:     cfg.Port,
+		dbUser:     cfg.User,
+		dbPassword: cfg.Password,
+		dbName:     cfg.DBName,
+		sslmode:    "disable",
+	})
+
 	// Start the bot
 	startBot(bot)
 
