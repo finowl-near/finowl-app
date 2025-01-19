@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import LogoIcon from "./Icons/LogoIcon";
 
 export default function Header() {

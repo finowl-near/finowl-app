@@ -132,6 +132,24 @@ func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Set CORS headers
+        w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000") // Use specific domains instead of "*" in production
+        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        // Handle preflight requests
+        if r.Method == http.MethodOptions {
+            w.WriteHeader(http.StatusNoContent)
+            return
+        }
+
+        // Call the next handler
+        next.ServeHTTP(w, r)
+    })
+}
+
 func RunAPIServer(cfg serverConfig) {
 	slog.Info("starting API server")
 
@@ -140,7 +158,7 @@ func RunAPIServer(cfg serverConfig) {
 		log.Fatal(err)
 	}
 
-	http.Handle("GET /api/v0/tickers", logMiddleware(http.HandlerFunc(server.getTickersHandler)))
+	http.Handle("GET /api/v0/tickers", corsMiddleware(logMiddleware(http.HandlerFunc(server.getTickersHandler))))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
