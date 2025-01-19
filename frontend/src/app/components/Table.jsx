@@ -1,9 +1,22 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import TableHead from "./TableHead";
 import TableBody from "./TableBody";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import getTableData from "../api/getTableData";
+import useTableData from "../hooks/useTableData";
 
 export default function Table() {
+    const setTableData = useTableData((state) => state.setTableData);
+    const queryClient = useQueryClient();
+    const query = useQuery({ queryKey: ["tableData"], queryFn: async () => {
+        const data = await getTableData();
+        console.log('data', data);
+        setTableData(data);
+        return data;
+    } })
   return (
     <div>
       <div className="relative overflow-hidden">
