@@ -1,0 +1,17 @@
+prompts:
+  EarlyAlpha:
+    prompt: |
+    coins:
+      - "Bitcoin (BTC)"
+  MacroNews:
+    prompt: |
+    coins:
+      - "Chainlink (LINK)"
+  PortfolioInsights:
+    prompt: |
+    coins:
+      - "Chainlink (LINK)"
+  AlphaTrenches:
+    prompt: |
+    coins:
+      - "Chainlink (LINK)"
