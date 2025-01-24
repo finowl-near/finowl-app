@@ -32,11 +32,19 @@ type serverConfig struct {
 	sslmode    string
 }
 
+type getTickersHandlerResponse struct {
+	Tickers      []ticker.Ticker `json:"tickers"`
+	TotalPageCnt int             `json:"total_page_cnt"`
+	Page         int             `json:"page"`
+	PageSize     int             `json:"page_size"`
+}
+
 const maxPageSize = 1024
 
 var (
-	errNewServer  = errors.New("failed to create new server")
-	errGetTickers = errors.New("failed to retrieve tickers")
+	errNewServer       = errors.New("failed to create new server")
+	errGetTickers      = errors.New("failed to retrieve tickers")
+	errGetTickersCount = errors.New("failed to retrieve tickers count")
 )
 
 func newServer(cfg serverConfig) (*server, error) {
@@ -93,7 +101,7 @@ FROM tickers_1_0 ORDER BY %s %s LIMIT $1 OFFSET $2`, orderBy, orderByDir)
 		return nil, fmt.Errorf("%w: %w", errGetTickers, err)
 	}
 
-	var tickers []ticker.Ticker
+	tickers := []ticker.Ticker{}
 	for rows.Next() {
 		var t ticker.Ticker
 		var mentionDetailsJSON string
@@ -110,6 +118,15 @@ FROM tickers_1_0 ORDER BY %s %s LIMIT $1 OFFSET $2`, orderBy, orderByDir)
 	}
 
 	return tickers, nil
+}
+
+func (s *server) getTickersCount() (int, error) {
+	count := 0
+	if err := s.db.QueryRow("SELECT COUNT(*) FROM tickers_1_0").Scan(&count); err != nil {
+		return 0, fmt.Errorf("%w: %w", errGetTickersCount, err)
+	}
+
+	return count, nil
 }
 
 func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +147,7 @@ func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
 
 	if queryPageSize := r.URL.Query().Get("pageSize"); queryPageSize != "" {
 		pageSize, err = strconv.Atoi(queryPageSize)
-		if err != nil || pageSize < 0 || pageSize > maxPageSize {
+		if err != nil || pageSize <= 0 || pageSize > maxPageSize {
 			w.WriteHeader(http.StatusBadRequest)
 
 			return
@@ -154,7 +171,30 @@ func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := json.Marshal(&tickers)
+	tickersCnt, err := s.getTickersCount()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		slog.Error(err.Error())
+
+		return
+	}
+
+	resp := getTickersHandlerResponse{
+		Tickers: tickers,
+		TotalPageCnt: func() int {
+			remaining := 0
+			if tickersCnt%pageSize > 0 {
+				remaining = 1
+			}
+
+			return (tickersCnt / pageSize) + remaining
+		}(),
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	body, err := json.Marshal(&resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
