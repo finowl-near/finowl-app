@@ -53,73 +53,21 @@ func (s *Storer) Close() {
 
 // InsertTweet inserts a new tweet into the database
 func (s *Storer) InsertTweet(tweet Tweet) error {
+	query := buildInsertTweetQuery()
 	linksJSON, _ := json.Marshal(tweet.Links)
 	tickersJSON, _ := json.Marshal(tweet.Tickers)
-
-	query := `
-		INSERT INTO tweets (id, author, timestamp, content, links, tickers)
-		VALUES ($1, $2, $3, $4, $5, $6)`
-
 	_, err := s.db.Exec(query, tweet.ID, tweet.Author, tweet.Timestamp, tweet.Content, linksJSON, tickersJSON)
 	if err != nil {
 		return fmt.Errorf("failed to insert tweet: %w", err)
 	}
-
 	return nil
 }
 
-// GetTweets retrieves tweets from the database based on author name
-func (s *Storer) GetTweets(author string) ([]Tweet, error) {
-	query := `SELECT id, author, timestamp, content, links, tickers FROM tweets WHERE author = $1`
-	rows, err := s.db.Query(query, author)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve tweets: %w", err)
-	}
-	defer rows.Close()
-
-	var tweets []Tweet
-	for rows.Next() {
-		var tweet Tweet
-		var linksJSON, tickersJSON string
-
-		if err := rows.Scan(&tweet.ID, &tweet.Author, &tweet.Timestamp, &tweet.Content, &linksJSON, &tickersJSON); err != nil {
-			return nil, err
-		}
-
-		// Unmarshal JSON arrays
-		json.Unmarshal([]byte(linksJSON), &tweet.Links)
-		json.Unmarshal([]byte(tickersJSON), &tweet.Tickers)
-
-		tweets = append(tweets, tweet)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return tweets, nil
-}
-
-// GetTweetByID retrieves a tweet from the database based on its ID
-func (s *Storer) GetTweetByID(id string) (*Tweet, error) {
-	query := `SELECT id, author, timestamp, content, links, tickers FROM tweets WHERE id = $1`
-	row := s.db.QueryRow(query, id)
-
-	var tweet Tweet
-	var linksJSON, tickersJSON string
-
-	if err := row.Scan(&tweet.ID, &tweet.Author, &tweet.Timestamp, &tweet.Content, &linksJSON, &tickersJSON); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("no tweet found with ID: %s", id)
-		}
-		return nil, fmt.Errorf("failed to retrieve tweet: %w", err)
-	}
-
-	// Unmarshal JSON arrays
-	json.Unmarshal([]byte(linksJSON), &tweet.Links)
-	json.Unmarshal([]byte(tickersJSON), &tweet.Tickers)
-
-	return &tweet, nil
+// buildInsertTweetQuery constructs the SQL query for inserting a tweet.
+func buildInsertTweetQuery() string {
+	return `
+		INSERT INTO tweets (id, author, timestamp, content, links, tickers)
+		VALUES ($1, $2, $3, $4, $5, $6)`
 }
 
 func (s *Storer) DB() *sql.DB {
@@ -138,10 +86,22 @@ func TransformToStorerTweet(input analyzer.Tweet) Tweet {
 	}
 }
 
-// CreateTables creates the necessary tables for the application.
-// It ensures that the "tweets" and "Tickers" tables exist in the database.
+// CreateTables handles the creation of necessary tables in the database.
 func CreateTables(storer *Storer) error {
-	// Create the 'tweets' table if it doesn't exist
+	if err := createTweetsTable(storer); err != nil {
+		return err
+	}
+	if err := createTickersTable(storer); err != nil {
+		return err
+	}
+	if err := createSummariesTable(storer); err != nil {
+		return err
+	}
+	return nil
+}
+
+// createTweetsTable creates the 'tweets' table if it doesn't exist.
+func createTweetsTable(storer *Storer) error {
 	_, err := storer.db.Exec(`
 		CREATE TABLE IF NOT EXISTS tweets (
 			id UUID PRIMARY KEY,
@@ -154,13 +114,16 @@ func CreateTables(storer *Storer) error {
 	if err != nil {
 		return fmt.Errorf("failed to create tweets table: %w", err)
 	}
+	return nil
+}
 
-	// Create the 'Tickers' table if it doesn't exist
-	_, err = storer.db.Exec(`
+// createTickersTable creates the 'Tickers' table if it doesn't exist.
+func createTickersTable(storer *Storer) error {
+	_, err := storer.db.Exec(`
 		CREATE TABLE IF NOT EXISTS Tickers_1_0 (
 			ticker_symbol VARCHAR(10) PRIMARY KEY,
 			category VARCHAR(20) CHECK (category IN ('High Alpha', 'Alpha', 'Trenches')),
-			mindshare_score DECIMAL(10,2),  -- Changed from INT to DECIMAL
+			mindshare_score DECIMAL(10,2),
 			last_mentioned_at TIMESTAMP,
 			first_mentioned_at TIMESTAMP,
 			mention_details JSONB
@@ -168,8 +131,12 @@ func CreateTables(storer *Storer) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Tickers table: %w", err)
 	}
-	// Create the 'Summaries' table if it doesn't exist
-	_, err = storer.db.Exec(`
+	return nil
+}
+
+// createSummariesTable creates the 'Summaries' table if it doesn't exist.
+func createSummariesTable(storer *Storer) error {
+	_, err := storer.db.Exec(`
 		CREATE TABLE IF NOT EXISTS Summaries (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			timestamp TIMESTAMP NOT NULL,
@@ -178,26 +145,25 @@ func CreateTables(storer *Storer) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Summaries table: %w", err)
 	}
-
-	// Return nil if all tables are created successfully
 	return nil
 }
 
 // InsertSummary inserts a new summary into the database
 func (s *Storer) InsertSummary(summary *mindshare.Summary) error {
-	// If ID is empty, generate a new UUID
 	if summary.ID == "" {
-		summary.ID = uuid.New().String() // Generate a new UUID
+		summary.ID = uuid.New().String()
 	}
-
-	query := `
-        INSERT INTO Summaries (id, timestamp, content)
-        VALUES ($1, $2, $3)`
-
+	query := buildInsertSummaryQuery()
 	_, err := s.db.Exec(query, summary.ID, summary.Time, summary.Content)
 	if err != nil {
 		return fmt.Errorf("failed to insert summary: %w", err)
 	}
-
 	return nil
+}
+
+// buildInsertSummaryQuery constructs the SQL query for inserting a summary.
+func buildInsertSummaryQuery() string {
+	return `
+        INSERT INTO Summaries (id, timestamp, content)
+        VALUES ($1, $2, $3)`
 }

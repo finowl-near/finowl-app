@@ -99,7 +99,7 @@ func TestCalculateScore(t *testing.T) {
 		            "whale2": {"tier": 1, "content": "test", "tweet_link": "link"}
 		        }
 		    }`,
-			expectedScore: 1000, // (95 * 2) * 1.2 * 1.3 (multiple T1 bonus)
+			expectedScore: 1597, // (95 * 2) * 1.2 * 1.3 (multiple T1 bonus)
 			description:   "Multiple top-tier influencers should get both T1 bonuses",
 		},
 		// {

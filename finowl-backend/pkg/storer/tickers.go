@@ -1,4 +1,4 @@
-// finowl-backend/storer/storer.go
+// finowl-backend/storer/tickers.go
 package storer
 
 import (
@@ -54,9 +54,7 @@ func (s *Storer) getExistingTicker(symbol string) (*ticker.Ticker, error) {
 	var ticker ticker.Ticker
 	var mentionDetailsString string
 
-	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details 
-             FROM Tickers_1_0 WHERE ticker_symbol = $1`
-
+	query := buildGetExistingTickerQuery()
 	err := s.db.QueryRow(query, symbol).Scan(
 		&ticker.TickerSymbol,
 		&ticker.Category,
@@ -83,9 +81,7 @@ func (s *Storer) createNewTicker(ticker ticker.Ticker) error {
 		return fmt.Errorf("failed to marshal mention details: %w", err)
 	}
 
-	query := `INSERT INTO Tickers_1_0 (ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details)
-             VALUES ($1, $2, $3, $4, $5, $6)`
-
+	query := buildInsertNewTickerQuery()
 	_, err = s.db.Exec(query,
 		ticker.TickerSymbol,
 		ticker.Category,
@@ -127,13 +123,7 @@ func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.
 		return fmt.Errorf("failed to marshal updated mention details: %w", err)
 	}
 
-	query := `UPDATE Tickers_1_0
-             SET last_mentioned_at = $1, 
-                 mention_details = $2,
-                 mindshare_score = $3,
-                 category = $4
-             WHERE ticker_symbol = $5`
-
+	query := buildUpdateExistingTickerQuery()
 	_, err = s.db.Exec(query,
 		newTicker.LastMentionedAt,
 		mentionDetailsJSON,
@@ -147,7 +137,7 @@ func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.
 
 // GetTicker retrieves a ticker from the database based on its symbol
 func (s *Storer) GetTicker(tickerSymbol string) (*ticker.Ticker, error) {
-	query := `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details FROM Tickers WHERE ticker_symbol = $1`
+	query := buildGetTickerQuery()
 	row := s.db.QueryRow(query, tickerSymbol)
 
 	var ticker ticker.Ticker
@@ -166,4 +156,31 @@ func (s *Storer) GetTicker(tickerSymbol string) (*ticker.Ticker, error) {
 	}
 
 	return &ticker, nil
+}
+
+// buildGetExistingTickerQuery constructs the SQL query for retrieving an existing ticker.
+func buildGetExistingTickerQuery() string {
+	return `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details 
+            FROM Tickers_1_0 WHERE ticker_symbol = $1`
+}
+
+// buildInsertNewTickerQuery constructs the SQL query for inserting a new ticker.
+func buildInsertNewTickerQuery() string {
+	return `INSERT INTO Tickers_1_0 (ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details)
+            VALUES ($1, $2, $3, $4, $5, $6)`
+}
+
+// buildUpdateExistingTickerQuery constructs the SQL query for updating an existing ticker.
+func buildUpdateExistingTickerQuery() string {
+	return `UPDATE Tickers_1_0
+            SET last_mentioned_at = $1, 
+                mention_details = $2,
+                mindshare_score = $3,
+                category = $4
+            WHERE ticker_symbol = $5`
+}
+
+// buildGetTickerQuery constructs the SQL query for retrieving a ticker.
+func buildGetTickerQuery() string {
+	return `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details FROM Tickers_1_0 WHERE ticker_symbol = $1`
 }

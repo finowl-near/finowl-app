@@ -12,7 +12,7 @@ func TestConvertTweetToTicker(t *testing.T) {
 		ID:        "e33fbc74-74e8-447b-9c0b-d02771ff7495",
 		Author:    "Stats",
 		Timestamp: "2024-12-31T01:11:49Z",
-		Content:   "BREAKING: THE QUANTUM CATS TREASURY HAS ACQUIRED 2,104,245 $AIXBT FOR ~$1.1 MILLION USD AT AN AVERAGE PRICE OF ~$0.52 PER TOKEN. @QuantumCatsXYZ we have also sent @aixbt_agent a second Quantum Cat. why are we doing this? we experienced aixbt’s dominance over CT mindshare this weekend. we are happy to top-blast the chart here, we are bullish on AI dominating attention over the cycle. switching to a Quantum Cat pfp helped aixbt push his AI agent mindshare over 65%. aixbt might decide to switch back to his original pfp at some point, or he might choose to embrace his new feline for longer. either way he will forever be a part of the Quantum Cats community, and therefore the Quantum Cats will support him on his mission. we will continue to monitor aixbt’s journey and might decide to add more to our position in the future. gmeow! p.s. if you think aixbt will continue to grow his mindshare by keeping his Quantum Cat as his pfp, you should let him know! (tweet directly at him from your timeline, he will ignore replies to this thread)",
+		Content:   "BREAKING:  $AIXBT  ",
 		Links:     []string{"https://twitter.com/punk9059/status/1873899601813790970"},
 		Tickers:   []string{"$AIXBT"},
 	}
@@ -27,10 +27,12 @@ func TestConvertTweetToTicker(t *testing.T) {
 
 	// Check the values of the converted Ticker
 	expectedTicker := ticker.Ticker{
-		TickerSymbol:    "$AIXBT",
-		Category:        "Trenches",                      // Category is empty
-		MindshareScore:  17.64290755116443,               // Mindshare score is 0
-		LastMentionedAt: parseTimestamp(tweet.Timestamp), // Parse the timestamp
+		TickerSymbol:     "AIXBT",
+		Category:         "Trenches",                      // Category is empty
+		MindshareScore:   17.64290755116443,               // Mindshare score is 0
+		LastMentionedAt:  parseTimestamp(tweet.Timestamp), // Parse the timestamp
+		FirstMentionedAt: parseTimestamp(tweet.Timestamp),
+
 		MentionDetails: ticker.MentionDetails{
 			Influencers: map[string]ticker.MentionDetail{
 				tweet.Author: {
