@@ -11,7 +11,7 @@ import ChatIcon from "./Icons/ChatIcon";
 
 export default function PopularPost() {
   return (
-    <div className="p-4 h-[fit-content] relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
+    <div className="p-4 h-[fit-content] relative border border-[#292929] rounded-[10px] overflow-hidden">
       <div className="absolute top-2 right-0 w-32 h-8 bg-[#D8E864] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
       <div>
         <div className="flex items-start justify-between">
@@ -25,7 +25,7 @@ export default function PopularPost() {
             />
             <div className="ml-2">
               <div className="flex">
-                <p className="text-white font-bold text-md">Frank</p>
+                <p className="text-white font-bold text-base">Frank</p>
                 <CheckBadgeIcon className="w-4" color="#D8E864" />
               </div>
               <p className="text-[#D0D0D0] font-bold text-sm leading-none">
@@ -43,7 +43,7 @@ export default function PopularPost() {
         <div>
           <p className="text-white font-[400] text-sm my-2">
             People are going to realize that it is
-            <br /> really difficult to dump{" "}
+            really difficult to dump{" "}
             <span className="text-[#D8E864]">$degod</span>...
           </p>
         </div>
