@@ -4,9 +4,12 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";
 import { StarIcon } from "@heroicons/react/24/solid";
 import React, { useState } from "react";
 import FunnelIcon from "./Icons/FunnelIcon";
+import useSwitchTabs from "../hooks/useSwitchTabs";
+import wifiIcon from "@/app/assets/svg/wifiIcon.svg";
+import Image from "next/image";
 
 export default function TableSearch() {
-  const [switchTabs, setSwitchTabs] = useState(false);
+  const { switchTabs, setSwitchTabs } = useSwitchTabs();
   return (
     <div className="flex justify-between items-center">
       <div className="flex gap-5">
@@ -41,11 +44,14 @@ export default function TableSearch() {
             } font-normal text-lg flex items-center`}
             onClick={() => setSwitchTabs(true)}
           >
-            <StarIcon
-              className="w-5"
-              color={`${switchTabs ? "#D8E864" : "#9D9D9D"} `}
+            <Image
+              className="mr-2"
+              src={wifiIcon}
+              width={undefined}
+              height={undefined}
+              alt="wifi icon"
             />
-            Watchlist
+            Feed
           </button>
         </div>
       </div>
