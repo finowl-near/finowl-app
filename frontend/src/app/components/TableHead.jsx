@@ -1,20 +1,30 @@
 import React from "react";
+import SortingIcon from "./Icons/SortingIcon";
 
 export default function TableHead() {
   return (
-    <thead className="sticky z-10 backdrop-blur-md top-0">
+    <thead className="sticky z-30 backdrop-blur-md top-0">
       <tr className="">
         <th className="text-white font-semibold text-center border-t border-b border-[#292929] p-4">
           Name
         </th>
         <th className="text-white font-semibold text-center border-t border-b border-[#292929] text-nowrap p-4">
-          Mindshare Score
+          <div className="flex items-center gap-2 cursor-pointer">
+            Mindshare Score
+            <SortingIcon />
+          </div>
+        </th>
+        <th className="text-white font-semibold text-center border-t border-b border-[#292929] text-nowrap p-4">
+          Onchain Score
         </th>
         <th className="text-white font-semibold text-center border-t border-b border-[#292929] p-4">
-          Price
+          Variation
         </th>
         <th className="text-white font-semibold text-center border-t border-b border-[#292929] p-4">
-          MarketCap
+          <div className="flex items-center gap-2 cursor-pointer">
+            Time
+            <SortingIcon />
+          </div>
         </th>
         <th className="text-white font-semibold text-center border-t border-b border-[#292929] p-4">
           Tier
