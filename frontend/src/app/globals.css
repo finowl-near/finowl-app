@@ -2,20 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-table {
+.custom-table {
   border-collapse: separate;
   border-spacing: 0;
 }
 
-
-tr:last-child td:first-child {
-    border-bottom-left-radius: 20px;
+.custom-table tr:last-child td:first-child {
+  border-bottom-left-radius: 20px;
 }
-tr:last-child td:last-child {
-    border-bottom-right-radius: 20px;
-}
-
-tr td {
-    border-bottom: solid 2px #292929;
+.custom-table tr:last-child td:last-child {
+  border-bottom-right-radius: 20px;
 }
 
+.custom-table tr td {
+  border-bottom: solid 2px #292929;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #b4b4b4;
+  border-bottom-color: #d6e755;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.mask {
+  mask: radial-gradient(circle 20px at -8px 50%, transparent 99%, #fff 100%);
+}
+.mask-sm {
+  mask: radial-gradient(circle 20px at -16px 50%, transparent 99%, #fff 100%);
+}
+
+.mozBlur {
+  backdrop-filter: blur(12px);
+}
+
+@media (min-width: 1350px) {
+  .br-col-span-1 {
+    grid-column: span 1 / span 1;
+  }
+}
