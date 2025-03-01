@@ -1,8 +1,8 @@
 package collector
 
 import (
+	"finowl-backend/ai"
 	"finowl-backend/internal/utils"
-	"finowl-backend/pkg/ai"
 	"finowl-backend/pkg/analyzer"
 	"finowl-backend/pkg/influencer"
 	"finowl-backend/pkg/storer"
@@ -10,14 +10,13 @@ import (
 	"os"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/psanford/claude"
 )
 
 type Bot struct {
 	session      *discordgo.Session
 	channelIDs   map[string]string
 	analyzer     *analyzer.TweetAnalyzer
-	ai           *ai.ClaudeClient
+	aiClient     *ai.AI
 	tweetBatch   map[string][]string
 	currentBatch []string
 	batchSize    int
@@ -55,27 +54,14 @@ func NewBot(
 		return nil, err
 	}
 
-	// Create a new analyzer instance
-	tweetAnalyzer := analyzer.NewTweetAnalyzer()
-
-	aiCLIENT, err := ai.NewClaudeClient(
-		appConfig.ClaudeAPIKey,
-		claude.Claude3Dot5SonnetLatest,
-		256,
-		false,
-		true)
-	if err != nil {
-		log.Fatalf("Failed to create AI client: %v", err)
-	}
-
 	// Create a new logger
 	logger := log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	return &Bot{
 		session: session,
 		channelIDs: map[string]string{
 			"mainChannel": appConfig.ChannelID},
-		analyzer:    tweetAnalyzer,
-		ai:          aiCLIENT,
+		analyzer:    analyzer.NewTweetAnalyzer(),
+		aiClient:    ai.NewDeepSeekAI(appConfig.ClaudeAPIKey),
 		tweetBatch:  make(map[string][]string),
 		batchSize:   2, // Set the batch size to 5
 		influencers: influencers,
