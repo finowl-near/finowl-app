@@ -16,6 +16,7 @@ services:
       - ./influencers.yaml:/app/influencers.yaml
       - ./logs:/app/logs
       - ./.env:/app/.env
+      - ./prompt.txt:/app/prompt.txt
     ports:
       - "8080:8080"
     networks:

@@ -1,15 +1,20 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"finowl-backend/ai"
+	"finowl-backend/pkg/mindshare"
 	"finowl-backend/pkg/ticker"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 )
 
 func logMiddleware(next http.Handler) http.Handler {
@@ -19,8 +24,29 @@ func logMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000") // Use specific domains instead of "*" in production
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Call the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 type server struct {
 	db *sql.DB
+
+	aiClient *ai.AI
+	aiPrompt string
 }
 
 type serverConfig struct {
@@ -30,6 +56,10 @@ type serverConfig struct {
 	dbPassword string
 	dbName     string
 	sslmode    string
+
+	aiPrompt             string
+	aiAPIKey             string
+	aiGenSummaryInterval time.Duration
 }
 
 type getTickersHandlerResponse struct {
@@ -39,12 +69,19 @@ type getTickersHandlerResponse struct {
 	PageSize     int             `json:"page_size"`
 }
 
+type getSummaryHandlerResponse struct {
+	Summary *mindshare.Summary `json:"summary"`
+	Total   int                `json:"total"`
+}
+
 const maxPageSize = 1024
 
 var (
-	errNewServer       = errors.New("failed to create new server")
-	errGetTickers      = errors.New("failed to retrieve tickers")
-	errGetTickersCount = errors.New("failed to retrieve tickers count")
+	errNewServer         = errors.New("failed to create new server")
+	errGetTickers        = errors.New("failed to retrieve tickers")
+	errGetTickersCount   = errors.New("failed to retrieve tickers count")
+	errGetSummary        = errors.New("failed to retrieve summary")
+	errGetSummariesCount = errors.New("failed to retrieve summaries count")
 )
 
 func newServer(cfg serverConfig) (*server, error) {
@@ -59,7 +96,9 @@ func newServer(cfg serverConfig) (*server, error) {
 	}
 
 	return &server{
-		db: db,
+		db:       db,
+		aiClient: ai.NewDeepSeekAI(cfg.aiAPIKey),
+		aiPrompt: cfg.aiPrompt,
 	}, nil
 }
 
@@ -124,6 +163,35 @@ func (s *server) getTickersCount() (int, error) {
 	count := 0
 	if err := s.db.QueryRow("SELECT COUNT(*) FROM tickers_1_0").Scan(&count); err != nil {
 		return 0, fmt.Errorf("%w: %w", errGetTickersCount, err)
+	}
+
+	return count, nil
+}
+
+func (s *server) getSummaryByID(id int) (*mindshare.Summary, error) {
+	summary := &mindshare.Summary{}
+
+	if id == -1 {
+		queryStr := "SELECT * FROM Summaries ORDER BY timestamp DESC LIMIT 1"
+		if err := s.db.QueryRow(queryStr).Scan(&summary.ID, &summary.Time, &summary.Content); err != nil {
+			return nil, fmt.Errorf("%w: %w", errGetSummary, err)
+		}
+
+		return summary, nil
+	}
+
+	queryStr := "SELECT * FROM Summaries WHERE id = $1 LIMIT 1"
+	if err := s.db.QueryRow(queryStr, id).Scan(&summary.ID, &summary.Time, &summary.Content); err != nil {
+		return nil, fmt.Errorf("%w: %w", errGetSummary, err)
+	}
+
+	return summary, nil
+}
+
+func (s *server) getSummaryCount() (int, error) {
+	count := 0
+	if err := s.db.QueryRow("SELECT COUNT(*) FROM Summaries").Scan(&count); err != nil {
+		return 0, fmt.Errorf("%w: %w", errGetSummariesCount, err)
 	}
 
 	return count, nil
@@ -212,23 +280,94 @@ func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+func (s *server) getSummaryHandler(w http.ResponseWriter, r *http.Request) {
+	summaryIDParam := r.URL.Query().Get("id")
+	summaryID, err := func() (int, error) {
+		if summaryIDParam == "" {
+			return -1, nil
+		}
 
-func corsMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        // Set CORS headers
-        w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000") // Use specific domains instead of "*" in production
-        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		return strconv.Atoi(summaryIDParam)
+	}()
+	if err != nil {
+		slog.Error(fmt.Errorf("error parsing id params: %w", err).Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-        // Handle preflight requests
-        if r.Method == http.MethodOptions {
-            w.WriteHeader(http.StatusNoContent)
-            return
-        }
+	summary, err := s.getSummaryByID(summaryID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
-        // Call the next handler
-        next.ServeHTTP(w, r)
-    })
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	total, err := s.getSummaryCount()
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	resp := getSummaryHandlerResponse{
+		Summary: summary,
+		Total:   total,
+	}
+
+	body, _ := json.Marshal(&resp)
+
+	if _, err := w.Write(body); err != nil {
+		slog.Error(err.Error())
+
+		return
+	}
+}
+
+func (s *server) generateSummary() error {
+	type tweet struct {
+		author  string
+		content string
+	}
+
+	log.Println("Started summary generation")
+
+	rows, err := s.db.Query("SELECT author, content FROM tweets ORDER BY timestamp DESC LIMIT 100")
+	if err != nil {
+		return fmt.Errorf("%w: %w", errGetTickers, err)
+	}
+
+	tweets := strings.Builder{}
+	for rows.Next() {
+		var t tweet
+		if err := rows.Scan(&t.author, &t.content); err != nil {
+			return fmt.Errorf("%w: %w", errGetTickers, err)
+		}
+
+		tweets.WriteString(t.author)
+		tweets.WriteString(": ")
+		tweets.WriteString(t.content)
+	}
+
+	summary, err := s.aiClient.AnalyzeTweets(context.Background(), s.aiPrompt, tweets.String())
+	if err != nil {
+		return fmt.Errorf("%w: %w", errGetTickers, err)
+	}
+
+	if _, err := s.db.Exec("INSERT INTO Summaries (timestamp, content) VALUES ($1, $2)", time.Now(), summary); err != nil {
+		return fmt.Errorf("%w: %w", errGetTickers, err)
+	}
+
+	log.Println("Finished summary generation")
+
+	return nil
 }
 
 func RunAPIServer(cfg serverConfig) {
@@ -240,6 +379,20 @@ func RunAPIServer(cfg serverConfig) {
 	}
 
 	http.Handle("GET /api/v0/tickers", corsMiddleware(logMiddleware(http.HandlerFunc(server.getTickersHandler))))
+	http.Handle("GET /api/v0/summary", corsMiddleware(logMiddleware(http.HandlerFunc(server.getSummaryHandler))))
+
+	go func() {
+		ticker := time.NewTimer(cfg.aiGenSummaryInterval)
+		defer ticker.Stop()
+
+		for {
+			if err := server.generateSummary(); err != nil {
+				log.Println(err)
+			}
+
+			<-ticker.C
+		}
+	}()
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

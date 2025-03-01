@@ -6,6 +6,8 @@ import (
 	"finowl-backend/pkg/influencer"
 	"fmt"
 	"log"
+	"os"
+	"time"
 )
 
 const (
@@ -29,14 +31,27 @@ func main() {
 	// Initialize bot
 	bot := mustInitializeBot(*appConfig, config, influencerRankings)
 
+	prompt, err := os.ReadFile("prompt.txt")
+	if err != nil {
+		log.Fatalln("error reading prompt file" + err.Error())
+	}
+
+	summaryGenInterval, err := time.ParseDuration(appConfig.AIGenSummaryInterval)
+	if err != nil {
+		log.Fatalln("error parsing AIGenSummaryInterval: ", err)
+	}
+
 	cfg := utils.NewDBConfig(*appConfig)
 	go RunAPIServer(serverConfig{
-		dbHost:     cfg.Host,
-		dbPort:     cfg.Port,
-		dbUser:     cfg.User,
-		dbPassword: cfg.Password,
-		dbName:     cfg.DBName,
-		sslmode:    "disable",
+		dbHost:               cfg.Host,
+		dbPort:               cfg.Port,
+		dbUser:               cfg.User,
+		dbPassword:           cfg.Password,
+		dbName:               cfg.DBName,
+		sslmode:              "disable",
+		aiAPIKey:             appConfig.ClaudeAPIKey,
+		aiPrompt:             string(prompt),
+		aiGenSummaryInterval: summaryGenInterval,
 	})
 
 	// Start the bot
