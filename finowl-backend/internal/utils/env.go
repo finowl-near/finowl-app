@@ -15,7 +15,8 @@ const (
 	channelIDKey    = "DISCORD_Macro_News_CHANNEL_ID"
 
 	// AI API related constants
-	claudeAPIKeyKey = "CLAUDE_API"
+	claudeAPIKeyKey         = "CLAUDE_API"
+	aiGenSummaryIntervalKey = "AI_GEN_SUMMARY_INTERVAL"
 
 	// Database related constants
 	dbHostKey     = "FINOWL_DB_HOST"
@@ -27,14 +28,15 @@ const (
 
 // AppConfig holds all the environment configuration for the application
 type AppConfig struct {
-	DiscordToken string
-	ChannelID    string
-	ClaudeAPIKey string
-	DBHost       string
-	DBPort       string
-	DBUser       string
-	DBPassword   string
-	DBName       string
+	DiscordToken         string
+	ChannelID            string
+	ClaudeAPIKey         string
+	DBHost               string
+	DBPort               string
+	DBUser               string
+	DBPassword           string
+	DBName               string
+	AIGenSummaryInterval string
 }
 
 // LoadAppConfig loads and validates the environment variables from the .env file.
@@ -46,14 +48,15 @@ func LoadAppConfig() (*AppConfig, error) {
 
 	// Initialize the AppConfig struct and populate it with environment variables
 	config := &AppConfig{
-		DiscordToken: os.Getenv(discordTokenKey),
-		ChannelID:    os.Getenv(channelIDKey),
-		ClaudeAPIKey: os.Getenv(claudeAPIKeyKey),
-		DBHost:       os.Getenv(dbHostKey),
-		DBPort:       os.Getenv(dbPortKey),
-		DBUser:       os.Getenv(dbUserKey),
-		DBPassword:   os.Getenv(dbPasswordKey),
-		DBName:       os.Getenv(dbNameKey),
+		DiscordToken:         os.Getenv(discordTokenKey),
+		ChannelID:            os.Getenv(channelIDKey),
+		ClaudeAPIKey:         os.Getenv(claudeAPIKeyKey),
+		AIGenSummaryInterval: os.Getenv(aiGenSummaryIntervalKey),
+		DBHost:               os.Getenv(dbHostKey),
+		DBPort:               os.Getenv(dbPortKey),
+		DBUser:               os.Getenv(dbUserKey),
+		DBPassword:           os.Getenv(dbPasswordKey),
+		DBName:               os.Getenv(dbNameKey),
 	}
 
 	// Validate that all required environment variables are set
@@ -74,6 +77,9 @@ func validateConfig(config *AppConfig) error {
 	}
 	if config.ClaudeAPIKey == "" {
 		return fmt.Errorf("environment variable %s is required but not set", claudeAPIKeyKey)
+	}
+	if config.AIGenSummaryInterval == "" {
+		return fmt.Errorf("environment variable %s is required but not set", aiGenSummaryIntervalKey)
 	}
 	if config.DBHost == "" {
 		return fmt.Errorf("environment variable %s is required but not set", dbHostKey)

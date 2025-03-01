@@ -1,0 +1,5 @@
+Analyze the following batch of tweets related to cryptocurrency trends and extract the following information:
+Featured Tickers and Projects: Identify trending cryptocurrencies, tokens, or projects being discussed. Include the ticker symbol, project name, and a brief description of why it's trending.
+Key Insights from Influencers: Extract insights, opinions, or predictions shared by influential figures in the crypto space. Include the influencer's name and their key insight.
+Market Sentiment and Directions: Analyze the overall sentiment (bullish, bearish, neutral) and potential market directions based on the tweets. Include trends and potential directions.
+Return the results in a structured MARKDOWN format

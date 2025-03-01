@@ -10,7 +10,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -138,7 +137,7 @@ func createTickersTable(storer *Storer) error {
 func createSummariesTable(storer *Storer) error {
 	_, err := storer.db.Exec(`
 		CREATE TABLE IF NOT EXISTS Summaries (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			id SERIAL PRIMARY KEY,
 			timestamp TIMESTAMP NOT NULL,
 			content TEXT NOT NULL
 		)`)
@@ -150,11 +149,8 @@ func createSummariesTable(storer *Storer) error {
 
 // InsertSummary inserts a new summary into the database
 func (s *Storer) InsertSummary(summary *mindshare.Summary) error {
-	if summary.ID == "" {
-		summary.ID = uuid.New().String()
-	}
 	query := buildInsertSummaryQuery()
-	_, err := s.db.Exec(query, summary.ID, summary.Time, summary.Content)
+	_, err := s.db.Exec(query, summary.Time, summary.Content)
 	if err != nil {
 		return fmt.Errorf("failed to insert summary: %w", err)
 	}
@@ -164,6 +160,6 @@ func (s *Storer) InsertSummary(summary *mindshare.Summary) error {
 // buildInsertSummaryQuery constructs the SQL query for inserting a summary.
 func buildInsertSummaryQuery() string {
 	return `
-        INSERT INTO Summaries (id, timestamp, content)
-        VALUES ($1, $2, $3)`
+        INSERT INTO Summaries (timestamp, content)
+        VALUES ($1, $2)`
 }

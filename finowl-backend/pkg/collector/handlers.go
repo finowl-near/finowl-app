@@ -7,6 +7,7 @@ import (
 	"finowl-backend/pkg/storer"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -69,7 +70,8 @@ func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, twe
 	if generateSummary && len(b.tweetBatch[category]) > 50 {
 
 		// Pass the new batch to generateSummary
-		b.generateSummary(category, b.currentBatch)
+		// FIXME: Turned off...
+		// b.generateSummary(category, b.currentBatch)
 
 		b.currentBatch = []string{}
 	}
@@ -118,8 +120,13 @@ func (b *Bot) logInvalidTweet(category string, tweet *analyzer.Tweet) {
 func (b *Bot) generateSummary(category string, tweets []string) {
 	b.logger.Printf("Generating summary for category: %s", category)
 
-	// Send the batch to the AI with the correct prompt
-	response, err := b.ai.SendPrompt(context.Background(), fmt.Sprintf("%v tweets: %v", b.config.Prompts[category].Prompt, tweets))
+	tweetsStr := strings.Builder{}
+	for _, t := range tweets {
+		tweetsStr.WriteString(t)
+		tweetsStr.WriteByte('\n')
+	}
+
+	response, err := b.aiClient.AnalyzeTweets(context.Background(), b.config.Prompts[category].Prompt, tweetsStr.String())
 	if err != nil {
 		b.logger.Printf("ERROR sending tweets to AI for category %s: %v", category, err)
 		return
@@ -141,7 +148,7 @@ func (b *Bot) generateSummary(category string, tweets []string) {
 	if err != nil {
 		b.logger.Printf("ERROR inserting summary into DB for category %s: %v", category, err)
 	} else {
-		b.logger.Printf("Inserted summary with ID: %s for category %s", summary.ID, category)
+		b.logger.Printf("Inserted summary with ID: %v for category %s", summary.ID, category)
 	}
 
 	// Clear the batch after processing
