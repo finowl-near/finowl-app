@@ -85,13 +85,42 @@ func appendTickers(
 			TickerSymbol:     tickerSymbol[1:],
 			Category:         mindShare.Category,
 			MindshareScore:   mindShare.Score,
-			LastMentionedAt:  timeStamp, // Parse the timestamp
-			FirstMentionedAt: timeStamp, // Corrected field name
+			LastMentionedAt:  timeStamp,
+			FirstMentionedAt: timeStamp,
 			MentionDetails:   mentionsDetail,
+			Variation:        "",
+			Time:             CalculateTimeAgo(timeStamp),
+			TopInfluencers:   InitializeTopInfluencers(tier),
+			Description:      "",
 		}
 		tickers = append(tickers, ticker)
 	}
 	return tickers
+}
+
+// InitializeTopInfluencers initializes the TopInfluencers map based on the provided tier
+func InitializeTopInfluencers(tier int) map[int]int {
+	topInfluencers := make(map[int]int)
+
+	// Set the specified tier to 1 and others to 0
+	for i := 1; i <= 3; i++ {
+		if i == tier {
+			topInfluencers[i] = 1
+		} else {
+			topInfluencers[i] = 0
+		}
+	}
+
+	return topInfluencers
+}
+
+// MergeTopInfluencers merges two maps by adding the counts of their keys
+func MergeTopInfluencers(existingMap, newMap map[int]int) map[int]int {
+	merged := existingMap
+	for key, value := range newMap {
+		merged[key] += value
+	}
+	return merged
 }
 
 // parseTimestamp parses the timestamp string into a time.Time object
@@ -112,4 +141,44 @@ func getFirstLink(links []string) string {
 		return links[0] // Return the first link if it exists
 	}
 	return "" // Return an empty string if there are no links
+}
+
+// CalculateTimeAgo calculates the time difference from FirstMentionedAt to now
+func CalculateTimeAgo(firstMentionedAt time.Time) string {
+	now := time.Now()
+	diff := now.Sub(firstMentionedAt)
+
+	// Define time durations
+	seconds := int(diff.Seconds())
+	minutes := seconds / 60
+	hours := minutes / 60
+	days := hours / 24
+	weeks := days / 7
+	months := int(diff.Hours() / 720) // Approximation: 30 days per month
+
+	// Determine the appropriate string representation
+	if seconds < 60 {
+		return fmt.Sprintf("%ds ago", seconds)
+	} else if minutes < 60 {
+		return fmt.Sprintf("%dmin ago", minutes)
+	} else if hours < 24 {
+		return fmt.Sprintf("%dh ago", hours)
+	} else if days < 7 {
+		return fmt.Sprintf("%dd ago", days)
+	} else if weeks < 4 {
+		return fmt.Sprintf("%d week ago", weeks)
+	} else {
+		return fmt.Sprintf("%d month ago", months)
+	}
+}
+
+// GenerateInfluencerString generates a formatted string from the Influencers map
+func GenerateInfluencerSummary(mentionDetails ticker.MentionDetails) string {
+	var result string
+
+	for influencer, detail := range mentionDetails.Influencers {
+		result += fmt.Sprintf("%s: %s\n", influencer, detail.Content) // Assuming MentionDetail has a Content field
+	}
+
+	return result
 }

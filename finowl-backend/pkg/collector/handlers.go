@@ -53,7 +53,7 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 // processValidTweet handles the logic for valid tweets
 func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, tweet *analyzer.Tweet, generateSummary bool) {
 
-	b.writeSummariesOnce()
+	// b.writeSummariesOnce()
 	tt := storer.TransformToStorerTweet(*tweet)
 
 	b.storer.InsertTweet(tt)
@@ -76,16 +76,16 @@ func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, twe
 }
 
 // writeSummariesOnce writes summaries to a file only once
-func (b *Bot) writeSummariesOnce() {
-	staticOnce := false
-	if !staticOnce {
-		err := b.storer.WriteSummariesToFile("summary.txt")
-		if err != nil {
-			fmt.Println("failed to write summaries .........")
-		}
-		staticOnce = true
-	}
-}
+// func (b *Bot) writeSummariesOnce() {
+// 	staticOnce := false
+// 	if !staticOnce {
+// 		err := b.storer.WriteSummariesToFile("summary.txt")
+// 		if err != nil {
+// 			fmt.Println("failed to write summaries .........")
+// 		}
+// 		staticOnce = true
+// 	}
+// }
 
 // logInfluencerInfo logs information about the influencer
 func (b *Bot) logInfluencerInfo(author string) {

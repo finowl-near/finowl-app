@@ -126,7 +126,8 @@ func createTickersTable(storer *Storer) error {
 			mindshare_score DECIMAL(10,2),
 			last_mentioned_at TIMESTAMP,
 			first_mentioned_at TIMESTAMP,
-			mention_details JSONB
+			mention_details JSONB,
+			time VARCHAR(255)
 		)`)
 	if err != nil {
 		return fmt.Errorf("failed to create Tickers table: %w", err)

@@ -61,6 +61,7 @@ func (s *Storer) getExistingTicker(symbol string) (*ticker.Ticker, error) {
 		&ticker.MindshareScore,
 		&ticker.LastMentionedAt,
 		&mentionDetailsString,
+		&ticker.Time,
 	)
 
 	if err != nil {
@@ -89,6 +90,7 @@ func (s *Storer) createNewTicker(ticker ticker.Ticker) error {
 		ticker.LastMentionedAt,
 		ticker.FirstMentionedAt,
 		mentionDetailsJSON,
+		ticker.Time,
 	)
 
 	return err
@@ -114,6 +116,10 @@ func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.
 		return nil
 	}
 
+	time := CalculateTimeAgo(existing.FirstMentionedAt)
+	// topInfluencers := MergeTopInfluencers(existing.TopInfluencers, newTicker.TopInfluencers)
+	// description := GenerateInfluencerSummary(existing.MentionDetails)
+
 	// Here we'll add the mindshare calculation later
 	// existing.MindshareScore = mindshare.Calculate(existing.MentionDetails)
 	// existing.Category = mindshare.DetermineCategory(existing.MindshareScore)
@@ -126,9 +132,10 @@ func (s *Storer) updateExistingTicker(existing *ticker.Ticker, newTicker ticker.
 	query := buildUpdateExistingTickerQuery()
 	_, err = s.db.Exec(query,
 		newTicker.LastMentionedAt,
-		mentionDetailsJSON,
+		mentionDetailsJSON, // Updated mentionDetails
 		mindShare.Score,    // Updated score
 		mindShare.Category, // Updated category
+		time,
 		existing.TickerSymbol,
 	)
 
@@ -143,7 +150,7 @@ func (s *Storer) GetTicker(tickerSymbol string) (*ticker.Ticker, error) {
 	var ticker ticker.Ticker
 	var mentionDetailsJSON string
 
-	if err := row.Scan(&ticker.TickerSymbol, &ticker.Category, &ticker.MindshareScore, &ticker.LastMentionedAt, &mentionDetailsJSON); err != nil {
+	if err := row.Scan(&ticker.TickerSymbol, &ticker.Category, &ticker.MindshareScore, &ticker.LastMentionedAt, &mentionDetailsJSON, &ticker.Time); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("no ticker found with symbol: %s", tickerSymbol)
 		}
@@ -160,14 +167,14 @@ func (s *Storer) GetTicker(tickerSymbol string) (*ticker.Ticker, error) {
 
 // buildGetExistingTickerQuery constructs the SQL query for retrieving an existing ticker.
 func buildGetExistingTickerQuery() string {
-	return `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details 
+	return `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details, time
             FROM Tickers_1_0 WHERE ticker_symbol = $1`
 }
 
 // buildInsertNewTickerQuery constructs the SQL query for inserting a new ticker.
 func buildInsertNewTickerQuery() string {
-	return `INSERT INTO Tickers_1_0 (ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details)
-            VALUES ($1, $2, $3, $4, $5, $6)`
+	return `INSERT INTO Tickers_1_0 (ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details, time)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)`
 }
 
 // buildUpdateExistingTickerQuery constructs the SQL query for updating an existing ticker.
@@ -176,11 +183,12 @@ func buildUpdateExistingTickerQuery() string {
             SET last_mentioned_at = $1, 
                 mention_details = $2,
                 mindshare_score = $3,
-                category = $4
-            WHERE ticker_symbol = $5`
+                category = $4,
+				time = $5
+            WHERE ticker_symbol = $6`
 }
 
 // buildGetTickerQuery constructs the SQL query for retrieving a ticker.
 func buildGetTickerQuery() string {
-	return `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details FROM Tickers_1_0 WHERE ticker_symbol = $1`
+	return `SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, mention_details, time FROM Tickers_1_0 WHERE ticker_symbol = $1`
 }
