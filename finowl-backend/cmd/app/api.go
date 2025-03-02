@@ -333,28 +333,44 @@ func (s *server) getSummaryHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) generateSummary() error {
 	type tweet struct {
+		id      string
 		author  string
 		content string
 	}
 
 	log.Println("Started summary generation")
 
-	rows, err := s.db.Query("SELECT author, content FROM tweets ORDER BY timestamp DESC LIMIT 100")
+	// Query to get the latest 100 tweets
+	rows, err := s.db.Query("SELECT id, author, content FROM tweets ORDER BY timestamp DESC LIMIT 150")
 	if err != nil {
 		return fmt.Errorf("%w: %w", errGetTickers, err)
 	}
+	defer rows.Close() // Ensure rows are closed after processing
 
 	tweets := strings.Builder{}
+	var firstTweetID, lastTweetID string
+	tweetCount := 0
+
 	for rows.Next() {
 		var t tweet
-		if err := rows.Scan(&t.author, &t.content); err != nil {
+		if err := rows.Scan(&t.id, &t.author, &t.content); err != nil {
 			return fmt.Errorf("%w: %w", errGetTickers, err)
 		}
+
+		// Log the first tweet ID
+		if tweetCount == 0 {
+			firstTweetID = t.id
+		}
+		lastTweetID = t.id // Update last tweet ID on each iteration
 
 		tweets.WriteString(t.author)
 		tweets.WriteString(": ")
 		tweets.WriteString(t.content)
+		tweetCount++
 	}
+
+	// Log the number of tweets processed and the first and last tweet IDs
+	log.Printf("Processed %d tweets. First tweet ID: %s, Last tweet ID: %s", tweetCount, firstTweetID, lastTweetID)
 
 	summary, err := s.aiClient.AnalyzeTweets(context.Background(), s.aiPrompt, tweets.String())
 	if err != nil {
@@ -382,14 +398,15 @@ func RunAPIServer(cfg serverConfig) {
 	http.Handle("GET /api/v0/summary", corsMiddleware(logMiddleware(http.HandlerFunc(server.getSummaryHandler))))
 
 	go func() {
-		ticker := time.NewTimer(cfg.aiGenSummaryInterval)
+		ticker := time.NewTicker(cfg.aiGenSummaryInterval)
 		defer ticker.Stop()
 
 		for {
 			if err := server.generateSummary(); err != nil {
-				log.Println(err)
+				log.Printf("Error generating summary: %v", err)
+			} else {
+				log.Println("Summary generated successfully.")
 			}
-
 			<-ticker.C
 		}
 	}()
