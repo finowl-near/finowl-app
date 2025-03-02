@@ -5,7 +5,7 @@ services:
     container_name: finowl-app
     depends_on:
       - db
-      - frontend
+      # - frontend
     environment:
       - FINOWL_DB_HOST=db
       - FINOWL_DB_PORT=5432
@@ -36,14 +36,14 @@ services:
       - "5432:5432"
     networks:
       - finowl-network
-  frontend:  # New frontend service
-    build:
-      context: ../frontend  # Path to the frontend Dockerfile
-    container_name: finowl-frontend
-    ports:
-      - "3000:3000"  # Expose frontend port
-    networks:
-      - finowl-network
+  # frontend:  # New frontend service
+  #   build:
+  #     context: ../frontend  # Path to the frontend Dockerfile
+  #   container_name: finowl-frontend
+  #   ports:
+  #     - "3000:3000"  # Expose frontend port
+  #   networks:
+  #     - finowl-network
 
 volumes:
   postgres_data:
