@@ -7,7 +7,7 @@ const useTableData = create((set) => ({
   allInfluencers: null,
   onChainData: null,
   feed: null,
-  feedTime: "",
+  feedData: null,
   setTableData: (data) => {
     console.log('here', data);
     set({ tableData: data });
@@ -28,9 +28,9 @@ const useTableData = create((set) => ({
     console.log('on chain', data);
     set({ onChainData: data })
   },
-  setFeed: (data, time) => {
-    console.log('feed', data, time);
-    set({ feed: data, feedTime: time })
+  setFeed: (data, feedData) => {
+    console.log('feed', data, feedData);
+    set({ feed: data, feedData: feedData })
   }
 }));
 
