@@ -1,11 +1,12 @@
 version: '3.1'
 services:
   app:
-    build: .
+    build:
+      context: ./finowl-backend  # Adjusted path to backend
     container_name: finowl-app
     depends_on:
       - db
-      - frontend
+      - frontend  # Ensure frontend is still a dependency
     environment:
       - FINOWL_DB_HOST=db
       - FINOWL_DB_PORT=5432
@@ -13,11 +14,11 @@ services:
       - FINOWL_DB_PASSWORD=finowl_pass
       - FINOWL_DB_NAME=finowl_db
     volumes:
-      - ./config.yaml:/app/config.yaml
-      - ./influencers.yaml:/app/influencers.yaml
-      - ./logs:/app/logs
-      - ./.env:/app/.env
-      - ./prompt.txt:/app/prompt.txt
+      - ./finowl-backend/config.yaml:/app/config.yaml
+      - ./finowl-backend/influencers.yaml:/app/influencers.yaml
+      - ./finowl-backend/logs:/app/logs
+      - ./finowl-backend/.env:/app/.env
+      - ./finowl-backend/prompt.txt:/app/prompt.txt
     ports:
       - "8080:8080"
     networks:
@@ -36,9 +37,10 @@ services:
       - "5432:5432"
     networks:
       - finowl-network
+
   frontend:  # New frontend service
     build:
-      context: ../frontend  # Path to the frontend Dockerfile
+      context: ./frontend  # Adjusted path to frontend
     container_name: finowl-frontend
     ports:
       - "3000:3000"  # Expose frontend port

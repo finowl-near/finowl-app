@@ -1,14 +1,10 @@
 package collector
 
 import (
-	"context"
 	"finowl-backend/pkg/analyzer"
-	"finowl-backend/pkg/mindshare"
 	"finowl-backend/pkg/storer"
 	"fmt"
 	"log"
-	"strings"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -45,16 +41,15 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 	tweet := b.analyzer.ProcessMessage(m.Content, m.Author.Username, m.Timestamp)
 
 	if tweet.IsValid {
-		b.processValidTweet(category, m, tweet, false)
+		b.processValidTweet(category, m, tweet)
 	} else {
 		b.logInvalidTweet(category, tweet)
 	}
 }
 
 // processValidTweet handles the logic for valid tweets
-func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, tweet *analyzer.Tweet, generateSummary bool) {
+func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, tweet *analyzer.Tweet) {
 
-	b.writeSummariesOnce()
 	tt := storer.TransformToStorerTweet(*tweet)
 
 	b.storer.InsertTweet(tt)
@@ -66,27 +61,6 @@ func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, twe
 	// Collect the formatted tweet content
 	b.collectFormattedTweet(category, m)
 
-	// Check if we need to generate a summary
-	if generateSummary && len(b.tweetBatch[category]) > 50 {
-
-		// Pass the new batch to generateSummary
-		// FIXME: Turned off...
-		// b.generateSummary(category, b.currentBatch)
-
-		b.currentBatch = []string{}
-	}
-}
-
-// writeSummariesOnce writes summaries to a file only once
-func (b *Bot) writeSummariesOnce() {
-	staticOnce := false
-	if !staticOnce {
-		err := b.storer.WriteSummariesToFile("summary.txt")
-		if err != nil {
-			fmt.Println("failed to write summaries .........")
-		}
-		staticOnce = true
-	}
 }
 
 // logInfluencerInfo logs information about the influencer
@@ -114,43 +88,4 @@ func (b *Bot) logInvalidTweet(category string, tweet *analyzer.Tweet) {
 		tweet.Author,
 		len(tweet.Content),
 	)
-}
-
-// generateSummary generates a summary from the collected tweets
-func (b *Bot) generateSummary(category string, tweets []string) {
-	b.logger.Printf("Generating summary for category: %s", category)
-
-	tweetsStr := strings.Builder{}
-	for _, t := range tweets {
-		tweetsStr.WriteString(t)
-		tweetsStr.WriteByte('\n')
-	}
-
-	response, err := b.aiClient.AnalyzeTweets(context.Background(), b.config.Prompts[category].Prompt, tweetsStr.String())
-	if err != nil {
-		b.logger.Printf("ERROR sending tweets to AI for category %s: %v", category, err)
-		return
-	}
-
-	// Prepare the summary content
-	summaryContent := response
-
-	b.logger.Printf("Summary response: %s", summaryContent)
-
-	// Create a new summary object
-	summary := &mindshare.Summary{
-		Time:    time.Now(),
-		Content: summaryContent,
-	}
-
-	// Insert the summary into the database
-	err = b.storer.InsertSummary(summary)
-	if err != nil {
-		b.logger.Printf("ERROR inserting summary into DB for category %s: %v", category, err)
-	} else {
-		b.logger.Printf("Inserted summary with ID: %v for category %s", summary.ID, category)
-	}
-
-	// Clear the batch after processing
-	b.tweetBatch[category] = nil
 }
