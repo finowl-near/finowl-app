@@ -34,24 +34,48 @@ function parseInfluencers(data) {
   return result;
 }
 
-function extractCategories(content) {
-  const categories = [
-      "Featured Tickers and Projects",
-      "Key Insights from Influencers",
-      "Market Sentiment and Directions"
-  ];
+export function extractCategories(markdown) {
+  const sections = {};
 
-  const regex = new RegExp(`(?<=# )(${categories.join("|")})\\n([\\s\\S]*?)(?=(\\n# |$))`, "g");
-  
-  const result = {};
-  
+  // Regex to match section headers (both # and ##)
+  const headerRegex = /#+\s*(.*?)\n([\s\S]*?)(?=\n#|$)/g;
+
   let match;
-  while ((match = regex.exec(content)) !== null) {
-      result[match[1]] = match[2].trim();
+  while ((match = headerRegex.exec(markdown)) !== null) {
+    const header = match[1].trim();
+    const content = match[2].trim();
+
+    // Map headers to standardized keys
+    if (header.toLowerCase().includes("featured tickers and projects")) {
+      sections.featuredTickersAndProjects = content;
+    } else if (header.toLowerCase().includes("key insights from influencers")) {
+      sections.keyInsightsFromInfluencers = content;
+    } else if (header.toLowerCase().includes("market sentiment and directions")) {
+      sections.marketSentimentAndDirections = content;
+    }
   }
 
-  return result;
+  return sections;
 }
+
+// export function extractCategories(content) {
+//   const categories = [
+//       "Featured Tickers and Projects",
+//       "Key Insights from Influencers",
+//       "Market Sentiment and Directions"
+//   ];
+
+//   const regex = new RegExp(`(?<=# )(${categories.join("|")})\\n([\\s\\S]*?)(?=(\\n# |$))`, "g");
+  
+//   const result = {};
+  
+//   let match;
+//   while ((match = regex.exec(content)) !== null) {
+//       result[match[1]] = match[2].trim();
+//   }
+
+//   return result;
+// }
 
 
 export default function Table() {
@@ -59,6 +83,7 @@ export default function Table() {
 
   const searchParams = useSearchParams();
   const page = parseInt(searchParams.get("page"));
+  const feedId = parseInt(searchParams.get("feedId"));
 
   const tableData = useTableData((state) => state.tableData);
   const setTableData = useTableData((state) => state.setTableData);
@@ -73,11 +98,11 @@ export default function Table() {
   const query = useQuery({
     queryKey: ["tableData", page],
     queryFn: async () => {
-      console.log("before fetching", page)
+      console.log("before fetching", page, feedId)
       const data = await getTableData(page);
       const trendingData = await getTrendingMindshareScore();
       const onChainData = await getOnchainActivity();
-      const feedData = await getSummary();
+      const feedData = await getSummary(feedId);
       const section = extractCategories(feedData.summary.content);
       console.log("summary content", feedData);
       console.log("summary data", section);
@@ -89,7 +114,7 @@ export default function Table() {
       setTopInfluencers(topInfluencers);
       setOnchainActivity(onChainData);
       setAllInfluencers(allInfluencers);
-      setFeed(section, feedData.summary.timestamp);
+      setFeed(section, feedData);
       return data;
     },
   });

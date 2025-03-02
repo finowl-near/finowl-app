@@ -10,13 +10,48 @@ import useModal from "../hooks/useModal";
 import useTableData from "../hooks/useTableData";
 import ReactMarkdown from "react-markdown";
 import moment from "moment";
+import { useRouter, useSearchParams } from "next/navigation";
+import getSummary from "../api/getSummary";
+import { extractCategories } from "./Table";
 
 export default function Modal() {
   const { isOpen, setModalOpen } = useModal();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const feedId = parseInt(searchParams.get("feedId"));
   const feed = useTableData((state) => state.feed);
-  const feedTime = useTableData((state) => state.feedTime);
+  const feedData = useTableData((state) => state.feedData);
+  const setFeed = useTableData((state) => state.setFeed);
+  console.log("inside feed", feed, feedData);
   const inputRef1 = useRef(null);
   if (!isOpen) return null;
+
+  async function handleNextFeed() {
+    if (feedId < feedData.total) {
+      const newFeedId = feedId + 1;
+      const newFeedData = await getSummary(newFeedId);
+      const section = extractCategories(newFeedData.summary.content);
+      setFeed(section, feedData);
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.set("feedId", newFeedId.toString());
+      router.replace(`?${newParams.toString()}`, { scroll: false });
+    }
+    console.log("handle next", feedId);
+  }
+
+  async function handlePreviousFeed() {
+    if (feedId > 1) {
+      const newFeedId = feedId - 1;
+      const newFeedData = await getSummary(newFeedId);
+      const section = extractCategories(newFeedData.summary.content);
+      setFeed(section, feedData);
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.set("feedId", newFeedId.toString());
+      router.replace(`?${newParams.toString()}`, { scroll: false });
+    }
+    console.log("handle prev", feedId);
+  }
+
   return (
     <div className="h-screen mx-auto max-w-[1600px] fixed top-0 overflow-auto z-50 p-10 bg-black/10 backdrop-blur-xl">
       <div className="flex justify-between">
@@ -52,7 +87,7 @@ export default function Modal() {
             "
             >
               <ReactMarkdown
-                children={feed["Featured Tickers and Projects"]}
+                children={feed["featuredTickersAndProjects"]}
                 // rehypePlugins={[rehypeRaw]}
                 // remarkPlugins={[remarkGfm]}
               />
@@ -76,7 +111,7 @@ export default function Modal() {
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
               <ReactMarkdown
-                children={feed["Key Insights from Influencers"]}
+                children={feed["keyInsightsFromInfluencers"]}
                 // rehypePlugins={[rehypeRaw]}
                 // remarkPlugins={[remarkGfm]}
               />
@@ -99,7 +134,7 @@ export default function Modal() {
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
               <ReactMarkdown
-                children={feed["Market Sentiment and Directions"]}
+                children={feed["marketSentimentAndDirections"]}
                 // rehypePlugins={[rehypeRaw]}
                 // remarkPlugins={[remarkGfm]}
               />
@@ -108,13 +143,16 @@ export default function Modal() {
         </div>
       </div>
       <div className="p-4 flex justify-center gap-10">
-        <div className="flex items-center cursor-pointer">
+        <div
+          className="flex items-center cursor-pointer"
+          onClick={handlePreviousFeed}
+        >
           <ChevronLeftIcon className="w-4" color="#D8E864" />
           <p className="text-[#D0D0D0]">Previous</p>
         </div>
         <div className="flex items-center gap-5">
           <p className="text-black font-semibold px-2 py-px rounded-md bg-[#D8E864]">
-            {moment(feedTime).format("MMMM Do")}
+            {moment(feedData.summary.timestamp).format("MMMM Do")}
           </p>
           <input
             ref={inputRef1}
@@ -139,7 +177,10 @@ export default function Modal() {
             />
           </button>
         </div>
-        <div className="flex items-center cursor-pointer">
+        <div
+          className="flex items-center cursor-pointer"
+          onClick={handleNextFeed}
+        >
           <p className="text-[#D0D0D0]">Next</p>
           <ChevronRightIcon className="w-4" color="#D8E864" />
         </div>
