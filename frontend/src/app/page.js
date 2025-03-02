@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { NearContext } from "./context";
 import { Wallet } from "./Wallets/near";
 import { CounterContract, NetworkId } from "./config";
@@ -27,7 +27,9 @@ export default function Home() {
     <>
       <QueryClientProvider client={queryClient}>
         <NearContext.Provider value={{ signedAccountId, wallet }}>
-          <LandingPage />
+          <Suspense>
+            <LandingPage />
+          </Suspense>
         </NearContext.Provider>
       </QueryClientProvider>
     </>
