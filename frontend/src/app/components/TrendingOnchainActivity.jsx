@@ -7,8 +7,12 @@ import ArrowUpIcon from "./Icons/ArrowUpIcon";
 import Image from "next/image";
 import dophin from "@/app/assets/svg/dophin.svg";
 import whale from "@/app/assets/svg/whale.svg";
+import useTableData from "../hooks/useTableData";
 
 export default function TrendingOnchainActivity() {
+  const onChainData  = useTableData((state) => state.onChainData);
+  console.log("on chain", onChainData);
+  if (!onChainData) return null
   return (
     <>
       <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
@@ -32,17 +36,16 @@ export default function TrendingOnchainActivity() {
                 <th className="text-[#CECECE]">Name</th>
                 <th className="text-[#CECECE]">Onchain Score</th>
                 <th className="text-[#CECECE]">Volume</th>
-                <th className="text-[#CECECE]">%</th>
+                {/* <th className="text-[#CECECE]">%</th> */}
               </tr>
             </thead>
             <tbody>
-              {Array(5)
-                .fill(0)
-                .map(() => {
+              {onChainData.tickers
+                .map((ticker, idx) => {
                   return (
                     <tr key={Math.random()}>
                       <td className="text-[#D8E864] flex gap-4 justify-center font-bold text-center py-3">
-                        1 <span className="text-[#CECECE]">SUI</span>
+                        {idx + 1} <span className="text-[#CECECE]">{ticker.ticker_symbol}</span>
                       </td>
                       <td className="py-2">
                         <div className="flex items-center justify-center">
@@ -73,16 +76,16 @@ export default function TrendingOnchainActivity() {
                         </div>
                       </td>
                       <td className="py-3 text-[#CECECE] text-center font-bold">
-                        356.15M
+                        { (Math.random() * (5 - 1) + 1).toFixed(2) }M
                       </td>
-                      <td className="py-3 flex justify-center items-center">
+                      {/* <td className="py-3 flex justify-center items-center">
                         <div className="flex items-center">
                           <ArrowUpIcon />
                           <span className="text-[#D8E864] font-bold ml-1 text-base">
                             +150%
                           </span>
                         </div>
-                      </td>
+                      </td> */}
                     </tr>
                   );
                 })}

@@ -7,9 +7,14 @@ import calenderIcon from "@/app/assets/svg/calenderIcon.svg";
 
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 import useModal from "../hooks/useModal";
+import useTableData from "../hooks/useTableData";
+import ReactMarkdown from "react-markdown";
+import moment from "moment";
 
 export default function Modal() {
   const { isOpen, setModalOpen } = useModal();
+  const feed = useTableData((state) => state.feed);
+  const feedTime = useTableData((state) => state.feedTime);
   const inputRef1 = useRef(null);
   if (!isOpen) return null;
   return (
@@ -23,11 +28,11 @@ export default function Modal() {
             <span className="text-[#D8E864]">{"<"}</span>Back
           </button>
         </div>
-        <div className="">
+        {/* <div className="">
           <p className="text-[#D0D0D0] py-2 font-semibold">
             Feb 4th <span className="text-[#D8E864]">Feed</span>
           </p>
-        </div>
+        </div> */}
       </div>
       <div className="rounded-[10px] relative mb-4">
         <Image
@@ -42,21 +47,16 @@ export default function Modal() {
             Featured Tickers &<br /> Projects
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
-            <p className="text-white text-sm md:text-base lg:text-xl ">
-              Kyle Chassé predicting an upcoming "supply shock" in the market
-              Multiple influencers suggesting potential upside for MICRO token
-              General optimism about Bitcoin as a hedge against global economic
-              concerns Kyle Chassé predicting an upcoming "supply shock" in the
-              market Multiple influencers suggesting potential upside for MICRO
-              token General optimism about Bitcoin as a hedge against global
-              economic concerns Kyle Chassé predicting an upcoming "supply
-              shock" in the market Multiple influencers suggesting potential
-              upside for MICRO token General optimism about Bitcoin as a hedge
-              against global economic concerns Kyle Chassé predicting an
-              upcoming "supply shock" in the market Multiple influencers
-              suggesting potential upside for MICRO token General optimism about
-              Bitcoin as a hedge against global economic concerns
-            </p>
+            <div
+              className="text-white text-xl 
+            "
+            >
+              <ReactMarkdown
+                children={feed["Featured Tickers and Projects"]}
+                // rehypePlugins={[rehypeRaw]}
+                // remarkPlugins={[remarkGfm]}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -74,24 +74,13 @@ export default function Modal() {
             <br /> Influencers
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
-            <p className="text-white text-xl ">
-              Kyle Chassé predicting an upcoming "supply shock" in the market
-              Multiple influencers suggesting potential upside for MICRO token
-              General optimism about Bitcoin as a hedge against global economic
-              concerns Kyle Chassé predicting an upcoming "supply shock" in the
-              market Multiple influencers suggesting potential upside for MICRO
-              token General optimism about Bitcoin as a hedge against global
-              economic concerns Kyle Chassé predicting an upcoming "supply
-              shock" in the market Multiple influencers suggesting potential
-              upside for MICRO token General optimism about Bitcoin as a hedge
-              against global economic concerns Kyle Chassé predicting an
-              upcoming "supply shock" in the market Multiple influencers
-              suggesting potential upside for MICRO token General optimism about
-              Bitcoin as a hedge against global economic concerns Kyle Chassé
-              predicting an upcoming "supply shock" in the market Multiple
-              influencers suggesting potential upside for MICRO token General
-              optimism about Bitcoin as a hedge against global economic concerns
-            </p>
+            <div className="text-white text-xl ">
+              <ReactMarkdown
+                children={feed["Key Insights from Influencers"]}
+                // rehypePlugins={[rehypeRaw]}
+                // remarkPlugins={[remarkGfm]}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -108,32 +97,24 @@ export default function Modal() {
             Market Sentiment &<br /> Direction
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
-            <p className="text-white text-xl">
-              Kyle Chassé predicting an upcoming "supply shock" in the market
-              Multiple influencers suggesting potential upside for MICRO token
-              General optimism about Bitcoin as a hedge against global economic
-              concerns Kyle Chassé predicting an upcoming "supply shock" in the
-              market Multiple influencers suggesting potential upside for MICRO
-              token General optimism about Bitcoin as a hedge against global
-              economic concerns Kyle Chassé predicting an upcoming "supply
-              shock" in the market Multiple influencers suggesting potential
-              upside for MICRO token General optimism about Bitcoin as a hedge
-              against global economic concerns Kyle Chassé predicting an
-              upcoming "supply shock" in the market Multiple influencers
-              suggesting potential upside for MICRO token General optimism about
-              Bitcoin as a hedge against global economic concerns
-            </p>
+            <div className="text-white text-xl ">
+              <ReactMarkdown
+                children={feed["Market Sentiment and Directions"]}
+                // rehypePlugins={[rehypeRaw]}
+                // remarkPlugins={[remarkGfm]}
+              />
+            </div>
           </div>
         </div>
       </div>
       <div className="p-4 flex justify-center gap-10">
         <div className="flex items-center cursor-pointer">
           <ChevronLeftIcon className="w-4" color="#D8E864" />
-          <p className="text-[#D0D0D0]">Previous day</p>
+          <p className="text-[#D0D0D0]">Previous</p>
         </div>
         <div className="flex items-center gap-5">
           <p className="text-black font-semibold px-2 py-px rounded-md bg-[#D8E864]">
-            Jan 17
+            {moment(feedTime).format("MMMM Do")}
           </p>
           <input
             ref={inputRef1}
@@ -159,7 +140,7 @@ export default function Modal() {
           </button>
         </div>
         <div className="flex items-center cursor-pointer">
-          <p className="text-[#D0D0D0]">Next day</p>
+          <p className="text-[#D0D0D0]">Next</p>
           <ChevronRightIcon className="w-4" color="#D8E864" />
         </div>
       </div>

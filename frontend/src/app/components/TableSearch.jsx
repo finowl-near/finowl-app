@@ -27,7 +27,7 @@ export default function TableSearch() {
                 : "bg-black rounded-md px-2 py-px text-white "
             } font-normal text-lg flex items-center`}
           >
-            AI agents index
+            Mindshare
           </button>
         </div>
         <div

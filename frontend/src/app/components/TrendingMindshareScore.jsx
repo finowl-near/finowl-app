@@ -5,8 +5,15 @@ import Image from "next/image";
 import CoinLogo from "../assets/svg/coinLogo.svg";
 import ArrowUpIcon from "./Icons/ArrowUpIcon";
 import BigFireIcon from "./Icons/BigFireIcon";
+import useTableData from "../hooks/useTableData";
+import TopInfluencers from "./TopInfluencers";
+
 
 export default function TrendingMindshareScore() {
+  const trendingData  = useTableData((state) => state.trendingData);
+  const topInfluencers = useTableData((state) => state.topInfluencers);
+ 
+  if (!trendingData) return null
   return (
     <>
       <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
@@ -30,49 +37,32 @@ export default function TrendingMindshareScore() {
                 <tr>
                   <th className="text-[#CECECE]">Name</th>
                   <th className="text-[#CECECE]">Mindshare Score</th>
-                  <th className="text-[#CECECE]">Volume</th>
-                  <th className="text-[#CECECE]">%</th>
+                  <th className="text-[#CECECE]">Top Influencers</th>
+                  {/* <th className="text-[#CECECE]">%</th> */}
                 </tr>
               </thead>
               <tbody>
-                {Array(5)
-                  .fill(0)
-                  .map(() => {
+                {trendingData.tickers
+                  .map((ticker, idx) => {
                     return (
                       <tr key={Math.random()}>
                         <td className="text-[#D8E864] flex gap-4 justify-center font-bold text-center py-3">
-                          1 <span className="text-[#CECECE]">SUI</span>
+                          {idx + 1} <span className="text-[#CECECE]">{ticker.ticker_symbol}</span>
                         </td>
                         <td className="text-[#D8E864] font-bold text-center py-3">
-                          5.5
+                          {ticker.mindshare_score}
                         </td>
                         <td className="py-3">
-                          <div className="flex items-center justify-center">
-                            <div className="w-6 h-6 flex  left-0 z-20 justify-center items-center rounded-full bg-[#FF6347]/30 border border-[#FF6B34]">
-                              <p className="text-[#FF6B34] font-semibold text-sm ">
-                                5
-                              </p>
-                            </div>
-                            <div className="w-6 h-6 mask-sm flex  left-5 z-10 justify-center items-center rounded-full bg-[#1E90FF]/30 border border-[#00BFFF]">
-                              <p className="text-[#00BFFF] font-semibold text-sm ">
-                                3
-                              </p>
-                            </div>
-                            <div className="w-6 h-6 mask-sm flex  left-10 justify-center items-center rounded-full bg-[#32CD32]/30 border border-[#60FF60]">
-                              <p className="text-[#60FF60] font-semibold text-sm ">
-                                1
-                              </p>
-                            </div>
-                          </div>
+                          <TopInfluencers tickerSymbol={ticker.ticker_symbol} influencers={topInfluencers}/>
                         </td>
-                        <td className="py-3 flex justify-center items-center">
+                        {/* <td className="py-3 flex justify-center items-center">
                           <div className="flex items-center">
                             <ArrowUpIcon />
                             <span className="text-[#D8E864] font-bold ml-1 text-base">
                               +150%
                             </span>
                           </div>
-                        </td>
+                        </td> */}
                       </tr>
                     );
                   })}
