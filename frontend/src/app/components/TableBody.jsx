@@ -10,6 +10,8 @@ import Tooltip from "./Tooltip";
 import TradersVolume from "./TradersVolume";
 import dophin from "@/app/assets/svg/dophin.svg";
 import whale from "@/app/assets/svg/whale.svg";
+import TopInfluencers from "./TopInfluencers";
+import moment from "moment";
 
 const UnderRadar = (
   <div className="flex justify-center">
@@ -38,8 +40,10 @@ const Alpha = (
   </div>
 );
 
+
 export default function TableBody() {
   const tableData = useTableData((state) => state.tableData);
+  const allInfluencers = useTableData((state) => state.allInfluencers);
   console.log("body", tableData);
   /// TODO dont forget to do spinner
   if (tableData.length === 0) {
@@ -58,7 +62,7 @@ export default function TableBody() {
   }
   return (
     <tbody>
-      {tableData.map((info, idx) => {
+      {tableData.tickers.map((info, idx) => {
         const content = Object.values(info.mention_details.influencers)[0]
           .content;
         const linkToTweet = Object.values(info.mention_details.influencers)[0]
@@ -123,15 +127,16 @@ export default function TableBody() {
                 </div>
               </Tooltip>
             </td>
-            <td align="center" className="py-4 px-3">
+            {/* <td align="center" className="py-4 px-3">
               <p className="text-[#E02828] font-medium text-center">-0.2%</p>
-            </td>
+            </td> */}
             <td align="center" className="py-4 px-3">
-              <p className="text-[#D0D0D0] font-medium text-center">9min ago</p>
+              <p className="text-[#D0D0D0] font-medium text-center">{moment(info.first_mentioned_at).fromNow()}</p>
             </td>
             <td className="p-4">{tier}</td>
             <td align="center" className="py-4 px-3">
-              <div className="flex items-center justify-center relative">
+              <TopInfluencers tickerSymbol={info.ticker_symbol} influencers={allInfluencers}/>
+              {/* <div className="flex items-center justify-center relative">
                 <div className="w-10 h-10 flex absolute left-0 z-20 justify-center items-center rounded-full bg-[#FF6347]/30 border border-[#FF6B34]">
                   <p className="text-[#FF6B34] font-semibold text-lg ">5</p>
                 </div>
@@ -141,7 +146,7 @@ export default function TableBody() {
                 <div className="w-10 h-10 mask flex absolute left-16 justify-center items-center rounded-full bg-[#32CD32]/30 border border-[#60FF60]">
                   <p className="text-[#60FF60] font-semibold text-lg ">1</p>
                 </div>
-              </div>
+              </div> */}
             </td>
             <td className="py-4 px-3">
               <div className="flex items-center w-[25rem] justify-between">

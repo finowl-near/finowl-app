@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation"; // Import useRouter
 import Header from "./Header";
 import TrendingMindshareScore from "./TrendingMindshareScore";
 import TrendingOnchainActivity from "./TrendingOnchainActivity";
@@ -9,9 +10,26 @@ import Table from "./Table";
 import useSwitchTabs from "../hooks/useSwitchTabs";
 import Feeds from "./Feeds";
 import Modal from "./Modal";
+import { useSearchParams } from "next/navigation";
 
 export default function LandingPage() {
   const switchTabs = useSwitchTabs((state) => state.switchTabs);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Memoize the function to update query params
+  const setInitialPageParam = useCallback(() => {
+    if (!searchParams.get("page")) {
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.set("page", "0");
+      router.replace(`?${newParams.toString()}`, { scroll: false });
+    }
+  }, [searchParams, router]);
+
+  useEffect(() => {
+    setInitialPageParam();
+  }, [setInitialPageParam]);
+
   return (
     <>
       <Header />
