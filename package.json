@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@near-wallet-selector/core": "^8.9.15"
+  }
+}

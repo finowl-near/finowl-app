@@ -87,10 +87,11 @@ export default function Modal() {
             "
             >
               <ReactMarkdown
-                children={feed["featuredTickersAndProjects"]}
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
-              />
+              // rehypePlugins={[rehypeRaw]}
+              // remarkPlugins={[remarkGfm]}
+              >
+                {feed["featuredTickersAndProjects"]}
+              </ReactMarkdown>
             </div>
           </div>
         </div>
@@ -111,10 +112,11 @@ export default function Modal() {
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
               <ReactMarkdown
-                children={feed["keyInsightsFromInfluencers"]}
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
-              />
+              // rehypePlugins={[rehypeRaw]}
+              // remarkPlugins={[remarkGfm]}
+              >
+                {feed["keyInsightsFromInfluencers"]}
+              </ReactMarkdown>
             </div>
           </div>
         </div>
@@ -134,10 +136,11 @@ export default function Modal() {
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
               <ReactMarkdown
-                children={feed["marketSentimentAndDirections"]}
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
-              />
+              // rehypePlugins={[rehypeRaw]}
+              // remarkPlugins={[remarkGfm]}
+              >
+                {feed["marketSentimentAndDirections"]}
+              </ReactMarkdown>
             </div>
           </div>
         </div>

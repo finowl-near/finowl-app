@@ -78,10 +78,12 @@ export default function Feeds() {
               <div className="text-white text-sm md:text-base lg:text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
                 {/* { feed["Featured Tickers and Projects"] } */}
                 <ReactMarkdown
-                  children={feed["featuredTickersAndProjects"]}
-                  // rehypePlugins={[rehypeRaw]}
-                  // remarkPlugins={[remarkGfm]}
-                />
+
+                // rehypePlugins={[rehypeRaw]}
+                // remarkPlugins={[remarkGfm]}
+                >
+                  {feed["featuredTickersAndProjects"]}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
@@ -102,10 +104,11 @@ export default function Feeds() {
             <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
               <div className="text-white text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
                 <ReactMarkdown
-                  children={feed["keyInsightsFromInfluencers"]}
-                  // rehypePlugins={[rehypeRaw]}
-                  // remarkPlugins={[remarkGfm]}
-                />
+                // rehypePlugins={[rehypeRaw]}
+                // remarkPlugins={[remarkGfm]}
+                >
+                  {feed["keyInsightsFromInfluencers"]}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
@@ -125,10 +128,11 @@ export default function Feeds() {
             <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
               <div className="text-white text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
                 <ReactMarkdown
-                  children={feed["marketSentimentAndDirections"]}
-                  // rehypePlugins={[rehypeRaw]}
-                  // remarkPlugins={[remarkGfm]}
-                />
+                // rehypePlugins={[rehypeRaw]}
+                // remarkPlugins={[remarkGfm]}
+                >
+                  {feed["marketSentimentAndDirections"]}
+                </ReactMarkdown>
               </div>
             </div>
           </div>

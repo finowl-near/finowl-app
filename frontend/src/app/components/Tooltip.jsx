@@ -17,7 +17,7 @@ const Tooltip = ({ children, text, above }) => {
         left: rect.left + rect.width / 2, // Center tooltip
       });
     }
-  }, [isVisible]);
+  }, [isVisible, above]);
 
   return (
     <>
