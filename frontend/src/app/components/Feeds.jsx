@@ -17,11 +17,11 @@ import { extractCategories } from "./Table";
 export default function Feeds() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const feedId = parseInt(searchParams.get("feedId"));
   const setModalOpen = useModal((state) => state.setModalOpen);
   const feed = useTableData((state) => state.feed);
   const feedData = useTableData((state) => state.feedData);
   const setFeed = useTableData((state) => state.setFeed);
+  const feedId = useTableData((state) => state.feedId);
   console.log("inside feed", feed, feedData);
   const inputRef = useRef(null);
 
@@ -30,10 +30,7 @@ export default function Feeds() {
       const newFeedId = feedId + 1;
       const newFeedData = await getSummary(newFeedId);
       const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, feedData);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("feedId", newFeedId.toString());
-      router.replace(`?${newParams.toString()}`, { scroll: false });
+      setFeed(section, newFeedData, newFeedId);
     }
     console.log("handle next", feedId);
   }
@@ -43,10 +40,7 @@ export default function Feeds() {
       const newFeedId = feedId - 1;
       const newFeedData = await getSummary(newFeedId);
       const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, feedData);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("feedId", newFeedId.toString());
-      router.replace(`?${newParams.toString()}`, { scroll: false });
+      setFeed(section, newFeedData, newFeedId);
     }
     console.log("handle prev", feedId);
   }
@@ -54,13 +48,16 @@ export default function Feeds() {
   return (
     <>
       <div className="relative overflow-hidden rounded-[20px] p-[10px] border border-[#292929]">
-        <div className="flex justify-end">
-          <button
-            className="text-[#D0D0D0] py-2"
-            onClick={() => setModalOpen(true)}
-          >
-            Expand <span className="text-[#D8E864]">{">"}</span>
-          </button>
+        <div className="flex items-center justify-between">
+          <p className="text-[#D8E864] text-base lg:text-xl font-bold">Updated Every 4 hours</p>
+          <div className="flex justify-end">
+            <button
+              className="text-[#D0D0D0] py-2"
+              onClick={() => setModalOpen(true)}
+            >
+              Expand <span className="text-[#D8E864]">{">"}</span>
+            </button>
+          </div>
         </div>
         <div className="rounded-[10px] relative mb-4">
           <Image
@@ -76,11 +73,7 @@ export default function Feeds() {
             </h1>
             <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
               <div className="text-white text-sm md:text-base lg:text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
-                {/* { feed["Featured Tickers and Projects"] } */}
                 <ReactMarkdown
-
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
                 >
                   {feed["featuredTickersAndProjects"]}
                 </ReactMarkdown>
@@ -104,8 +97,6 @@ export default function Feeds() {
             <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
               <div className="text-white text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
                 <ReactMarkdown
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
                 >
                   {feed["keyInsightsFromInfluencers"]}
                 </ReactMarkdown>
@@ -128,8 +119,6 @@ export default function Feeds() {
             <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
               <div className="text-white text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
                 <ReactMarkdown
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
                 >
                   {feed["marketSentimentAndDirections"]}
                 </ReactMarkdown>
@@ -148,7 +137,7 @@ export default function Feeds() {
         </div>
         <div className="flex items-center gap-5">
           <p className="text-black font-semibold px-2 py-px rounded-md bg-[#D8E864]">
-            {moment(feedData.summary.timestamp).format("MMMM Do")}
+            {moment(feedData.summary.timestamp).format("MMMM Do, hA")}
           </p>
           <input
             ref={inputRef}

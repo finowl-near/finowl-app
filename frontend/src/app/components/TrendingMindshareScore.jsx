@@ -8,12 +8,11 @@ import BigFireIcon from "./Icons/BigFireIcon";
 import useTableData from "../hooks/useTableData";
 import TopInfluencers from "./TopInfluencers";
 
-
 export default function TrendingMindshareScore() {
-  const trendingData  = useTableData((state) => state.trendingData);
+  const trendingData = useTableData((state) => state.trendingData);
   const topInfluencers = useTableData((state) => state.topInfluencers);
- 
-  if (!trendingData) return null
+
+  if (!trendingData) return null;
   return (
     <>
       <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
@@ -35,37 +34,39 @@ export default function TrendingMindshareScore() {
             <table className="w-full">
               <thead>
                 <tr>
-                  <th className="text-[#CECECE]">Name</th>
+                  <th className="text-[#CECECE] text-left pl-5">Name</th>
                   <th className="text-[#CECECE]">Mindshare Score</th>
                   <th className="text-[#CECECE]">Top Influencers</th>
-                  {/* <th className="text-[#CECECE]">%</th> */}
                 </tr>
               </thead>
               <tbody>
-                {trendingData.tickers
-                  .map((ticker, idx) => {
-                    return (
-                      <tr key={Math.random()}>
-                        <td className="text-[#D8E864] flex gap-4 justify-center font-bold text-center py-3">
-                          {idx + 1} <span className="text-[#CECECE]">{ticker.ticker_symbol}</span>
-                        </td>
-                        <td className="text-[#D8E864] font-bold text-center py-3">
-                          {ticker.mindshare_score}
-                        </td>
-                        <td className="py-3">
-                          <TopInfluencers tickerSymbol={ticker.ticker_symbol} influencers={topInfluencers}/>
-                        </td>
-                        {/* <td className="py-3 flex justify-center items-center">
-                          <div className="flex items-center">
-                            <ArrowUpIcon />
-                            <span className="text-[#D8E864] font-bold ml-1 text-base">
-                              +150%
+                {trendingData.tickers.map((ticker, idx) => {
+                  return (
+                    <tr key={Math.random()}>
+                      <td className="text-[#D8E864] font-bold text-center px-3 py-3">
+                        <div className="flex gap-4">
+                          <span className="text-[#D8E864] text-base font-bold">
+                            {idx + 1}
+                          </span>
+                          <div className="">
+                            <span className="text-[#D0D0D0] text-base font-bold">
+                              {ticker.ticker_symbol}
                             </span>
                           </div>
-                        </td> */}
-                      </tr>
-                    );
-                  })}
+                        </div>
+                      </td>
+                      <td className="text-[#D8E864] font-bold text-center py-3">
+                        {ticker.mindshare_score}
+                      </td>
+                      <td className="py-3">
+                        <TopInfluencers
+                          tickerSymbol={ticker.ticker_symbol}
+                          influencers={topInfluencers}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

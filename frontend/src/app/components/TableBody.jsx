@@ -12,6 +12,7 @@ import dophin from "@/app/assets/svg/dophin.svg";
 import whale from "@/app/assets/svg/whale.svg";
 import TopInfluencers from "./TopInfluencers";
 import moment from "moment";
+import Link from "next/link";
 
 const UnderRadar = (
   <div className="flex justify-center">
@@ -39,7 +40,6 @@ const Alpha = (
     </div>
   </div>
 );
-
 
 export default function TableBody() {
   const tableData = useTableData((state) => state.tableData);
@@ -83,15 +83,15 @@ export default function TableBody() {
                     {idx + 1}
                   </span>
                   <div className="flex items-center">
-                    {/* <Image
-                      src={CoinLogo}
-                      alt="Coin Logo"
-                      width={20}
-                      height={20}
-                    /> */}
-                    <span className="text-[#D0D0D0] text-base font-bold ml-2">
-                      {info.ticker_symbol}
-                    </span>
+                    <Link
+                      href={linkToTweet}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className="text-[#D0D0D0] text-base font-bold ml-2">
+                        {info.ticker_symbol}
+                      </span>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -127,26 +127,17 @@ export default function TableBody() {
                 </div>
               </Tooltip>
             </td>
-            {/* <td align="center" className="py-4 px-3">
-              <p className="text-[#E02828] font-medium text-center">-0.2%</p>
-            </td> */}
             <td align="center" className="py-4 px-3">
-              <p className="text-[#D0D0D0] font-medium text-center">{moment(info.first_mentioned_at).fromNow()}</p>
+              <p className="text-[#D0D0D0] font-medium text-center">
+                {moment(info.first_mentioned_at).fromNow()}
+              </p>
             </td>
             <td className="p-4">{tier}</td>
             <td align="center" className="py-4 px-3">
-              <TopInfluencers tickerSymbol={info.ticker_symbol} influencers={allInfluencers}/>
-              {/* <div className="flex items-center justify-center relative">
-                <div className="w-10 h-10 flex absolute left-0 z-20 justify-center items-center rounded-full bg-[#FF6347]/30 border border-[#FF6B34]">
-                  <p className="text-[#FF6B34] font-semibold text-lg ">5</p>
-                </div>
-                <div className="w-10 h-10 mask flex absolute left-8 z-10 justify-center items-center rounded-full bg-[#1E90FF]/30 border border-[#00BFFF]">
-                  <p className="text-[#00BFFF] font-semibold text-lg ">3</p>
-                </div>
-                <div className="w-10 h-10 mask flex absolute left-16 justify-center items-center rounded-full bg-[#32CD32]/30 border border-[#60FF60]">
-                  <p className="text-[#60FF60] font-semibold text-lg ">1</p>
-                </div>
-              </div> */}
+              <TopInfluencers
+                tickerSymbol={info.ticker_symbol}
+                influencers={allInfluencers}
+              />
             </td>
             <td className="py-4 px-3">
               <div className="flex items-center w-[25rem] justify-between">
@@ -155,12 +146,16 @@ export default function TableBody() {
                   {content}
                 </p>
                 {/* </Tooltip> */}
-                <a href={linkToTweet} target="_blank" rel="noopener noreferrer">
+                <Link
+                  href={linkToTweet}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <button className="text-[#141414] font-bold flex items-center px-2 py-px ml-5 rounded-md bg-[#D8E864]">
                     <EyeIcon className="w-4 mr-1" color="#141414" />
                     View
                   </button>
-                </a>
+                </Link>
               </div>
             </td>
           </tr>
