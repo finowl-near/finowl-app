@@ -18,9 +18,9 @@ export default function Modal() {
   const { isOpen, setModalOpen } = useModal();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const feedId = parseInt(searchParams.get("feedId"));
   const feed = useTableData((state) => state.feed);
   const feedData = useTableData((state) => state.feedData);
+  const feedId = useTableData((state) => state.feedId);
   const setFeed = useTableData((state) => state.setFeed);
   console.log("inside feed", feed, feedData);
   const inputRef1 = useRef(null);
@@ -31,10 +31,7 @@ export default function Modal() {
       const newFeedId = feedId + 1;
       const newFeedData = await getSummary(newFeedId);
       const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, feedData);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("feedId", newFeedId.toString());
-      router.replace(`?${newParams.toString()}`, { scroll: false });
+      setFeed(section, newFeedData, newFeedId);
     }
     console.log("handle next", feedId);
   }
@@ -44,10 +41,7 @@ export default function Modal() {
       const newFeedId = feedId - 1;
       const newFeedData = await getSummary(newFeedId);
       const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, feedData);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("feedId", newFeedId.toString());
-      router.replace(`?${newParams.toString()}`, { scroll: false });
+      setFeed(section, newFeedData, newFeedId);
     }
     console.log("handle prev", feedId);
   }
@@ -63,11 +57,6 @@ export default function Modal() {
             <span className="text-[#D8E864]">{"<"}</span>Back
           </button>
         </div>
-        {/* <div className="">
-          <p className="text-[#D0D0D0] py-2 font-semibold">
-            Feb 4th <span className="text-[#D8E864]">Feed</span>
-          </p>
-        </div> */}
       </div>
       <div className="rounded-[10px] relative mb-4">
         <Image
@@ -78,7 +67,10 @@ export default function Modal() {
           alt="feed 1 icon"
         />
         <div className="flex items-start justify-between">
-          <h1 className="pt-3 ml-28 font-medium text-[16px] md:text-[20px] lg:text-[40px] text-[#D5D5D5]">
+          <h1
+            onClick={() => setModalOpen(false)}
+            className="cursor-pointer  pt-3 ml-28 font-medium text-[16px] md:text-[20px] lg:text-[40px] text-[#D5D5D5]"
+          >
             Featured Tickers &<br /> Projects
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
@@ -87,8 +79,6 @@ export default function Modal() {
             "
             >
               <ReactMarkdown
-              // rehypePlugins={[rehypeRaw]}
-              // remarkPlugins={[remarkGfm]}
               >
                 {feed["featuredTickersAndProjects"]}
               </ReactMarkdown>
@@ -105,15 +95,16 @@ export default function Modal() {
           alt="feed 2 icon"
         />
         <div className="flex items-start justify-between">
-          <h1 className="pt-3 ml-28 text-[16px] md:text-[20px] lg:text-[40px] font-medium text-[#D5D5D5]">
+          <h1
+            onClick={() => setModalOpen(false)}
+            className="cursor-pointer  pt-3 ml-28 text-[16px] md:text-[20px] lg:text-[40px] font-medium text-[#D5D5D5]"
+          >
             Key Insights from
             <br /> Influencers
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
               <ReactMarkdown
-              // rehypePlugins={[rehypeRaw]}
-              // remarkPlugins={[remarkGfm]}
               >
                 {feed["keyInsightsFromInfluencers"]}
               </ReactMarkdown>
@@ -130,14 +121,15 @@ export default function Modal() {
           alt="feed 3 icon"
         />
         <div className="flex items-start justify-between">
-          <h1 className=" pt-3 ml-28 text-[16px] md:text-[20px] lg:text-[40px] font-medium text-[#D5D5D5]">
+          <h1
+            onClick={() => setModalOpen(false)}
+            className="cursor-pointer pt-3 ml-28 text-[16px] md:text-[20px] lg:text-[40px] font-medium text-[#D5D5D5]"
+          >
             Market Sentiment &<br /> Direction
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
               <ReactMarkdown
-              // rehypePlugins={[rehypeRaw]}
-              // remarkPlugins={[remarkGfm]}
               >
                 {feed["marketSentimentAndDirections"]}
               </ReactMarkdown>
@@ -155,7 +147,7 @@ export default function Modal() {
         </div>
         <div className="flex items-center gap-5">
           <p className="text-black font-semibold px-2 py-px rounded-md bg-[#D8E864]">
-            {moment(feedData.summary.timestamp).format("MMMM Do")}
+            {moment(feedData.summary.timestamp).format("MMMM Do, hA")}
           </p>
           <input
             ref={inputRef1}

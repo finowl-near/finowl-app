@@ -11,6 +11,7 @@ import getTrendingMindshareScore from "../api/getTrendingMindshareScore";
 import getOnchainActivity from "../api/getOnchainActivity";
 import { useRouter, useSearchParams } from "next/navigation";
 import getSummary from "../api/getSummary";
+import Pagination from "./Pagination";
 
 function parseInfluencers(data) {
   const result = new Map();
@@ -38,7 +39,7 @@ export function extractCategories(markdown) {
   const sections = {};
 
   // Regex to match section headers (both # and ##)
-  const headerRegex = /#+\s*(.*?)\n([\s\S]*?)(?=\n#|$)/g;
+  const headerRegex = /##\s*(.*?)\n([\s\S]*?)(?=\n##|$)/g;
 
   let match;
   while ((match = headerRegex.exec(markdown)) !== null) {
@@ -50,32 +51,15 @@ export function extractCategories(markdown) {
       sections.featuredTickersAndProjects = content;
     } else if (header.toLowerCase().includes("key insights from influencers")) {
       sections.keyInsightsFromInfluencers = content;
-    } else if (header.toLowerCase().includes("market sentiment and directions")) {
+    } else if (
+      header.toLowerCase().includes("market sentiment and directions")
+    ) {
       sections.marketSentimentAndDirections = content;
     }
   }
 
   return sections;
 }
-
-// export function extractCategories(content) {
-//   const categories = [
-//       "Featured Tickers and Projects",
-//       "Key Insights from Influencers",
-//       "Market Sentiment and Directions"
-//   ];
-
-//   const regex = new RegExp(`(?<=# )(${categories.join("|")})\\n([\\s\\S]*?)(?=(\\n# |$))`, "g");
-  
-//   const result = {};
-  
-//   let match;
-//   while ((match = regex.exec(content)) !== null) {
-//       result[match[1]] = match[2].trim();
-//   }
-
-//   return result;
-// }
 
 
 export default function Table() {
@@ -98,12 +82,15 @@ export default function Table() {
   const query = useQuery({
     queryKey: ["tableData", page],
     queryFn: async () => {
-      console.log("before fetching", page, feedId)
+      console.log("before fetching", page, feedId);
       const data = await getTableData(page);
       const trendingData = await getTrendingMindshareScore();
       const onChainData = await getOnchainActivity();
-      const feedData = await getSummary(feedId);
+
+      const feedData = await getSummary();
       const section = extractCategories(feedData.summary.content);
+      setFeed(section, feedData, feedData.total);
+
       console.log("summary content", feedData);
       console.log("summary data", section);
       console.log("data", data);
@@ -114,7 +101,6 @@ export default function Table() {
       setTopInfluencers(topInfluencers);
       setOnchainActivity(onChainData);
       setAllInfluencers(allInfluencers);
-      setFeed(section, feedData);
       return data;
     },
   });
@@ -158,37 +144,12 @@ export default function Table() {
           <ChevronLeftIcon className="w-4" color="#D8E864" />
           <p className="text-[#D0D0D0]">Previous</p>
         </div>
-        <div className="flex gap-5">
-          {Array(tableData.total_page_cnt)
-            .fill(0)
-            .map((_, idx) => {
-              return (
-                <Fragment key={idx}>
-                  <p
-                    className={` ${
-                      page === idx
-                        ? "text-black bg-[#D8E864]"
-                        : "text-[#D0D0D0]"
-                    } font-semibold px-2 rounded-sm cursor-pointer`}
-                    onClick={() => {
-                      const newParams = new URLSearchParams(
-                        searchParams.toString()
-                      );
-                      newParams.set("page", idx.toString());
-                      router.push(`?${newParams.toString()}`, {
-                        scroll: false,
-                      });
-                    }}
-                  >
-                    {idx + 1}
-                  </p>
-                  {/* <p className="text-[#D0D0D0] font-semibold">2</p>
-                <p className="text-[#D0D0D0] font-semibold">3</p>
-                <p className="text-[#D0D0D0] font-semibold">4</p> */}
-                </Fragment>
-              );
-            })}
-        </div>
+        <Pagination
+          tableData={tableData}
+          page={page}
+          searchParams={searchParams}
+          router={router}
+        />
         <div className="flex cursor-pointer" onClick={handleNextPage}>
           <p className="text-[#D0D0D0]">Next</p>
           <ChevronRightIcon className="w-4" color="#D8E864" />

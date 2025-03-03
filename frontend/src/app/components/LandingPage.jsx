@@ -24,11 +24,6 @@ export default function LandingPage() {
       newParams.set("page", "0");
       router.replace(`?${newParams.toString()}`, { scroll: false });
     }
-    if (!searchParams.get("feedId")) {
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("feedId", "1");
-      router.replace(`?${newParams.toString()}`, { scroll: false });
-    }
   }, [searchParams, router]);
 
   useEffect(() => {

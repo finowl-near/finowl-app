@@ -1,6 +1,5 @@
 import Image from "next/image";
 import React from "react";
-// import prIcon from "@/app/assets/svg/ProfileIcon.svg";
 import czIcon from "@/app/assets/cz.png";
 import StarIcon from "./Icons/StarIcon";
 import {

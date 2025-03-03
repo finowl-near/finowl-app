@@ -10,8 +10,6 @@ if (!influencers) return null
 
   return (
     <div className="flex items-center justify-center">
-      {/* {tickerArray.map((val, idx) => {
-        return ( */}
           <>
             <div className="w-6 h-6 flex  left-0 z-20 justify-center items-center rounded-full bg-[#FF6347]/30 border border-[#FF6B34]">
               <p className="text-[#FF6B34] font-semibold text-sm ">{tickerArray[0][1]}</p>
@@ -23,8 +21,6 @@ if (!influencers) return null
               <p className="text-[#60FF60] font-semibold text-sm ">{tickerArray[2][1]}</p>
             </div>
           </>
-        {/* );
-      })} */}
     </div>
   );
 }

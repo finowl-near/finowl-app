@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import LeafIcon from "./Icons/LeafIcon";
 import BigLeafIcon from "./Icons/BigLeafIcon";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
@@ -8,11 +8,21 @@ import Image from "next/image";
 import dophin from "@/app/assets/svg/dophin.svg";
 import whale from "@/app/assets/svg/whale.svg";
 import useTableData from "../hooks/useTableData";
+import { useWalletSelector } from "@near-wallet-selector/react-hook";
 
 export default function TrendingOnchainActivity() {
-  const onChainData  = useTableData((state) => state.onChainData);
+  const onChainData = useTableData((state) => state.onChainData);
   console.log("on chain", onChainData);
-  if (!onChainData) return null
+  const { signedAccountId, signIn, signOut } = useWalletSelector();
+  const [blur, setBlur] = useState(true);
+  useEffect(() => {
+    if (signedAccountId) {
+      setBlur(false);
+    } else {
+      setBlur(true);
+    }
+  }, [signedAccountId]);
+  if (!onChainData) return null;
   return (
     <>
       <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
@@ -27,68 +37,70 @@ export default function TrendingOnchainActivity() {
           <ChevronRightIcon className="w-5" color="#D8E864" />
         </div>
         <div className="px-4 relative">
+          <div className={`absolute ${blur ? "block": "hidden"} top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white`}>
+            Please connect Wallet
+          </div>
           <div className="absolute right-0 bottom-0">
             <BigLeafIcon />
           </div>
-          <table className="w-full">
+          <table className={`w-full ${blur && "blur-md"}`}>
             <thead>
               <tr>
-                <th className="text-[#CECECE]">Name</th>
+                <th className="text-[#CECECE] text-left pl-5">Name</th>
                 <th className="text-[#CECECE]">Onchain Score</th>
                 <th className="text-[#CECECE]">Volume</th>
-                {/* <th className="text-[#CECECE]">%</th> */}
               </tr>
             </thead>
             <tbody>
-              {onChainData.tickers
-                .map((ticker, idx) => {
-                  return (
-                    <tr key={Math.random()}>
-                      <td className="text-[#D8E864] flex gap-4 justify-center font-bold text-center py-3">
-                        {idx + 1} <span className="text-[#CECECE]">{ticker.ticker_symbol}</span>
-                      </td>
-                      <td className="py-2">
-                        <div className="flex items-center justify-center">
-                          <div className="relative">
-                            <Image
-                              className="w-8  z-10 "
-                              src={dophin}
-                              width={undefined}
-                              height={undefined}
-                              alt="dophin icon "
-                            />
-                            <span className="absolute top-4 -right-1 z-10 text-xs h-4 w-4 p-1 flex items-center justify-center rounded-full border-2 border-black bg-[#B0DEF6] text-black font-semibold">
-                              5
-                            </span>
-                          </div>
-                          <div className="relative">
-                            <Image
-                              className="w-8 mask-sm"
-                              src={whale}
-                              width={undefined}
-                              height={undefined}
-                              alt="dophin icon "
-                            />
-                            <span className="absolute top-4 -right-2 h-4 w-4 p-1 text-xs border-2 border-black flex items-center  justify-center rounded-full bg-[#356FF9] text-black font-semibold">
-                              5
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 text-[#CECECE] text-center font-bold">
-                        { (Math.random() * (5 - 1) + 1).toFixed(2) }M
-                      </td>
-                      {/* <td className="py-3 flex justify-center items-center">
-                        <div className="flex items-center">
-                          <ArrowUpIcon />
-                          <span className="text-[#D8E864] font-bold ml-1 text-base">
-                            +150%
+              {onChainData.tickers.map((ticker, idx) => {
+                return (
+                  <tr key={Math.random()}>
+                    <td className="text-[#D8E864] font-bold text-center py-3">
+                      <div className="flex gap-4">
+                        <span className="text-[#D8E864] text-base font-bold">
+                          {idx + 1}
+                        </span>
+                        <div className="">
+                          <span className="text-[#D0D0D0] text-base font-bold">
+                            {ticker.ticker_symbol}
                           </span>
                         </div>
-                      </td> */}
-                    </tr>
-                  );
-                })}
+                      </div>
+                    </td>
+                    <td className="py-2">
+                      <div className="flex items-center justify-center">
+                        <div className="relative">
+                          <Image
+                            className="w-8  z-10 "
+                            src={dophin}
+                            width={undefined}
+                            height={undefined}
+                            alt="dophin icon "
+                          />
+                          <span className="absolute top-4 -right-1 z-10 text-xs h-4 w-4 p-1 flex items-center justify-center rounded-full border-2 border-black bg-[#B0DEF6] text-black font-semibold">
+                            5
+                          </span>
+                        </div>
+                        <div className="relative">
+                          <Image
+                            className="w-8 mask-sm"
+                            src={whale}
+                            width={undefined}
+                            height={undefined}
+                            alt="dophin icon "
+                          />
+                          <span className="absolute top-4 -right-2 h-4 w-4 p-1 text-xs border-2 border-black flex items-center  justify-center rounded-full bg-[#356FF9] text-black font-semibold">
+                            5
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 text-[#CECECE] text-center font-bold">
+                      {(Math.random() * (5 - 1) + 1).toFixed(2)}M
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
