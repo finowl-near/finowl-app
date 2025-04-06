@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"finowl-ai-assistant/internal/handlers"
 	"log"
 	"net/http"
 	"os"
@@ -15,15 +15,9 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Placeholder handler for /create-conversation
-	http.HandleFunc("/create-conversation", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "/create-conversation not yet implemented")
-	})
+	http.HandleFunc("/create-conversation", handlers.CreateConversationHandler)
 
-	// Placeholder handler for /register
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, " /register not yet implemented")
-	})
+	http.HandleFunc("/register", handlers.RegisterHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
