@@ -1,6 +1,7 @@
 package main
 
 import (
+	"finowl-ai-assistant/internal/handlers"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,10 +21,7 @@ func main() {
 		fmt.Fprintln(w, "/create-conversation not yet implemented")
 	})
 
-	// Placeholder handler for /register
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, " /register not yet implemented")
-	})
+	http.HandleFunc("/register", handlers.RegisterHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
