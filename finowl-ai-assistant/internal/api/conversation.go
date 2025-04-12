@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"encoding/base64"
@@ -7,17 +7,15 @@ import (
 	"log"
 	"math/big"
 	"net/http"
-	"os"
 
-	near "github.com/aurora-is-near/near-api-go"
-	"github.com/aurora-is-near/near-api-go/utils"
+	"finowl-ai-assistant/pkg/near"
 )
 
 type CreateConversationRequest struct {
 	ConversationID string `json:"conversation_id"`
 }
 
-func CreateConversationHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateConversationHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
 		return
@@ -29,21 +27,7 @@ func CreateConversationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := os.Getenv("NEAR_USER_ACCOUNT_ID")
-	userPK := os.Getenv("NEAR_USER_PRIVATE_KEY")
-	ownerID := os.Getenv("NEAR_OWNER_ACCOUNT_ID")
-	ownerPK := os.Getenv("NEAR_OWNER_PRIVATE_KEY")
-	contractID := os.Getenv("NEAR_CONTRACT_ID")
-	rpc := os.Getenv("NEAR_RPC_URL")
-
-	userKey, _ := utils.Ed25519PrivateKeyFromString(userPK)
-	ownerKey, _ := utils.Ed25519PrivateKeyFromString(ownerPK)
-
-	conn := near.NewConnection(rpc)
-	userAccount := near.LoadAccountWithPrivateKey(conn, userID, userKey)
-	ownerAccount := near.LoadAccountWithPrivateKey(conn, ownerID, ownerKey)
-
-	userBalance, err := GetUserBalance(userAccount, contractID, userID)
+	userBalance, err := h.NearClient.GetUserBalance(h.NearClient.GetUserAccountID())
 	if err != nil {
 		http.Error(w, "Could not check user balance: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -52,15 +36,7 @@ func CreateConversationHandler(w http.ResponseWriter, r *http.Request) {
 	minTokens := big.NewInt(1_000_000)
 	if userBalance.Cmp(minTokens) < 0 {
 		log.Printf("⚠️ Low balance (%s), funding user...\n", userBalance.String())
-		transferArgs := map[string]interface{}{
-			"receiver_id": userID,
-			"amount":      "1000000",
-		}
-		transferJSON, _ := json.Marshal(transferArgs)
-		gas := uint64(100_000_000_000_000)
-		oneYocto := big.NewInt(1)
-
-		_, err := ownerAccount.FunctionCall(contractID, "ft_transfer", transferJSON, gas, *oneYocto)
+		err := h.NearClient.FundUser(h.NearClient.GetUserAccountID(), "1000000")
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Auto-funding failed: %v", err), http.StatusInternalServerError)
 			return
@@ -68,15 +44,7 @@ func CreateConversationHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("✅ Auto-funded user successfully")
 	}
 
-	args := map[string]interface{}{
-		"function_name":   "start_ai_conversation",
-		"conversation_id": req.ConversationID,
-	}
-	argsJSON, _ := json.Marshal(args)
-	gas := uint64(100_000_000_000_000)
-	zero := big.NewInt(0)
-
-	result, err := userAccount.FunctionCall(contractID, "call_js_func", argsJSON, gas, *zero)
+	result, err := h.NearClient.CreateConversation(req.ConversationID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Transaction failed: %v", err), http.StatusInternalServerError)
 		return
@@ -103,7 +71,7 @@ func CreateConversationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if failureRaw, ok := status["Failure"]; ok {
-		errMsg := ExtractContractError(failureRaw)
+		errMsg := near.ExtractContractError(failureRaw)
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": false,

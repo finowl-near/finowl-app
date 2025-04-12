@@ -1,7 +1,7 @@
 package feedstock_test
 
 import (
-	"finowl-ai-assistant/feedstock"
+	"finowl-ai-assistant/pkg/feedstock"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -39,7 +39,7 @@ func TestGetSummary(t *testing.T) {
 	defer server.Close()
 
 	// Create client with the mock server URL
-	client := feedstock.NewClient(server.URL)
+	client := feedstock.NewClient(server.URL, "/summary", 60*time.Second)
 
 	// Call the method being tested
 	summary, err := client.GetSummary(123)
@@ -100,7 +100,7 @@ func TestFetchSummaries(t *testing.T) {
 	defer server.Close()
 
 	// Create client with the mock server URL
-	client := feedstock.NewClient(server.URL)
+	client := feedstock.NewClient(server.URL, "/summary", 60*time.Second)
 
 	// Define test parameters
 	startID := 200
@@ -183,7 +183,7 @@ func TestGetLastSummaryID(t *testing.T) {
 	defer server.Close()
 
 	// Create a client with the mock server URL
-	client := feedstock.NewClient(server.URL)
+	client := feedstock.NewClient(server.URL, "/summary", 60*time.Second)
 
 	// Call the client method being tested
 	lastID, err := client.GetLastSummaryID()
