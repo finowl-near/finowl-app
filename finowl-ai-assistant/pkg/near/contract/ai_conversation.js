@@ -173,7 +173,8 @@ export function check_user_status() {
       created_at: Date.now(),
       conversations: [],
       token_grants: [],
-      token_purchases: []
+      token_purchases: [],
+      storage_enabled: true // Default to storing conversations
     };
     
     env.set_data(user_key, JSON.stringify(user_profile));
@@ -250,4 +251,241 @@ export function grant_free_tokens() {
     success: true, 
     amount: free_token_amount.toString() 
   }));
-} 
+}
+
+/**
+ * Creates a new conversation for the user.
+ * 
+ * @returns {string} The new conversation ID
+ */
+export function start_new_conversation() {
+  const account_id = env.signer_account_id();
+  let input = {};
+  
+  try {
+    input = JSON.parse(env.input());
+  } catch (e) {
+    input = {};
+  }
+  
+  const title = input.title || "New Conversation";
+  
+  // Generate unique conversation ID
+  const conversation_id = `${account_id}_${Date.now()}`;
+  
+  // Create conversation metadata
+  const conversation_metadata = {
+    id: conversation_id,
+    owner: account_id,
+    title: title,
+    created_at: Date.now(),
+    last_active: Date.now(),
+    message_count: 0,
+    tokens_used: "0"
+  };
+  
+  // Store conversation metadata
+  env.set_data(
+    `conversation_${conversation_id}_metadata`,
+    JSON.stringify(conversation_metadata)
+  );
+  
+  // Initialize empty message history
+  env.set_data(
+    `conversation_${conversation_id}_messages`,
+    JSON.stringify([])
+  );
+  
+  // Add to user's conversation list
+  update_user_conversations(conversation_id);
+  
+  // Return the conversation ID and metadata
+  env.value_return(JSON.stringify({ 
+    conversation_id: conversation_id,
+    metadata: conversation_metadata
+  }));
+}
+
+/**
+ * Updates a user's conversation list with a new conversation.
+ * 
+ * @param {string} conversation_id - The ID of the conversation to add
+ */
+function update_user_conversations(conversation_id) {
+  const account_id = env.signer_account_id();
+  const user_convos_key = `user_${account_id}_conversations`;
+  
+  // Get existing conversations
+  let conversations = [];
+  const existing_data = env.get_data(user_convos_key);
+  
+  if (existing_data) {
+    conversations = JSON.parse(existing_data);
+  }
+  
+  // Add new conversation to the list if not already there
+  if (!conversations.includes(conversation_id)) {
+    conversations.push(conversation_id);
+  }
+  
+  // Update storage
+  env.set_data(user_convos_key, JSON.stringify(conversations));
+}
+
+/**
+ * Lists all conversations for the current user.
+ * 
+ * @returns {string} JSON array of conversation metadata
+ */
+export function list_user_conversations() {
+  const account_id = env.signer_account_id();
+  const user_convos_key = `user_${account_id}_conversations`;
+  
+  // Get conversation IDs
+  const conversations_data = env.get_data(user_convos_key);
+  if (!conversations_data) {
+    env.value_return(JSON.stringify([]));
+    return;
+  }
+  
+  const conversation_ids = JSON.parse(conversations_data);
+  const conversations = [];
+  
+  // Retrieve metadata for each conversation
+  for (const id of conversation_ids) {
+    const metadata = env.get_data(`conversation_${id}_metadata`);
+    if (metadata) {
+      conversations.push(JSON.parse(metadata));
+    }
+  }
+  
+  // Sort by last active, newest first
+  conversations.sort((a, b) => b.last_active - a.last_active);
+  
+  env.value_return(JSON.stringify(conversations));
+}
+
+/**
+ * Gets metadata for a specific conversation.
+ * 
+ * @returns {string} Conversation metadata as a JSON string
+ */
+export function get_conversation_metadata() {
+  const { conversation_id } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  if (!conversation_id) {
+    env.panic("Must provide conversation_id");
+    return;
+  }
+  
+  // Get conversation metadata
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata = env.get_data(metadata_key);
+  
+  if (!metadata) {
+    env.panic(`Conversation not found: ${conversation_id}`);
+    return;
+  }
+  
+  // Parse metadata to check ownership
+  const metadata_obj = JSON.parse(metadata);
+  
+  // Verify ownership
+  if (metadata_obj.owner !== account_id) {
+    env.panic("Not authorized to view this conversation");
+    return;
+  }
+  
+  env.value_return(metadata);
+}
+
+/**
+ * Retrieves the message history for a conversation.
+ * 
+ * @returns {string} JSON array of messages in the conversation
+ */
+export function get_conversation_history() {
+  const { conversation_id } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  if (!conversation_id) {
+    env.panic("Must provide conversation_id");
+    return;
+  }
+  
+  // Verify conversation exists and user owns it
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (!metadata_json) {
+    env.panic("Conversation not found");
+    return;
+  }
+  
+  const metadata = JSON.parse(metadata_json);
+  if (metadata.owner !== account_id) {
+    env.panic("Not authorized to view this conversation");
+    return;
+  }
+  
+  // Get messages
+  const messages_key = `conversation_${conversation_id}_messages`;
+  const messages_json = env.get_data(messages_key);
+  
+  if (!messages_json) {
+    env.value_return(JSON.stringify([]));
+    return;
+  }
+  
+  env.value_return(messages_json);
+}
+
+/**
+ * Deletes a conversation and its messages.
+ * 
+ * @returns {string} Result of the delete operation
+ */
+export function delete_conversation() {
+  const { conversation_id } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  if (!conversation_id) {
+    env.panic("Must provide conversation_id");
+    return;
+  }
+  
+  // Verify conversation exists and user owns it
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (!metadata_json) {
+    env.panic("Conversation not found");
+    return;
+  }
+  
+  const metadata = JSON.parse(metadata_json);
+  if (metadata.owner !== account_id) {
+    env.panic("Not authorized to delete this conversation");
+    return;
+  }
+  
+  // Delete conversation data
+  env.clear_data(metadata_key);
+  env.clear_data(`conversation_${conversation_id}_messages`);
+  
+  // Remove from user's conversation list
+  const user_convos_key = `user_${account_id}_conversations`;
+  const conversations_json = env.get_data(user_convos_key);
+  
+  if (conversations_json) {
+    const conversations = JSON.parse(conversations_json);
+    const updated_conversations = conversations.filter(id => id !== conversation_id);
+    env.set_data(user_convos_key, JSON.stringify(updated_conversations));
+  }
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    conversation_id: conversation_id
+  }));
+}
