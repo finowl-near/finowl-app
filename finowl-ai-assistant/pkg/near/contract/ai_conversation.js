@@ -707,3 +707,281 @@ function calculateTokens(text) {
   // Simple approximation: ~4 chars per token on average
   return Math.max(1, Math.ceil(text.length / 4));
 }
+
+/**
+ * Charges tokens for sending a message.
+ * 
+ * @returns {string} Result of the token charge operation
+ */
+export function charge_per_message() {
+  const { conversation_id, token_count } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  // Set a default token cost if not provided
+  const tokens_to_charge = token_count ? BigInt(token_count) : 1_000_000n;
+  
+  // Check if user has enough tokens
+  const user_balance = BigInt(get_user_token_balance(account_id));
+  if (user_balance < tokens_to_charge) {
+    env.panic(`Insufficient tokens. Required: ${tokens_to_charge.toString()}, Available: ${user_balance.toString()}`);
+    return;
+  }
+  
+  // Get conversation metadata
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (!metadata_json) {
+    env.panic(`Conversation not found: ${conversation_id}`);
+    return;
+  }
+  
+  const metadata = JSON.parse(metadata_json);
+  if (metadata.owner !== account_id) {
+    env.panic("Not authorized to charge tokens for this conversation");
+    return;
+  }
+  
+  // Transfer tokens to contract
+  env.ft_transfer_internal(
+    account_id,
+    env.current_account_id(),
+    tokens_to_charge.toString()
+  );
+  
+  // Update conversation token usage
+  metadata.tokens_used = (BigInt(metadata.tokens_used) + tokens_to_charge).toString();
+  env.set_data(metadata_key, JSON.stringify(metadata));
+  
+  // Update last charged timestamp
+  metadata.last_charged = Date.now();
+  env.set_data(metadata_key, JSON.stringify(metadata));
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    amount_charged: tokens_to_charge.toString(),
+    new_balance: (user_balance - tokens_to_charge).toString(),
+    conversation_id: conversation_id
+  }));
+}
+
+/**
+ * Gets the token balance for the current user or a specified account.
+ * 
+ * @returns {string} The token balance
+ */
+export function get_token_balance() {
+  let input;
+  try {
+    input = JSON.parse(env.input());
+  } catch (e) {
+    input = {};
+  }
+  
+  const account_id = input.account_id || env.signer_account_id();
+  const balance = env.ft_balance_of(account_id);
+  
+  env.value_return(JSON.stringify({
+    account_id: account_id,
+    balance: balance
+  }));
+}
+
+/**
+ * Helper function to get a user's token balance.
+ * For internal use within other functions.
+ * 
+ * @param {string} account_id - The account to check
+ * @returns {string} The user's token balance
+ */
+function get_user_token_balance(account_id) {
+  return env.ft_balance_of(account_id);
+}
+
+/**
+ * Calculates how many messages a user can send with their current balance.
+ * 
+ * @returns {string} Number of messages user can afford
+ */
+export function calculate_message_allowance() {
+  const account_id = env.signer_account_id();
+  const token_cost_per_message = 1_000_000n;
+  const balance = BigInt(get_user_token_balance(account_id));
+  
+  const message_allowance = balance / token_cost_per_message;
+  
+  env.value_return(JSON.stringify({ 
+    token_balance: balance.toString(),
+    messages_remaining: message_allowance.toString(),
+    token_cost_per_message: token_cost_per_message.toString()
+  }));
+}
+
+/**
+ * Pre-reserves tokens for an AI conversation.
+ * This allows the user to reserve the maximum expected tokens for a conversation.
+ * 
+ * @returns {string} Reservation details
+ */
+export function reserve_tokens() {
+  const { amount, conversation_id } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  if (!amount || !conversation_id) {
+    env.panic("Must provide amount and conversation_id");
+    return;
+  }
+  
+  // Parse the amount to reserve
+  const reserve_amount = BigInt(amount);
+  
+  // Check user balance
+  const user_balance = BigInt(get_user_token_balance(account_id));
+  if (user_balance < reserve_amount) {
+    env.panic(`Insufficient tokens. Required: ${reserve_amount.toString()}, Available: ${user_balance.toString()}`);
+    return;
+  }
+  
+  // Get conversation metadata
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (!metadata_json) {
+    env.panic(`Conversation not found: ${conversation_id}`);
+    return;
+  }
+  
+  const metadata = JSON.parse(metadata_json);
+  if (metadata.owner !== account_id) {
+    env.panic("Not authorized to reserve tokens for this conversation");
+    return;
+  }
+  
+  // Create reservation record
+  const reservation_id = `${conversation_id}_reserve_${Date.now()}`;
+  const reservation_data = {
+    id: reservation_id,
+    conversation_id: conversation_id,
+    account_id: account_id,
+    amount: reserve_amount.toString(),
+    timestamp: Date.now(),
+    status: "active"
+  };
+  
+  // Store reservation
+  env.set_data(`reservation_${reservation_id}`, JSON.stringify(reservation_data));
+  
+  // Transfer tokens to contract
+  env.ft_transfer_internal(
+    account_id,
+    env.current_account_id(),
+    reserve_amount.toString()
+  );
+  
+  // Update conversation metadata with reservation
+  if (!metadata.reservations) {
+    metadata.reservations = [];
+  }
+  metadata.reservations.push(reservation_id);
+  metadata.tokens_reserved = reserve_amount.toString();
+  env.set_data(metadata_key, JSON.stringify(metadata));
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    reservation_id: reservation_id,
+    amount: reserve_amount.toString(),
+    conversation_id: conversation_id
+  }));
+}
+
+/**
+ * Refunds unused tokens from a reservation.
+ * 
+ * @returns {string} Refund details
+ */
+export function refund_reserved_tokens() {
+  const { reservation_id, amount } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  if (!reservation_id || !amount) {
+    env.panic("Must provide reservation_id and amount");
+    return;
+  }
+  
+  // Get reservation data
+  const reservation_key = `reservation_${reservation_id}`;
+  const reservation_json = env.get_data(reservation_key);
+  
+  if (!reservation_json) {
+    env.panic(`Reservation not found: ${reservation_id}`);
+    return;
+  }
+  
+  const reservation = JSON.parse(reservation_json);
+  
+  // Verify ownership
+  if (reservation.account_id !== account_id) {
+    env.panic("Not authorized to refund this reservation");
+    return;
+  }
+  
+  // Check reservation status
+  if (reservation.status !== "active") {
+    env.panic(`Reservation is not active: ${reservation.status}`);
+    return;
+  }
+  
+  // Parse the refund amount
+  const refund_amount = BigInt(amount);
+  const reserved_amount = BigInt(reservation.amount);
+  
+  if (refund_amount > reserved_amount) {
+    env.panic(`Refund amount exceeds reserved amount. Available: ${reserved_amount.toString()}, Requested: ${refund_amount.toString()}`);
+    return;
+  }
+  
+  // Transfer tokens back to user
+  env.ft_transfer_internal(
+    env.current_account_id(),
+    account_id,
+    refund_amount.toString()
+  );
+  
+  // Update reservation
+  const remaining_amount = reserved_amount - refund_amount;
+  
+  if (remaining_amount <= 0) {
+    // Close reservation
+    reservation.status = "closed";
+    reservation.closed_at = Date.now();
+    reservation.amount = "0";
+  } else {
+    // Update remaining amount
+    reservation.amount = remaining_amount.toString();
+    reservation.last_refund = Date.now();
+  }
+  
+  env.set_data(reservation_key, JSON.stringify(reservation));
+  
+  // Update conversation metadata
+  const conversation_id = reservation.conversation_id;
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (metadata_json) {
+    const metadata = JSON.parse(metadata_json);
+    if (metadata.tokens_reserved) {
+      const current_reserved = BigInt(metadata.tokens_reserved);
+      metadata.tokens_reserved = (current_reserved - refund_amount).toString();
+      env.set_data(metadata_key, JSON.stringify(metadata));
+    }
+  }
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    reservation_id: reservation_id,
+    refunded: refund_amount.toString(),
+    remaining: remaining_amount.toString(),
+    status: reservation.status
+  }));
+}
