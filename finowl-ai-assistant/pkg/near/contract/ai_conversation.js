@@ -151,4 +151,103 @@ export function buy_tokens_for_near() {
   } else {
     env.panic(`Must attach exactly 0.5 NEAR to get ${tokens_to_transfer} tokens`);
   }
+}
+
+/**
+ * Checks if a user already exists and creates a profile if they're new.
+ * Also checks eligibility for free tokens.
+ * 
+ * @returns {string} Status message indicating if user is new or existing
+ */
+export function check_user_status() {
+  const account_id = env.signer_account_id();
+  const user_key = `user_${account_id}_metadata`;
+  
+  // Check if user exists
+  const user_data = env.get_data(user_key);
+  
+  if (!user_data) {
+    // New user - create profile
+    const user_profile = {
+      account_id: account_id,
+      created_at: Date.now(),
+      conversations: [],
+      token_grants: [],
+      token_purchases: []
+    };
+    
+    env.set_data(user_key, JSON.stringify(user_profile));
+    
+    // Create conversations list
+    env.set_data(`user_${account_id}_conversations`, JSON.stringify([]));
+    
+    // Check if eligible for free tokens
+    const near_balance = env.account_balance();
+    if (BigInt(near_balance) >= 1_000_000_000_000_000_000_000_000n) { // 1 NEAR
+      grant_free_tokens();
+    }
+    
+    env.value_return(JSON.stringify({ status: "new_user", profile_created: true }));
+    return;
+  } else {
+    // Existing user
+    env.value_return(JSON.stringify({ status: "existing_user" }));
+    return;
+  }
+}
+
+/**
+ * Grants free tokens to new users with sufficient NEAR balance.
+ * 
+ * @returns {string} Result of the token grant operation
+ */
+export function grant_free_tokens() {
+  const account_id = env.signer_account_id();
+  const free_token_amount = 100_000_000n; // Enough for 100 messages
+  
+  // Get user profile
+  const user_key = `user_${account_id}_metadata`;
+  const user_data_json = env.get_data(user_key);
+  
+  if (!user_data_json) {
+    env.panic("User profile not found");
+    return;
+  }
+  
+  const user_data = JSON.parse(user_data_json);
+  
+  // Check if user already received free tokens
+  if (user_data.token_grants && user_data.token_grants.some(grant => grant.type === "welcome")) {
+    env.value_return(JSON.stringify({ 
+      success: false, 
+      reason: "User already received welcome tokens" 
+    }));
+    return;
+  }
+  
+  // Transfer tokens to the user
+  env.ft_transfer_internal(
+    env.current_account_id(),
+    account_id,
+    free_token_amount.toString()
+  );
+  
+  // Record the grant
+  if (!user_data.token_grants) {
+    user_data.token_grants = [];
+  }
+  
+  user_data.token_grants.push({
+    type: "welcome",
+    amount: free_token_amount.toString(),
+    timestamp: Date.now()
+  });
+  
+  // Update user profile
+  env.set_data(user_key, JSON.stringify(user_data));
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    amount: free_token_amount.toString() 
+  }));
 } 
