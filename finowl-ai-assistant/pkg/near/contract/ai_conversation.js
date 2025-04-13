@@ -489,3 +489,221 @@ export function delete_conversation() {
     conversation_id: conversation_id
   }));
 }
+
+/**
+ * Stores a new message in a conversation.
+ * 
+ * @returns {string} Result of the message storage operation
+ */
+export function store_message() {
+  const input = JSON.parse(env.input());
+  const { conversation_id, role, content } = input;
+  const account_id = env.signer_account_id();
+  
+  // Verify inputs
+  if (!conversation_id || !role || !content) {
+    env.panic("Must provide conversation_id, role, and content");
+    return;
+  }
+  
+  // Verify role is valid
+  if (role !== "user" && role !== "assistant" && role !== "system") {
+    env.panic("Role must be 'user', 'assistant', or 'system'");
+    return;
+  }
+  
+  // Verify conversation exists and user owns it
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (!metadata_json) {
+    env.panic("Conversation not found");
+    return;
+  }
+  
+  const metadata = JSON.parse(metadata_json);
+  if (metadata.owner !== account_id) {
+    env.panic("Not authorized to add messages to this conversation");
+    return;
+  }
+  
+  // Check if storage is enabled for this user
+  const user_key = `user_${account_id}_metadata`;
+  const user_data_json = env.get_data(user_key);
+  let storage_enabled = true; // Default to true if user data not found
+  
+  if (user_data_json) {
+    const user_data = JSON.parse(user_data_json);
+    storage_enabled = user_data.storage_enabled !== false; // Default to true if not specified
+  }
+  
+  // Calculate token count (simple approximation)
+  const token_count = calculateTokens(content);
+  
+  // Create new message
+  const message = {
+    id: `${conversation_id}_msg_${metadata.message_count}`,
+    role: role,
+    content: content,
+    timestamp: Date.now(),
+    tokens: token_count
+  };
+  
+  // Only store message content if storage is enabled
+  if (storage_enabled) {
+    // Get existing messages
+    const messages_key = `conversation_${conversation_id}_messages`;
+    let messages = [];
+    const existing_messages = env.get_data(messages_key);
+    
+    if (existing_messages) {
+      messages = JSON.parse(existing_messages);
+    }
+    
+    // Add message to list
+    messages.push(message);
+    
+    // Update conversation storage
+    env.set_data(messages_key, JSON.stringify(messages));
+  }
+  
+  // Always update conversation metadata
+  metadata.message_count++;
+  metadata.last_active = Date.now();
+  metadata.tokens_used = (BigInt(metadata.tokens_used) + BigInt(token_count)).toString();
+  env.set_data(metadata_key, JSON.stringify(metadata));
+  
+  env.value_return(JSON.stringify({ 
+    success: true,
+    message_id: message.id,
+    tokens: token_count,
+    stored: storage_enabled
+  }));
+}
+
+/**
+ * Sets the conversation storage preference for a user.
+ * If disabled, messages will not be stored but metadata will still be tracked.
+ * 
+ * @returns {string} Result of the update operation
+ */
+export function set_storage_preference() {
+  const { enabled } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  const user_key = `user_${account_id}_metadata`;
+  
+  // Get user profile
+  const user_data_json = env.get_data(user_key);
+  
+  if (!user_data_json) {
+    env.panic("User profile not found");
+    return;
+  }
+  
+  // Update storage preference
+  const user_data = JSON.parse(user_data_json);
+  user_data.storage_enabled = enabled === true;
+  
+  // Save updated profile
+  env.set_data(user_key, JSON.stringify(user_data));
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    storage_enabled: user_data.storage_enabled 
+  }));
+}
+
+/**
+ * Updates the title of a conversation.
+ * 
+ * @returns {string} Result of the update operation
+ */
+export function update_conversation_title() {
+  const { conversation_id, title } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  if (!conversation_id || !title) {
+    env.panic("Must provide conversation_id and title");
+    return;
+  }
+  
+  // Verify conversation exists and user owns it
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (!metadata_json) {
+    env.panic("Conversation not found");
+    return;
+  }
+  
+  const metadata = JSON.parse(metadata_json);
+  if (metadata.owner !== account_id) {
+    env.panic("Not authorized to update this conversation");
+    return;
+  }
+  
+  // Update title
+  metadata.title = title;
+  env.set_data(metadata_key, JSON.stringify(metadata));
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    conversation_id: conversation_id,
+    title: title
+  }));
+}
+
+/**
+ * Clears the message history for a conversation but keeps the metadata.
+ * 
+ * @returns {string} Result of the clear operation
+ */
+export function clear_conversation_history() {
+  const { conversation_id } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+  
+  if (!conversation_id) {
+    env.panic("Must provide conversation_id");
+    return;
+  }
+  
+  // Verify conversation exists and user owns it
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata_json = env.get_data(metadata_key);
+  
+  if (!metadata_json) {
+    env.panic("Conversation not found");
+    return;
+  }
+  
+  const metadata = JSON.parse(metadata_json);
+  if (metadata.owner !== account_id) {
+    env.panic("Not authorized to clear this conversation");
+    return;
+  }
+  
+  // Clear messages but keep message count in metadata
+  const messages_key = `conversation_${conversation_id}_messages`;
+  env.set_data(messages_key, JSON.stringify([]));
+  
+  // Update metadata to reflect clearing
+  metadata.last_active = Date.now();
+  env.set_data(metadata_key, JSON.stringify(metadata));
+  
+  env.value_return(JSON.stringify({ 
+    success: true, 
+    conversation_id: conversation_id
+  }));
+}
+
+/**
+ * Helper function to estimate token count in a message.
+ * This is a simple approximation - in production you'd want a more accurate tokenizer.
+ * 
+ * @param {string} text - The message text
+ * @returns {number} Estimated token count
+ */
+function calculateTokens(text) {
+  // Simple approximation: ~4 chars per token on average
+  return Math.max(1, Math.ceil(text.length / 4));
+}
