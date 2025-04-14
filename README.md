@@ -1,78 +1,116 @@
-# FinOwl 🦉  
-**Your AI Financial Advisor for Smarter Cryptocurrency Investments**  
+# 🦉 FinOwl  
+**Your AI Financial Advisor for Smarter Cryptocurrency Investments**
 
-FinOwl is an autonomous AI-powered financial advisor designed to empower cryptocurrency users with actionable investment insights. By leveraging advanced market trend analysis, influencer sentiment tracking, and mindshare evaluation, FinOwl bridges the gap between complex market data and data-driven investment strategies.
-
----
-
-## 🚀 **Purpose and Goals**  
-FinOwl’s mission is to simplify cryptocurrency investing by offering:  
-- **Market Trend Analysis**: Analyzing market movements and identifying key narratives.  
-- **Influencer Sentiment Tracking**: Following top influencers to detect trending tokens.  
-- **Mindshare Evaluation**: Gauging the hype and popularity of crypto projects.  
-- **AI-Driven Strategies**: Suggesting actionable strategies like dollar-cost averaging (DCA) or trading narrative-based tokens.  
-
-Our vision is to create an autonomous AI capable of suggesting and executing strategies tailored to user preferences and market conditions.
+[🌐 Visit FinOwl → finowl.finance](https://finowl.finance)  
+[🐦 Follow FinOwlX on Twitter → @FinOwlX](https://twitter.com/FinOwlX)
 
 ---
 
-## 🌍 **Serving NEAR Users**  
-FinOwl integrates deeply with the NEAR ecosystem to deliver unique benefits for its users:  
-1. **NEAR Intents for Token Swaps**:  
-   Seamlessly execute token swaps and purchases directly on the NEAR blockchain using intents.  
-
-2. **Exclusive Trend Feeds**:  
-   A feed summarizing the latest market trends, emerging projects, and narratives is updated in real time.  
-   - **For AI Algorithms**: This data informs investment strategies.  
-   - **For Users**: Offers a curated overview without the need to track hundreds of influencers.  
-   Accessible exclusively to NEAR users, requiring wallet authentication for access.  
+![FinOwl Banner](/assets/finowl-banner.png) <!-- Replace with your actual image path -->
 
 ---
 
-## 🔧 **Current Progress**  
-- **Backend**: Fully operational with robust tweet analysis and market trend tracking.  
-- **Dockerized Infrastructure**: Ensures scalability and stability.  
-- **Refined Algorithms**: Optimized scoring models and database handling.  
+## 🚀 What is FinOwl?
+
+**FinOwl** is an AI-powered crypto intelligence platform that helps investors navigate the market with real-time insights, curated data, and autonomous strategies. From social sentiment to on-chain data, FinOwl delivers actionable analysis to make smarter crypto trades.
 
 ---
 
-## 📅 **Next Steps**  
-- Implement AI-driven investment strategy suggestions.  
-- Develop NEAR-based smart contracts for autonomous token trading.  
-- Build a user-friendly frontend for seamless interaction with the platform.  
+## 🔍 Core Features
+
+### 1. Top Trending Coins
+Tracks and ranks the hottest tokens based on:
+- Mindshare on Twitter/X
+- Engagement metrics
+- Trading volume
+- On-chain signals
+
+### 2. Real-Time Feed Summary
+Updated every 4 hours:
+- Crypto & macro news
+- Influencer insights
+- Market sentiment  
+Sourced from FinOwl’s custom backend.
+
+### 3. FinOwlX — AI Twitter Agent *(In Progress - Almost There)*
+Autonomous Twitter bot that:
+- Posts trending projects
+- Shares alpha-rich market summaries  
+Follow: [@FinOwlX](https://twitter.com/FinOwlX)
+
+### 4. FinOwl AI Chatbot *(Coming Soon)*
+Conversational crypto assistant that:
+- Analyzes tokens & trends
+- Suggests strategies based on market data
+- Gated access via NEAR staking
+
+### 5. On-Chain Trading via Chatbot *(Coming Soon)*
+Execute trades directly from the chat:
+- Buy/sell actions
+- DCA strategies
+- Portfolio management  
+Powered by NEAR Intents & smart contracts.
 
 ---
-## 🌟 **Ecosystem Impact**  
-- **Empowering Investors**: Helps users make informed decisions with curated insights and actionable strategies.  
-- **Driving NEAR Adoption**: By leveraging NEAR intents and offering exclusive features for NEAR users, FinOwl directly contributes to the ecosystem’s growth.  
-- **Market Awareness**: Keeps users informed about trends and opportunities without overwhelming them with data.
+
+## 🌉 Built on NEAR
+
+FinOwl deeply integrates with the NEAR blockchain:
+- Fast, low-cost token swaps using NEAR Intents
+- Exclusive tools for NEAR wallet holders
+- Strategy automation via smart contracts
 
 ---
 
-## 🎯 **Use Cases**  
-1. **Trend Monitoring**: NEAR users can access exclusive market trend feeds to stay updated.  
-2. **AI Investment Strategies**: Receive personalized, actionable strategies based on data-driven insights.  
-3. **Autonomous Trading**: Execute trades on NEAR blockchain using smart contracts.  
+## 📈 Impact & Vision
+
+- **Simplify Alpha Discovery** – FinOwl curates trends so users don’t have to chase noise  
+- **Boost NEAR Adoption** – Real use cases powered by NEAR’s smart contract platform  
+- **Empower Smarter Investing** – Data-driven strategies, not emotional decisions
 
 ---
-# Project Structure
+
+## 💡 Use Cases
+
+- Monitor top trending crypto tokens in real time  
+- Get curated feed summaries & market insights  
+- Execute AI-recommended trades on NEAR
+
 ---
 
-## 🛠️ **Tech Stack**  
-- **Backend**: Go, Docker  
+## 🧱 Project Architecture
+
+### 🔧 Tech Stack
+- **Backend**: Go (Golang), Docker  
+- **Frontend**: React, Next.js  
 - **Database**: PostgreSQL  
-- **Web Application Frontend**: React, Next.js  
-- **Blockchain**: NEAR Protocol (Smart Contracts in WASM)  
-- **AI/ML**: Sentiment Analysis and Scoring Algorithms using Claude/OpenAI APIs  
+- **Blockchain**: NEAR Protocol (Smart Contracts in TypeScript/WASM)  
+- **AI/ML**: Sentiment scoring with OpenAI & Deepseek APIs
 
-### Directories
+### 📁 Structure
 
-- **LICENSE**: Licensing information for the project.
-- **README.md**: This documentation file.
-- **contract-ts**: TypeScript Smart contracts.
-- **finowl-backend**: The backend service for data processing and API management.
-- **frontend**: The user interface for data visualization and interaction.
-- **package-lock.json**: Dependency management for the frontend application.
+| Directory         | Description                                 |
+|------------------|---------------------------------------------|
+| `contract-ts`     | NEAR smart contracts in TypeScript          |
+| `finowl-backend`  | Backend for data processing & APIs          |
+| `frontend`        | React app for user interaction              |
+| `README.md`       | This documentation file                     |
+| `LICENSE`         | Licensing information                       |
 
+---
 
-For more information, please refer to the documentation or contact the development team.
+## 🧠 Next Milestones
+
+- [ ] Launch FinOwl AI Chatbot with NEAR-gated access  
+- [ ] Enable on-chain trading via chatbot + intents  
+- [ ] Add real-time portfolio dashboards  
+
+---
+
+## 📫 Connect With Us
+
+- 🌐 Website: [https://finowl.finance](https://finowl.finance)  
+- 🐦 Twitter: [@FinOwlX](https://twitter.com/FinOwlX)  
+- 💬 Coming Soon: Telegram & Discord
+
+---
