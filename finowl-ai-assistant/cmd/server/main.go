@@ -96,7 +96,7 @@ func waitForShutdown(server *http.Server) {
 	log.Println("⚠️ Shutting down server...")
 
 	// Create a deadline context for shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Attempt graceful shutdown
