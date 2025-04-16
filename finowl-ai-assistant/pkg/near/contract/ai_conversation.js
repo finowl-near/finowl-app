@@ -222,3 +222,128 @@ export function deduct_tokens_from_conversation() {
 function calculateTokens(text) {
   return Math.max(1, Math.ceil(text.length / 4));
 }
+
+/**
+ * Returns all messages in a conversation.
+ */
+export function get_conversation_history() {
+  const { conversation_id } = JSON.parse(env.input());
+  const messages_key = `conversation_${conversation_id}_messages`;
+  const messages_json = env.get_data(messages_key);
+  env.value_return(messages_json || JSON.stringify([]));
+}
+
+/**
+ * Returns all conversation IDs for a user account.
+ */
+export function get_user_conversations() {
+  const { account_id } = JSON.parse(env.input());
+  const key = `user_${account_id}_conversations`;
+  const list = env.get_data(key);
+  env.value_return(list || JSON.stringify([]));
+}
+
+/**
+ * Fetch conversation metadata by ID.
+ */
+export function get_conversation_metadata() {
+  const { conversation_id } = JSON.parse(env.input());
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const metadata = env.get_data(metadata_key);
+  if (!metadata) env.panic("Conversation not found: " + conversation_id);
+  env.value_return(metadata);
+}
+
+/**
+ * Check if a given user is already registered (has a user profile).
+ *
+ * @param {string} account_id - The NEAR account to check
+ * @returns {boolean} Whether the user is registered or not
+ */
+export function is_user_registered() {
+  const { account_id } = JSON.parse(env.input());
+  if (!account_id) {
+    env.panic("Must provide account_id");
+    return;
+  }
+
+  const key = `user_${account_id}_metadata`;
+  const profile = env.get_data(key);
+
+  env.value_return(JSON.stringify({ registered: !!profile }));
+}
+
+/**
+ * Get the user's current FinOwl token balance.
+ *
+ * @param {string} account_id - The user's NEAR account
+ * @returns {string} Token balance in smallest denomination (e.g., yocto-tokens)
+ */
+export function get_user_token_balance() {
+  const { account_id } = JSON.parse(env.input());
+  if (!account_id) {
+    env.panic("Must provide account_id");
+    return;
+  }
+
+  const balance = env.ft_balance_of(account_id);
+  env.value_return(JSON.stringify({ balance }));
+}
+
+/**
+ * Check if the user has already received their welcome (free) tokens.
+ *
+ * @param {string} account_id - The user's NEAR account
+ * @returns {boolean} Whether welcome tokens were already granted
+ */
+export function has_received_welcome_tokens() {
+  const { account_id } = JSON.parse(env.input());
+  const profile_key = `user_${account_id}_metadata`;
+  const profile_json = env.get_data(profile_key);
+
+  if (!profile_json) {
+    env.value_return(JSON.stringify({ received: false }));
+    return;
+  }
+
+  const profile = JSON.parse(profile_json);
+  const received = profile.token_grants?.some(g => g.type === "welcome") || false;
+
+  env.value_return(JSON.stringify({ received }));
+}
+
+/**
+ * Get the number of tokens still available (not yet consumed) for a conversation.
+ *
+ * @param {string} conversation_id - The unique ID of the conversation
+ * @returns {string} Remaining tokens for that conversation
+ */
+export function get_tokens_remaining() {
+  const { conversation_id } = JSON.parse(env.input());
+  const key = `conversation_${conversation_id}_metadata`;
+  const metadata_raw = env.get_data(key);
+
+  if (!metadata_raw) {
+    env.value_return(JSON.stringify({ remaining: "0" }));
+    return;
+  }
+
+  const metadata = JSON.parse(metadata_raw);
+  const used = BigInt(metadata.tokens_used || "0");
+  const reserved = BigInt(metadata.tokens_reserved || "0");
+  const remaining = reserved > used ? reserved - used : 0n;
+
+  env.value_return(JSON.stringify({ remaining: remaining.toString() }));
+}
+
+/**
+ * Check whether a conversation exists in storage.
+ *
+ * @param {string} conversation_id - The unique ID of the conversation
+ * @returns {boolean} Whether the conversation exists or not
+ */
+export function conversation_exists() {
+  const { conversation_id } = JSON.parse(env.input());
+  const exists = !!env.get_data(`conversation_${conversation_id}_metadata`);
+  env.value_return(JSON.stringify({ exists }));
+}
