@@ -207,3 +207,16 @@ func (c *Client) ViewFunction(methodName string, args map[string]interface{}) (m
 	}
 	return result.(map[string]interface{}), nil
 }
+
+// GrantFreeTokens calls the smart contract function to grant free tokens to the current user
+func (c *Client) GrantFreeTokens() (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name": "grant_free_tokens",
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	gas := uint64(50_000_000_000_000) // 50 TGas
+	deposit := big.NewInt(0)
+
+	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
+}

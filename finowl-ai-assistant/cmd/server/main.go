@@ -58,6 +58,7 @@ func setupServer(application *app.App) *http.Server {
 		mux.HandleFunc("/register", application.APIHandler.RegisterHandler)
 		mux.HandleFunc("/api/check-user", application.APIHandler.CheckUserStatusHandler)
 		mux.HandleFunc("/api/list-users", application.APIHandler.ListAllUsersHandler)
+		mux.HandleFunc("/api/grant-free-tokens", application.APIHandler.GrantFreeTokensHandler)
 	} else {
 		// Add placeholder handlers when NEAR functionality is not available
 		unavailableHandler := func(w http.ResponseWriter, r *http.Request) {
