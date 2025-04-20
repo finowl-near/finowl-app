@@ -37,27 +37,33 @@ function parseInfluencers(data) {
 
 export function extractCategories(markdown) {
   const sections = {};
-  
-  // Define the categories we want to extract with their tag identifiers
+
   const categories = [
     { key: "featuredTickersAndProjects", tag: "FEATURED TICKERS AND PROJECTS" },
     { key: "keyInsightsFromInfluencers", tag: "KEY INSIGHTS FROM INFLUENCERS" },
     { key: "marketSentimentAndDirections", tag: "MARKET SENTIMENT AND DIRECTIONS" }
   ];
-  
-  // Extract content between BEGIN/END tags for each category
+
   for (const category of categories) {
     const tagPattern = new RegExp(
-      `<!-- BEGIN ${category.tag} -->\\s*([\\s\\S]*?)\\s*<!-- END ${category.tag} -->`, 
+      `<!-- BEGIN ${category.tag} -->[\\s\\r\\n]*((?:.*\\n)*?)[\\s\\r\\n]*<!-- END ${category.tag} -->`,
       'i'
     );
-    
+
     const match = markdown.match(tagPattern);
     if (match && match[1]) {
-      sections[category.key] = match[1].trim();
+      let content = match[1].trim();
+
+      // Remove leading heading line if it matches the tag (e.g. "## FEATURED TICKERS AND PROJECTS")
+      const lines = content.split('\n');
+      if (lines[0].toUpperCase().includes(category.tag)) {
+        lines.shift();
+      }
+
+      sections[category.key] = lines.join('\n').trim();
     }
   }
-  
+
   return sections;
 }
 
