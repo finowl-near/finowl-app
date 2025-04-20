@@ -60,6 +60,10 @@ func setupServer(application *app.App) *http.Server {
 		mux.HandleFunc("/api/grant-free-tokens", application.APIHandler.GrantFreeTokensHandler)
 		mux.HandleFunc("/api/start-conversation", application.APIHandler.StartConversationHandler)
 		mux.HandleFunc("/api/get-user-conversations", application.APIHandler.GetUserConversationsHandler)
+		// in setupServer
+		mux.HandleFunc("/api/store-message", application.APIHandler.StoreMessageHandler)
+		mux.HandleFunc("/api/get-conversation-history", application.APIHandler.GetConversationHistoryHandler)
+		mux.HandleFunc("/api/get-user-balance", application.APIHandler.GetUserTokenBalanceHandler)
 	} else {
 		// Add placeholder handlers when NEAR functionality is not available
 		unavailableHandler := func(w http.ResponseWriter, r *http.Request) {
