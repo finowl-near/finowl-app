@@ -16,7 +16,7 @@ export default function TrendingMindshareScore() {
   return (
     <>
       <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
-        <div className="absolute top-2 right-0 w-32 h-8 bg-[#D8E864] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
+        <div className="absolute top-2 right-0 w-32 h-8 bg-[var(--primary-color)] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
         <div className="flex items-center p-4 cursor-pointer justify-between">
           <div className="flex items-center">
             <FireIcon />
@@ -24,7 +24,7 @@ export default function TrendingMindshareScore() {
               Trending Mindshare Score
             </p>
           </div>
-          <ChevronRightIcon className="w-5" color="#D8E864" />
+          <ChevronRightIcon className="w-5" color="var(--primary-color)" />
         </div>
         <div className="px-4 relative">
           <div className="absolute right-0 bottom-0">
@@ -43,9 +43,9 @@ export default function TrendingMindshareScore() {
                 {trendingData.tickers.map((ticker, idx) => {
                   return (
                     <tr key={Math.random()}>
-                      <td className="text-[#D8E864] font-bold text-center px-3 py-3">
+                      <td className="text-[var(--primary-color)] font-bold text-center px-3 py-3">
                         <div className="flex gap-4">
-                          <span className="text-[#D8E864] text-base font-bold">
+                          <span className="text-[var(--primary-color)] text-base font-bold">
                             {idx + 1}
                           </span>
                           <div className="">
@@ -55,7 +55,7 @@ export default function TrendingMindshareScore() {
                           </div>
                         </div>
                       </td>
-                      <td className="text-[#D8E864] font-bold text-center py-3">
+                      <td className="text-[var(--primary-color)] font-bold text-center py-3">
                         {ticker.mindshare_score}
                       </td>
                       <td className="py-3">

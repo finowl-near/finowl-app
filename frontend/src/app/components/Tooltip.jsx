@@ -42,7 +42,7 @@ const Tooltip = ({ children, text, above }) => {
               zIndex: 50, // Ensures tooltip appears on top
             }}
           >
-            <div className="absolute top-2 right-0 w-32 h-8 bg-[#D8E864] -z-10 rounded-[0px_0px_10px_10px] blur-xl opacity-65"></div>
+            <div className="absolute top-2 right-0 w-32 h-8 bg-[var(--primary-color)] -z-10 rounded-[0px_0px_10px_10px] blur-xl opacity-65"></div>
             {text}
           </div>,
           document.body

@@ -54,7 +54,7 @@ export default function Modal() {
             className="text-[#D0D0D0] py-2"
             onClick={() => setModalOpen(false)}
           >
-            <span className="text-[#D8E864]">{"<"}</span>Back
+            <span className="text-[var(--primary-color)]">{"<"}</span>Back
           </button>
         </div>
       </div>
@@ -78,8 +78,7 @@ export default function Modal() {
               className="text-white text-xl 
             "
             >
-              <ReactMarkdown
-              >
+              <ReactMarkdown>
                 {feed["featuredTickersAndProjects"]}
               </ReactMarkdown>
             </div>
@@ -104,8 +103,7 @@ export default function Modal() {
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
-              <ReactMarkdown
-              >
+              <ReactMarkdown>
                 {feed["keyInsightsFromInfluencers"]}
               </ReactMarkdown>
             </div>
@@ -129,8 +127,7 @@ export default function Modal() {
           </h1>
           <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
             <div className="text-white text-xl ">
-              <ReactMarkdown
-              >
+              <ReactMarkdown>
                 {feed["marketSentimentAndDirections"]}
               </ReactMarkdown>
             </div>
@@ -142,11 +139,11 @@ export default function Modal() {
           className="flex items-center cursor-pointer"
           onClick={handlePreviousFeed}
         >
-          <ChevronLeftIcon className="w-4" color="#D8E864" />
+          <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
           <p className="text-[#D0D0D0]">Previous</p>
         </div>
         <div className="flex items-center gap-5">
-          <p className="text-black font-semibold px-2 py-px rounded-md bg-[#D8E864]">
+          <p className="text-black font-semibold px-2 py-px rounded-md bg-[var(--primary-color)]">
             {moment(feedData.summary.timestamp).format("MMMM Do, hA")}
           </p>
           <input
@@ -177,7 +174,7 @@ export default function Modal() {
           onClick={handleNextFeed}
         >
           <p className="text-[#D0D0D0]">Next</p>
-          <ChevronRightIcon className="w-4" color="#D8E864" />
+          <ChevronRightIcon className="w-4" color="var(--primary-color)" />
         </div>
       </div>
     </div>

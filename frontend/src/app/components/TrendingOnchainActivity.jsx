@@ -8,25 +8,25 @@ import Image from "next/image";
 import dophin from "@/app/assets/svg/dophin.svg";
 import whale from "@/app/assets/svg/whale.svg";
 import useTableData from "../hooks/useTableData";
-import { useWalletSelector } from "@near-wallet-selector/react-hook";
+// import { useWalletSelector } from "@near-wallet-selector/react-hook";
 
 export default function TrendingOnchainActivity() {
   const onChainData = useTableData((state) => state.onChainData);
   console.log("on chain", onChainData);
-  const { signedAccountId, signIn, signOut } = useWalletSelector();
+  // const { signedAccountId, signIn, signOut } = useWalletSelector();
   const [blur, setBlur] = useState(true);
-  useEffect(() => {
-    if (signedAccountId) {
-      setBlur(false);
-    } else {
-      setBlur(true);
-    }
-  }, [signedAccountId]);
+  // useEffect(() => {
+  //   if (signedAccountId) {
+  //     setBlur(false);
+  //   } else {
+  //     setBlur(true);
+  //   }
+  // }, [signedAccountId]);
   if (!onChainData) return null;
   return (
     <>
       <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
-        <div className="absolute top-2 right-0 w-32 h-8 bg-[#D8E864] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
+        <div className="absolute top-2 right-0 w-32 h-8 bg-[var(--primary-color)] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
         <div className="flex items-center p-4 cursor-pointer justify-between">
           <div className="flex items-center">
             <LeafIcon />
@@ -34,10 +34,14 @@ export default function TrendingOnchainActivity() {
               Trending Onchain Activity
             </p>
           </div>
-          <ChevronRightIcon className="w-5" color="#D8E864" />
+          <ChevronRightIcon className="w-5" color="var(--primary-color)" />
         </div>
         <div className="px-4 relative">
-          <div className={`absolute ${blur ? "block": "hidden"} top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white`}>
+          <div
+            className={`absolute ${
+              blur ? "block" : "hidden"
+            } top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white`}
+          >
             Please connect Wallet
           </div>
           <div className="absolute right-0 bottom-0">
@@ -55,9 +59,9 @@ export default function TrendingOnchainActivity() {
               {onChainData.tickers.map((ticker, idx) => {
                 return (
                   <tr key={Math.random()}>
-                    <td className="text-[#D8E864] font-bold text-center py-3">
+                    <td className="text-[var(--primary-color)] font-bold text-center py-3">
                       <div className="flex gap-4">
-                        <span className="text-[#D8E864] text-base font-bold">
+                        <span className="text-[var(--primary-color)] text-base font-bold">
                           {idx + 1}
                         </span>
                         <div className="">

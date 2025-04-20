@@ -19,7 +19,7 @@ export default function SortingIcon() {
       />
       <path
         d="M4.04456 0.231384L7.13294 5.58062H0.956177L4.04456 0.231384Z"
-        fill="#D8E864"
+        fill="var(--primary-color)"
       />
       <path
         d="M4.04456 12.159L7.13294 6.80976H0.956177L4.04456 12.159Z"
@@ -31,7 +31,7 @@ export default function SortingIcon() {
       />
       <path
         d="M4.04456 12.159L7.13294 6.80976H0.956177L4.04456 12.159Z"
-        fill="#D8E864"
+        fill="var(--primary-color)"
       />
       <defs>
         <linearGradient

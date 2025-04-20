@@ -37,30 +37,55 @@ function parseInfluencers(data) {
 
 export function extractCategories(markdown) {
   const sections = {};
-
-  // Regex to match section headers (both # and ##)
-  const headerRegex = /##\s*(.*?)\n([\s\S]*?)(?=\n##|$)/g;
-
-  let match;
-  while ((match = headerRegex.exec(markdown)) !== null) {
-    const header = match[1].trim();
-    const content = match[2].trim();
-
-    // Map headers to standardized keys
-    if (header.toLowerCase().includes("featured tickers and projects")) {
-      sections.featuredTickersAndProjects = content;
-    } else if (header.toLowerCase().includes("key insights from influencers")) {
-      sections.keyInsightsFromInfluencers = content;
-    } else if (
-      header.toLowerCase().includes("market sentiment and directions")
-    ) {
-      sections.marketSentimentAndDirections = content;
+  
+  // Define the categories we want to extract with their tag identifiers
+  const categories = [
+    { key: "featuredTickersAndProjects", tag: "FEATURED TICKERS AND PROJECTS" },
+    { key: "keyInsightsFromInfluencers", tag: "KEY INSIGHTS FROM INFLUENCERS" },
+    { key: "marketSentimentAndDirections", tag: "MARKET SENTIMENT AND DIRECTIONS" }
+  ];
+  
+  // Extract content between BEGIN/END tags for each category
+  for (const category of categories) {
+    const tagPattern = new RegExp(
+      `<!-- BEGIN ${category.tag} -->\\s*([\\s\\S]*?)\\s*<!-- END ${category.tag} -->`, 
+      'i'
+    );
+    
+    const match = markdown.match(tagPattern);
+    if (match && match[1]) {
+      sections[category.key] = match[1].trim();
     }
   }
-
+  
   return sections;
 }
 
+// export function extractCategories(markdown) {
+//   const sections = {};
+
+//   // Regex to match section headers (both # and ##)
+//   const headerRegex = /##\s*(.*?)\n([\s\S]*?)(?=\n##|$)/g;
+
+//   let match;
+//   while ((match = headerRegex.exec(markdown)) !== null) {
+//     const header = match[1].trim();
+//     const content = match[2].trim();
+
+//     // Map headers to standardized keys
+//     if (header.toLowerCase().includes("featured tickers and projects")) {
+//       sections.featuredTickersAndProjects = content;
+//     } else if (header.toLowerCase().includes("key insights from influencers")) {
+//       sections.keyInsightsFromInfluencers = content;
+//     } else if (
+//       header.toLowerCase().includes("market sentiment and directions")
+//     ) {
+//       sections.marketSentimentAndDirections = content;
+//     }
+//   }
+
+//   return sections;
+// }
 
 export default function Table() {
   const router = useRouter();
@@ -125,7 +150,7 @@ export default function Table() {
   return (
     <div>
       <div className="relative overflow-hidden">
-        <div className="absolute top-2 right-1/2 translate-x-1/2 w-1/2 h-10 bg-[#D8E864] -z-10 rounded-[50px_50px_100px_100px] blur-2xl opacity-50"></div>
+        <div className="absolute top-2 right-1/2 translate-x-1/2 w-1/2 h-10 bg-[var(--primary-color)] -z-10 rounded-[50px_50px_100px_100px] blur-2xl opacity-50"></div>
         <div className="w-full h-[700px] max-h-[700px] rounded-[20px] border border-[#292929] max-w-[1400px] overflow-auto">
           <table className={`w-full custom-table`}>
             <TableHead />
@@ -141,7 +166,7 @@ export default function Table() {
       </div>
       <div className="p-4 flex justify-center gap-10">
         <div className="flex cursor-pointer" onClick={handlePreviousPage}>
-          <ChevronLeftIcon className="w-4" color="#D8E864" />
+          <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
           <p className="text-[#D0D0D0]">Previous</p>
         </div>
         <Pagination
@@ -152,7 +177,7 @@ export default function Table() {
         />
         <div className="flex cursor-pointer" onClick={handleNextPage}>
           <p className="text-[#D0D0D0]">Next</p>
-          <ChevronRightIcon className="w-4" color="#D8E864" />
+          <ChevronRightIcon className="w-4" color="var(--primary-color)" />
         </div>
       </div>
     </div>

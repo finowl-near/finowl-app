@@ -7,25 +7,27 @@ import FunnelIcon from "./Icons/FunnelIcon";
 import useSwitchTabs from "../hooks/useSwitchTabs";
 import wifiIcon from "@/app/assets/svg/wifiIcon.svg";
 import Image from "next/image";
+import ChatListIcon from "./Icons/ChatListIcon";
+import WifiIcon from "./Icons/WifiIcon";
 
 export default function TableSearch() {
   const { switchTabs, setSwitchTabs } = useSwitchTabs();
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex flex-col gap-2 md:flex-row  md:justify-between md:items-center">
       <div className="flex gap-5">
         <div
           className={`${
             !switchTabs &&
-            "rounded-md p-px bg-gradient-to-r from-transparent from-30% to-[#D8E864] w-[fit-content] transition-all ease-out duration-500 "
-          } `}
+            "bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content] transition-all duration-300 ease-in-out"
+          } rounded-md p-px `}
         >
           <button
             onClick={() => setSwitchTabs(false)}
             className={`${
               switchTabs
                 ? "text-[#9D9D9D] "
-                : "bg-black rounded-md px-2 py-px text-white "
-            } font-normal text-lg flex items-center`}
+                : "bg-black/80 rounded-md  text-white "
+            } font-normal px-2 py-px text-lg flex items-center`}
           >
             Mindshare
           </button>
@@ -33,35 +35,47 @@ export default function TableSearch() {
         <div
           className={`${
             switchTabs &&
-            "rounded-md p-px bg-gradient-to-r from-transparent from-30% to-[#D8E864] w-[fit-content] transition-all ease-out duration-500"
-          } `}
+            " bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content]"
+          } rounded-md p-px transition-all duration-300 ease-in-out`}
         >
           <button
             className={`${
               switchTabs
-                ? "bg-black rounded-md px-2 py-px text-white "
+                ? "bg-black/80 rounded-md  text-white "
                 : "text-[#9D9D9D] "
-            } font-normal text-lg flex items-center`}
+            } font-normal px-2 py-px text-lg flex items-center`}
             onClick={() => setSwitchTabs(true)}
           >
-            <Image
-              className="mr-2"
-              src={wifiIcon}
-              width={undefined}
-              height={undefined}
-              alt="wifi icon"
-            />
+            <WifiIcon/>
             Feed
           </button>
         </div>
+        <div
+          className={`${
+            switchTabs &&
+            " bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content]"
+          } rounded-md p-px transition-all duration-300 ease-in-out`}
+        >
+          <button
+            className={`${
+              switchTabs
+                ? "bg-black/80 rounded-md  text-white"
+                : "text-[#9D9D9D]"
+            } font-normal px-2 py-px text-lg flex items-center`}
+            onClick={() => setSwitchTabs(true)}
+          >
+            <ChatListIcon/>
+            Chat
+          </button>
+        </div>
       </div>
-      <div className="flex w-[25%] justify-end items-center gap-5">
+      <div className={`flex justify-end items-center gap-5 ${switchTabs && "hidden"}`}>
         <div className="relative overflow-hidden flex-grow">
           <MagnifyingGlassIcon
             className="w-10 p-2 absolute top-0"
-            color="#D8E864"
+            color="var(--primary-color)"
           />
-          <div className="absolute top-2 right-5 w-32 h-4 bg-[#D8E864] -z-10 rounded-[20px_20px_100px_100px] blur-xl opacity-65"></div>
+          <div className="absolute top-2 right-5 w-32 h-4 bg-[var(--primary-color)] -z-10 rounded-[20px_20px_100px_100px] blur-xl opacity-65"></div>
           <input
             className="bg-transparent outline-none w-full rounded-full pl-8 pr-2 py-2 border border-[#292929] text-white"
             placeholder="Search icon"

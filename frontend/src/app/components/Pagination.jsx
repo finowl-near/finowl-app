@@ -39,7 +39,11 @@ const Pagination = ({ tableData, page, searchParams, router }) => {
         </p>
       );
       if (startPage > 2) {
-        pages.push(<span className="text-[#D0D0D0]" key="ellipsis-start">...</span>);
+        pages.push(
+          <span className="text-[#D0D0D0]" key="ellipsis-start">
+            ...
+          </span>
+        );
       }
     }
 
@@ -50,7 +54,7 @@ const Pagination = ({ tableData, page, searchParams, router }) => {
           key={i}
           className={`${
             currentPage === i - 1
-              ? "text-black bg-[#D8E864]"
+              ? "text-black bg-[var(--primary-color)]"
               : "text-[#D0D0D0]"
           } font-semibold px-2 rounded-sm cursor-pointer`}
           onClick={() => handlePageClick(i - 1)}
@@ -63,7 +67,11 @@ const Pagination = ({ tableData, page, searchParams, router }) => {
     // Add the last page and ellipsis if needed
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
-        pages.push(<span className="text-[#D0D0D0]" key="ellipsis-end">...</span>);
+        pages.push(
+          <span className="text-[#D0D0D0]" key="ellipsis-end">
+            ...
+          </span>
+        );
       }
       pages.push(
         <p

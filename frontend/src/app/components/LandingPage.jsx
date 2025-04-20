@@ -8,9 +8,10 @@ import NewPost from "./NewPost";
 import TableSearch from "./TableSearch";
 import Table from "./Table";
 import useSwitchTabs from "../hooks/useSwitchTabs";
-import Feeds from "./Feeds";
+import Feeds0 from "./Feeds0";
 import Modal from "./Modal";
 import { useSearchParams } from "next/navigation";
+import Feeds from "./Feeds";
 
 export default function LandingPage() {
   const switchTabs = useSwitchTabs((state) => state.switchTabs);
@@ -36,7 +37,7 @@ export default function LandingPage() {
       <div className="grid grid-cols-[repeat(auto-fill,minmax(450px,1fr))]">
         <TrendingMindshareScore />
         <TrendingOnchainActivity />
-        <div className="m-4 flex flex-col flex-wrap justify-between col-span-full br-col-span-1">
+        <div className="m-4 grid grid-rows-2 col-span-full br-col-span-1">
           <PopularPost />
           <NewPost />
         </div>
@@ -47,7 +48,8 @@ export default function LandingPage() {
       {switchTabs ? (
         <div className="m-4">
           <Modal />
-          <Feeds />
+          {/* <Feeds0 /> */}
+          <Feeds/>
         </div>
       ) : (
         <div className="m-4">

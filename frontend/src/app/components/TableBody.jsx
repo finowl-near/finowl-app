@@ -51,7 +51,7 @@ export default function TableBody() {
       <tbody className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <tr>
           <td>
-            <InboxIcon className="w-20" color="#D8E864" />
+            <InboxIcon className="w-20" color="var(--primary-color)" />
           </td>
         </tr>
         <tr>
@@ -79,7 +79,7 @@ export default function TableBody() {
               <div className="flex">
                 <StarIcon className="w-6 mr-4" color="white" />
                 <div className="flex gap-4">
-                  <span className="text-[#D8E864] text-base font-bold">
+                  <span className="text-[var(--primary-color)] text-base font-bold">
                     {idx + 1}
                   </span>
                   <div className="flex items-center">
@@ -97,7 +97,7 @@ export default function TableBody() {
               </div>
             </td>
             <td align="center" className="py-4 px-3">
-              <p className="text-[#D8E864] font-medium text-center">
+              <p className="text-[var(--primary-color)] font-medium text-center">
                 {Math.floor(info.mindshare_score)}
               </p>
             </td>
@@ -151,7 +151,7 @@ export default function TableBody() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <button className="text-[#141414] font-bold flex items-center px-2 py-px ml-5 rounded-md bg-[#D8E864]">
+                  <button className="text-[#141414] font-bold flex items-center px-2 py-px ml-5 rounded-md bg-[var(--primary-color)]">
                     <EyeIcon className="w-4 mr-1" color="#141414" />
                     View
                   </button>
