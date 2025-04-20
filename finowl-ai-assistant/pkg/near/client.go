@@ -220,3 +220,55 @@ func (c *Client) GrantFreeTokens() (map[string]interface{}, error) {
 
 	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
 }
+
+// StartConversation starts a new conversation by reserving tokens and storing metadata
+func (c *Client) StartConversation(conversationID string, reserveAmount string) (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name":   "start_ai_conversation",
+		"conversation_id": conversationID,
+		"reserve_amount":  reserveAmount,
+	}
+	argsJSON, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal args: %w", err)
+	}
+
+	gas := uint64(50_000_000_000_000) // 50 TGas
+	deposit := big.NewInt(0)
+
+	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
+}
+
+// GetUserConversations fetches all conversation IDs for a given account
+func (c *Client) GetUserConversations(accountID string) ([]string, error) {
+	args := map[string]interface{}{
+		"function_name": "get_user_conversations",
+		"account_id":    accountID,
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	options := int64(-1)
+	resultRaw, err := c.userAccount.ViewFunction(c.contractID, "view_js_func", argsJSON, &options)
+	if err != nil {
+		return nil, err
+	}
+
+	resultMap := resultRaw.(map[string]interface{})
+	resultBytes := resultMap["result"].([]interface{})
+	bytes := make([]byte, len(resultBytes))
+	for i, v := range resultBytes {
+		if num, ok := v.(float64); ok {
+			bytes[i] = byte(num)
+		} else if n, ok := v.(json.Number); ok {
+			n64, _ := n.Int64()
+			bytes[i] = byte(n64)
+		}
+	}
+
+	var conversations []string
+	if err := json.Unmarshal(bytes, &conversations); err != nil {
+		return nil, err
+	}
+
+	return conversations, nil
+}

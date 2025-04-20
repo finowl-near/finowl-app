@@ -54,11 +54,12 @@ func setupServer(application *app.App) *http.Server {
 	// NEAR blockchain endpoints
 	if application.APIHandler != nil {
 		mux.HandleFunc("/api/register-storage", application.APIHandler.RegisterStorageHandler)
-		mux.HandleFunc("/create-conversation", application.APIHandler.CreateConversationHandler)
 		mux.HandleFunc("/register", application.APIHandler.RegisterHandler)
 		mux.HandleFunc("/api/check-user", application.APIHandler.CheckUserStatusHandler)
 		mux.HandleFunc("/api/list-users", application.APIHandler.ListAllUsersHandler)
 		mux.HandleFunc("/api/grant-free-tokens", application.APIHandler.GrantFreeTokensHandler)
+		mux.HandleFunc("/api/start-conversation", application.APIHandler.StartConversationHandler)
+		mux.HandleFunc("/api/get-user-conversations", application.APIHandler.GetUserConversationsHandler)
 	} else {
 		// Add placeholder handlers when NEAR functionality is not available
 		unavailableHandler := func(w http.ResponseWriter, r *http.Request) {
