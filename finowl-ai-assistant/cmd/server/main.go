@@ -53,6 +53,7 @@ func setupServer(application *app.App) *http.Server {
 
 	// NEAR blockchain endpoints
 	if application.APIHandler != nil {
+		mux.HandleFunc("/api/register-storage", application.APIHandler.RegisterStorageHandler)
 		mux.HandleFunc("/create-conversation", application.APIHandler.CreateConversationHandler)
 		mux.HandleFunc("/register", application.APIHandler.RegisterHandler)
 	} else {
