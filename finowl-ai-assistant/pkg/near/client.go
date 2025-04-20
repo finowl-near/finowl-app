@@ -1,6 +1,7 @@
 package near
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -152,4 +153,47 @@ func (c *Client) RegisterUserStorage(accountID string) (map[string]interface{}, 
 	gas := uint64(50_000_000_000_000) // 50 Tgas
 
 	return c.ownerAccount.FunctionCall(c.contractID, "storage_deposit", argsJSON, gas, *amount)
+}
+
+func (c *Client) CheckUserStatus() (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name": "check_user_status",
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	resultRaw, err := c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, *defaultGas(), *big.NewInt(0))
+	if err != nil {
+		return nil, fmt.Errorf("failed to call check_user_status: %w", err)
+	}
+
+	status, ok := resultRaw["status"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected response format: missing status field")
+	}
+
+	if encoded, ok := status["SuccessValue"].(string); ok && encoded != "" {
+		decodedBytes, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode base64 response: %w", err)
+		}
+
+		var parsed map[string]interface{}
+		if err := json.Unmarshal(decodedBytes, &parsed); err != nil {
+			return nil, fmt.Errorf("invalid JSON response: %w", err)
+		}
+
+		return parsed, nil
+	}
+
+	if failure, ok := status["Failure"]; ok {
+		return nil, fmt.Errorf("contract call failed: %s", ExtractContractError(failure))
+	}
+
+	return nil, fmt.Errorf("unexpected result structure")
+}
+
+// defaultGas returns the default gas value for NEAR transactions
+func defaultGas() *uint64 {
+	g := uint64(100_000_000_000_000)
+	return &g
 }
