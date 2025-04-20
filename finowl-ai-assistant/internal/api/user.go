@@ -61,3 +61,29 @@ func (h *Handler) ListAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 		"users":   users,
 	})
 }
+
+func (h *Handler) GetUserTokenBalanceHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		AccountID string `json:"account_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.AccountID == "" {
+		http.Error(w, "Invalid JSON or missing account_id", http.StatusBadRequest)
+		return
+	}
+
+	balance, err := h.NearClient.GetUserTokenBalance(req.AccountID)
+	if err != nil {
+		http.Error(w, "Failed to fetch balance: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"balance": balance,
+	})
+}

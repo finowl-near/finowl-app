@@ -93,3 +93,31 @@ func (h *Handler) GetUserConversationsHandler(w http.ResponseWriter, r *http.Req
 		"conversations": conversations,
 	})
 }
+
+func (h *Handler) GetConversationHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	req := struct {
+		ConversationID string `json:"conversation_id"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ConversationID == "" {
+		http.Error(w, "Invalid JSON or missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.NearClient.GetConversationHistory(req.ConversationID)
+	if err != nil {
+		http.Error(w, "Failed to fetch history: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":   true,
+		"messages":  messages,
+		"msg_count": len(messages),
+	})
+}

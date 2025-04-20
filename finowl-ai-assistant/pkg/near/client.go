@@ -272,3 +272,127 @@ func (c *Client) GetUserConversations(accountID string) ([]string, error) {
 
 	return conversations, nil
 }
+
+// StoreMessage stores a user message in a conversation
+func (c *Client) StoreMessage(conversationID, role, content string) (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name":   "store_message",
+		"conversation_id": conversationID,
+		"role":            role,
+		"content":         content,
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	gas := uint64(50_000_000_000_000) // 50 TGas
+	deposit := big.NewInt(0)
+
+	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
+}
+
+// GetConversationHistory retrieves all messages from a given conversation ID
+func (c *Client) GetConversationHistory(conversationID string) ([]map[string]interface{}, error) {
+	// Prepare JSON args
+	args := map[string]interface{}{
+		"function_name":   "get_conversation_history",
+		"conversation_id": conversationID,
+	}
+	argsJSON, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode args: %w", err)
+	}
+
+	// Call view function
+	resultRaw, err := c.userAccount.ViewFunction(c.contractID, "view_js_func", argsJSON, nil)
+	if err != nil {
+		return nil, fmt.Errorf("view function call failed: %w", err)
+	}
+
+	// The raw result comes as a byte array under resultRaw["result"]
+	resultMap, ok := resultRaw.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected result type")
+	}
+
+	rawResult, ok := resultMap["result"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid 'result' field")
+	}
+
+	bytes := make([]byte, len(rawResult))
+	for i, v := range rawResult {
+		switch val := v.(type) {
+		case float64:
+			bytes[i] = byte(val)
+		case json.Number:
+			n, _ := val.Int64()
+			bytes[i] = byte(n)
+		default:
+			return nil, fmt.Errorf("unexpected byte format at index %d", i)
+		}
+	}
+
+	// Unmarshal decoded bytes into messages
+	var messages []map[string]interface{}
+	if err := json.Unmarshal(bytes, &messages); err != nil {
+		return nil, fmt.Errorf("failed to decode conversation history: %w", err)
+	}
+
+	return messages, nil
+}
+
+func (c *Client) GetUserTokenBalance(accountID string) (string, error) {
+	args := map[string]interface{}{
+		"function_name": "get_user_token_balance",
+		"account_id":    accountID,
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	// Call the view function
+	resultRaw, err := c.userAccount.ViewFunction(c.contractID, "view_js_func", argsJSON, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to call view function: %w", err)
+	}
+
+	// Extract result field
+	resultMap, ok := resultRaw.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("unexpected result type: %T", resultRaw)
+	}
+
+	resultBytes, ok := resultMap["result"].([]interface{})
+	if !ok {
+		return "", fmt.Errorf("missing or invalid 'result' field")
+	}
+
+	// Convert result bytes to actual bytes
+	bytes := make([]byte, 0, len(resultBytes))
+	for _, v := range resultBytes {
+		switch val := v.(type) {
+		case float64:
+			bytes = append(bytes, byte(val))
+		case json.Number:
+			n, err := val.Int64()
+			if err != nil {
+				return "", fmt.Errorf("invalid number in result: %w", err)
+			}
+			bytes = append(bytes, byte(n))
+		default:
+			return "", fmt.Errorf("unexpected type in result: %T", val)
+		}
+	}
+
+	// If we got no bytes, return "0" as the balance
+	if len(bytes) == 0 {
+		return "0", nil
+	}
+
+	// Decode the bytes into a struct with balance
+	var decoded struct {
+		Balance string `json:"balance"`
+	}
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return "", fmt.Errorf("failed to decode balance: %w", err)
+	}
+
+	return decoded.Balance, nil
+}
