@@ -138,3 +138,18 @@ func ExtractContractError(failure interface{}) string {
 func (c *Client) GetUserAccountID() string {
 	return c.userAccount.AccountID()
 }
+
+// RegisterUserStorage calls storage_deposit for a given account
+func (c *Client) RegisterUserStorage(accountID string) (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"account_id": accountID,
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	amount := new(big.Int)
+	amount.SetString("1250000000000000000000", 10) // 0.00125 NEAR
+
+	gas := uint64(50_000_000_000_000) // 50 Tgas
+
+	return c.ownerAccount.FunctionCall(c.contractID, "storage_deposit", argsJSON, gas, *amount)
+}
