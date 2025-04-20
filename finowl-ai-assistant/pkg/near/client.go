@@ -197,3 +197,13 @@ func defaultGas() *uint64 {
 	g := uint64(100_000_000_000_000)
 	return &g
 }
+
+// ViewFunction calls a view function on the contract
+func (c *Client) ViewFunction(methodName string, args map[string]interface{}) (map[string]interface{}, error) {
+	argsJSON, _ := json.Marshal(args)
+	result, err := c.userAccount.ViewFunction(c.contractID, methodName, argsJSON, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call view function %s: %w", methodName, err)
+	}
+	return result.(map[string]interface{}), nil
+}

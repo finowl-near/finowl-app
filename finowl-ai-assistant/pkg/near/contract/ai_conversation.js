@@ -10,14 +10,6 @@
  * - Seamless token grants (free and backend-verified paid).
  */
 
-
-// =============================================
-// PART 1: User Onboarding & Token Granting
-// =============================================
-
-/**
- * Check if a user has a profile. If not, create one.
- */
 export function check_user_status() {
   const account_id = env.signer_account_id();
   const key = `user_${account_id}_metadata`;
@@ -33,8 +25,23 @@ export function check_user_status() {
     };
     env.set_data(key, JSON.stringify(profile));
     env.set_data(`user_${account_id}_conversations`, JSON.stringify([]));
+
+    // ✅ Track in user_list
+    const userListKey = "user_list";
+    const currentList = JSON.parse(env.get_data(userListKey) || "[]");
+
+    if (!currentList.includes(account_id)) {
+      currentList.push(account_id);
+      env.set_data(userListKey, JSON.stringify(currentList));
+    }
+
     env.value_return(JSON.stringify({ status: "new_user", profile_created: true }));
   }
+}
+
+export function list_all_users() {
+  const list = env.get_data("user_list");
+  env.value_return(list || JSON.stringify([]));
 }
 
 /**
