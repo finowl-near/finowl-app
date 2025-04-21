@@ -396,3 +396,53 @@ func (c *Client) GetUserTokenBalance(accountID string) (string, error) {
 
 	return decoded.Balance, nil
 }
+
+// GrantPaidTokens grants tokens when a user pays in NEAR
+func (c *Client) GrantPaidTokens() (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name": "grant_paid_tokens",
+	}
+	argsJSON, _ := json.Marshal(args)
+	gas := uint64(50_000_000_000_000)
+	deposit := big.NewInt(0)
+	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
+}
+
+// AddTokensToConversation adds tokens to an existing conversation
+func (c *Client) AddTokensToConversation(conversationID string, amount string) (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name":   "add_tokens_to_conversation",
+		"conversation_id": conversationID,
+		"amount":          amount,
+	}
+	argsJSON, _ := json.Marshal(args)
+	gas := uint64(50_000_000_000_000)
+	deposit := big.NewInt(0)
+	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
+}
+
+// RefundReservedTokens refunds unused tokens to the user
+func (c *Client) RefundReservedTokens(conversationID string) (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name":   "refund_reserved_tokens",
+		"conversation_id": conversationID,
+	}
+	argsJSON, _ := json.Marshal(args)
+	gas := uint64(50_000_000_000_000)
+	deposit := big.NewInt(0)
+	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
+}
+
+func (c *Client) DeductTokens(conversationID string, amount string) (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name":   "deduct_tokens_from_conversation",
+		"conversation_id": conversationID,
+		"amount":          amount,
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	gas := uint64(50_000_000_000_000)
+	deposit := big.NewInt(0)
+
+	return c.ownerAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
+}
