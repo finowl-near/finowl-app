@@ -121,3 +121,30 @@ func (h *Handler) GetConversationHistoryHandler(w http.ResponseWriter, r *http.R
 		"msg_count": len(messages),
 	})
 }
+
+func (h *Handler) GetConversationMetadataHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		ConversationID string `json:"conversation_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ConversationID == "" {
+		http.Error(w, "Invalid request or missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	metadata, err := h.NearClient.GetConversationMetadata(req.ConversationID)
+	if err != nil {
+		http.Error(w, "Failed to fetch metadata: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":  true,
+		"metadata": metadata,
+	})
+}
