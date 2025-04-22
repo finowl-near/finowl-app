@@ -40,6 +40,25 @@ func main() {
 	waitForShutdown(server)
 }
 
+// corsMiddleware adds CORS headers to responses
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow any origin for development
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Call the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 // setupServer creates and configures the HTTP server
 func setupServer(application *app.App) *http.Server {
 	// Create router and register handlers
@@ -84,7 +103,7 @@ func setupServer(application *app.App) *http.Server {
 	// Create and configure the server
 	return &http.Server{
 		Addr:         ":" + application.Config.Server.Port,
-		Handler:      mux,
+		Handler:      corsMiddleware(mux), // Apply CORS middleware
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

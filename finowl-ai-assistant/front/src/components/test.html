@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ask The Block</title>
+<style>
+  :root{
+    --bg:#0C1624;
+    --c1:#21E2C0;    /* teal  */
+    --c2:#685CFF;    /* indigo*/
+  }
+  html,body{
+    height:100%;margin:0;
+    display:flex;flex-direction:column;
+    justify-content:center;align-items:center;
+    background:var(--bg);
+    font-family:"Inter","SF Pro",system-ui,sans-serif;
+  }
+  /* logo container */
+  .logo{
+    width:280px;
+    animation:tilt 7s ease-in-out infinite alternate;
+  }
+  @keyframes tilt{
+    from{transform:rotateX(0deg) rotateY(0deg);}
+    to  {transform:rotateX(18deg) rotateY(-18deg);}
+  }
+  /* word‑mark */
+  h1{
+    margin:32px 0 0;
+    font-weight:800;
+    font-size:clamp(1.8rem,5vw,3rem);
+    letter-spacing:-1px;
+    background:linear-gradient(135deg,var(--c1),var(--c2));
+    -webkit-background-clip:text;
+    color:transparent;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== speech‑cube SVG (verified) ===== -->
+<svg class="logo" viewBox="0 0 140 140" fill="none"
+     stroke="url(#g)" stroke-width="12"
+     stroke-linecap="round" stroke-linejoin="round">
+  <!-- gradient -->
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"  stop-color="var(--c1)"/>
+      <stop offset="100%" stop-color="var(--c2)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- cube outline -->
+  <polyline points="
+      30,30   85,30   110,50   110,95
+      70,120  30,100  30,55   85,30
+  "/>
+
+  <!-- speech‑tail -->
+  <polyline points="30,100 30,130 60,140"/>
+</svg>
+
+<h1>ASK THE BLOCK</h1>
+
+</body>
+</html>
