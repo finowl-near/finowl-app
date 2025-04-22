@@ -14,6 +14,22 @@ func (h *Handler) GrantPaidTokensHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Parse the account ID from request body
+	var req struct {
+		AccountID string `json:"account_id"`
+	}
+
+	// Try to decode the request body
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil && err.Error() != "EOF" {
+		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// If no account ID was provided, use an empty string (the client will use the default)
+	accountID := req.AccountID
+
+	// Call the NEAR client to grant paid tokens
 	result, err := h.NearClient.GrantPaidTokens()
 	if err != nil {
 		http.Error(w, "Failed to grant paid tokens: "+err.Error(), http.StatusInternalServerError)
@@ -34,6 +50,7 @@ func (h *Handler) GrantPaidTokensHandler(w http.ResponseWriter, r *http.Request)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,
 			"granted": grantInfo,
+			"account": accountID,
 		})
 		return
 	}

@@ -446,3 +446,38 @@ func (c *Client) DeductTokens(conversationID string, amount string) (map[string]
 
 	return c.ownerAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
 }
+
+func (c *Client) GetConversationMetadata(conversationID string) (map[string]interface{}, error) {
+	args := map[string]interface{}{
+		"function_name":   "get_conversation_metadata",
+		"conversation_id": conversationID,
+	}
+	argsJSON, _ := json.Marshal(args)
+
+	options := int64(-1)
+	viewResult, err := c.userAccount.ViewFunction(c.contractID, "view_js_func", argsJSON, &options)
+	if err != nil {
+		return nil, fmt.Errorf("view call failed: %w", err)
+	}
+
+	// Decode result
+	resultMap := viewResult.(map[string]interface{})
+	raw := resultMap["result"].([]interface{})
+
+	bytes := make([]byte, len(raw))
+	for i, v := range raw {
+		if num, ok := v.(float64); ok {
+			bytes[i] = byte(num)
+		} else if n, ok := v.(json.Number); ok {
+			n64, _ := n.Int64()
+			bytes[i] = byte(n64)
+		}
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(bytes, &metadata); err != nil {
+		return nil, fmt.Errorf("failed to parse metadata: %w", err)
+	}
+
+	return metadata, nil
+}

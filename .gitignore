@@ -19,7 +19,9 @@
 
 # production
 /build
-
+/finowl-ai-assistant/front/build/
+finowl-ai-assistant/front/build
+finowl-ai-assistant/front/node_modules
 # misc
 .DS_Store
 *.pem
