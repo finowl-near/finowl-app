@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 
 export const ConversationManagement = ({ refreshTokenBalance }) => {
@@ -7,6 +7,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   const [conversationId, setConversationId] = useState('');
   const [conversations, setConversations] = useState([]);
   const [conversationHistory, setConversationHistory] = useState([]);
+  const [autoListDone, setAutoListDone] = useState(false);
+  const [fullyRegistered, setFullyRegistered] = useState(false);
   
   // Store message state
   const [messageRole, setMessageRole] = useState('user');
@@ -16,8 +18,102 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   // Add tokens state
   const [addTokensConvId, setAddTokensConvId] = useState('');
   const [tokenAmount, setTokenAmount] = useState(5); // Default to 5 tokens
+  
+  // Listen for registration, storage and token status events to determine full registration
+  useEffect(() => {
+    let claimStatus = false;
+    let storageStatus = false;
+    let registrationStatus = false;
+    
+    const updateFullyRegistered = () => {
+      const isFullyRegistered = claimStatus && storageStatus && registrationStatus;
+      console.log('Checking fully registered status:', { 
+        claimStatus, storageStatus, registrationStatus, isFullyRegistered 
+      });
+      setFullyRegistered(isFullyRegistered);
+      
+      // If fully registered and conversations not loaded, load them
+      if (isFullyRegistered && !autoListDone && signedAccountId) {
+        console.log('User is fully registered. Auto-listing conversations...');
+        setTimeout(() => {
+          handleListConversations(false); // false means don't show loading indicator
+          setAutoListDone(true);
+        }, 500); // Small delay to prevent too many simultaneous calls
+      }
+    };
+    
+    // Event handlers
+    const handleWelcomeTokensChecked = (event) => {
+      console.log('ConversationManagement received welcomeTokensChecked event:', event.detail);
+      const { result } = event.detail;
+      
+      if (result && typeof result.received === 'boolean') {
+        claimStatus = result.received;
+        updateFullyRegistered();
+      }
+    };
+    
+    const handleStorageDepositChecked = (event) => {
+      console.log('ConversationManagement received storageDepositChecked event:', event.detail);
+      const { result } = event.detail;
+      
+      storageStatus = result !== null;
+      updateFullyRegistered();
+    };
+    
+    const handleUserRegistrationChecked = (event) => {
+      console.log('ConversationManagement received userRegistrationChecked event:', event.detail);
+      const { result } = event.detail;
+      
+      if (result && typeof result.registered === 'boolean') {
+        registrationStatus = result.registered;
+        updateFullyRegistered();
+      }
+    };
+    
+    // Add event listeners
+    window.addEventListener('welcomeTokensChecked', handleWelcomeTokensChecked);
+    window.addEventListener('storageDepositChecked', handleStorageDepositChecked);
+    window.addEventListener('userRegistrationChecked', handleUserRegistrationChecked);
+    
+    // Try to load from localStorage if available
+    try {
+      // Check claim status
+      const cachedTokenStatus = localStorage.getItem(`finowl_tokens_claimed_${signedAccountId}`);
+      if (cachedTokenStatus) {
+        const parsed = JSON.parse(cachedTokenStatus);
+        claimStatus = parsed.claimed === true;
+      }
+      
+      // Check storage status
+      const cachedStorageStatus = localStorage.getItem(`finowl_storage_deposit_${signedAccountId}`);
+      if (cachedStorageStatus) {
+        const parsed = JSON.parse(cachedStorageStatus);
+        storageStatus = parsed.hasDeposit === true;
+      }
+      
+      // Check registration status
+      const cachedRegistrationStatus = localStorage.getItem(`finowl_registration_${signedAccountId}`);
+      if (cachedRegistrationStatus) {
+        const parsed = JSON.parse(cachedRegistrationStatus);
+        registrationStatus = parsed.registered === true;
+      }
+      
+      // Update fully registered status based on cached values
+      updateFullyRegistered();
+    } catch (error) {
+      console.error('Error loading registration status from cache:', error);
+    }
+    
+    return () => {
+      // Remove event listeners on cleanup
+      window.removeEventListener('welcomeTokensChecked', handleWelcomeTokensChecked);
+      window.removeEventListener('storageDepositChecked', handleStorageDepositChecked);
+      window.removeEventListener('userRegistrationChecked', handleUserRegistrationChecked);
+    };
+  }, [signedAccountId, autoListDone]);
 
-  const handleListConversations = async () => {
+  const handleListConversations = async (showLoading = true) => {
     try {
       if (!signedAccountId) {
         console.log('Please connect your wallet first');
@@ -33,7 +129,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         return;
       }
 
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
+      
       // Try to get conversations using view method first
       try {
         const result = await viewFunction({
@@ -52,7 +151,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         // If view method fails, try with call method
         const result = await callFunction({
           contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
-          method: "view_js_func",
+          method: "call_js_func",
           args: {
             function_name: "get_user_conversations",
             account_id: signedAccountId
@@ -64,7 +163,11 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      } else {
+        setTimeout(() => setLoading(false), 200); // Slight delay to avoid UI flash
+      }
     }
   };
 
@@ -305,6 +408,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
               {/* Start Conversation Panel */}
               <div className="panel">
                 <h2 className="panel-title">Start & View Conversations</h2>
+                
+                {fullyRegistered && (
+                  <div className="registration-notice success">
+                    <span className="registration-icon">✅</span>
+                    <span>You are fully registered and can use all conversation features</span>
+                  </div>
+                )}
+                
                 <div className="start-conversation-container">
                   <button 
                     onClick={handleStartConversation} 
@@ -319,11 +430,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                 </div>
 
                 <button 
-                  onClick={handleListConversations} 
+                  onClick={() => handleListConversations(true)} 
                   disabled={loading}
                   className="feature-button"
                 >
                   {loading ? 'Loading...' : '📋 List Conversations'}
+                  {autoListDone && conversations.length > 0 && (
+                    <span className="count-badge">{conversations.length}</span>
+                  )}
                 </button>
                 
                 <div className="conversation-id-input">

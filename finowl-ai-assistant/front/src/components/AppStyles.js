@@ -178,6 +178,12 @@ export default css.global`
     background-color: #2f855a;
   }
 
+  .accent-button.active {
+    background-color: #276749;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    transform: translateY(1px);
+  }
+
   .feature-button {
     background-color: #4299e1;
     font-weight: 500;
@@ -788,5 +794,396 @@ export default css.global`
       align-items: flex-start;
       gap: 10px;
     }
+  }
+
+  /* Welcome tokens popup styling */
+  .welcome-tokens-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .welcome-tokens-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    animation: pulse 2s infinite;
+    background-color: rgba(237, 137, 54, 0.1);
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  .welcome-tokens-message h3 {
+    font-size: 1.5rem;
+    color: #f6ad55;
+    margin-bottom: 15px;
+  }
+
+  .welcome-tokens-message p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .token-warning {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: rgba(237, 137, 54, 0.1);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .claim-tokens-button {
+    background-color: #ed8936;
+    transition: all 0.3s;
+    font-weight: 600;
+  }
+
+  .claim-tokens-button:hover {
+    background-color: #dd6b20;
+    transform: translateY(-2px);
+  }
+
+  /* Debug styling */
+  .debug-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .debug-results {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+  
+  .token-check-result {
+    background-color: #1a202c;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #4a5568;
+  }
+  
+  .token-check-result h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #90cdf4;
+  }
+  
+  .json-result {
+    background-color: #2d3748;
+    padding: 15px;
+    border-radius: 8px;
+    color: #f6e05e;
+    font-family: monospace;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    margin-bottom: 15px;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 10px;
+  }
+  
+  .status-badge.success {
+    background-color: rgba(72, 187, 120, 0.2);
+    color: #48bb78;
+    border: 1px solid #48bb78;
+  }
+  
+  .status-badge.warning {
+    background-color: rgba(237, 137, 54, 0.2);
+    color: #ed8936;
+    border: 1px solid #ed8936;
+  }
+  
+  .debug-log {
+    background-color: #1a202c;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #4a5568;
+  }
+  
+  .debug-log h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #90cdf4;
+  }
+  
+  .log-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .log-entry {
+    padding: 10px;
+    background-color: #2d3748;
+    border-radius: 8px;
+  }
+  
+  .log-message {
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+  
+  .log-data {
+    font-family: monospace;
+    font-size: 0.85rem;
+    background-color: #1a202c;
+    padding: 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+
+  .status-badge-mini {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 10px;
+  }
+  
+  .status-badge-mini.success {
+    background-color: rgba(72, 187, 120, 0.2);
+    color: #48bb78;
+    border: 1px solid #48bb78;
+  }
+  
+  .status-badge-mini.warning {
+    background-color: rgba(237, 137, 54, 0.2);
+    color: #ed8936;
+    border: 1px solid #ed8936;
+  }
+  
+  .status-badge-mini.fully-registered {
+    background-color: rgba(72, 187, 120, 0.3);
+    color: #48bb78;
+    border: 1px solid #48bb78;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+  }
+
+  /* Status check buttons and badges */
+  .status-check-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .status-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .registration-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(72, 187, 120, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(72, 187, 120, 0.3);
+  }
+  
+  .registration-summary h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #48bb78;
+  }
+  
+  /* Registration notice and count badge */
+  .registration-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background-color: rgba(72, 187, 120, 0.1);
+    border: 1px solid rgba(72, 187, 120, 0.3);
+  }
+  
+  .registration-notice.success {
+    color: #48bb78;
+  }
+  
+  .registration-icon {
+    font-size: 1.2rem;
+  }
+  
+  .count-badge {
+    background-color: #4c51bf;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+
+  /* Onboarding Status Panel styling */
+  .onboarding-status-section {
+    margin-bottom: 20px;
+  }
+  
+  .onboarding-status-panel {
+    background: linear-gradient(145deg, #1a202c 0%, #2d3748 100%);
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border: 1px solid #4a5568;
+    margin-bottom: 20px;
+  }
+  
+  .onboarding-status-panel.complete {
+    background: linear-gradient(145deg, #1e392a 0%, #2c5744 100%);
+    border: 1px solid #38a169;
+  }
+  
+  .onboarding-status-panel.claim_only {
+    background: linear-gradient(145deg, #323214 0%, #4c4c28 100%);
+    border: 1px solid #ecc94b;
+  }
+  
+  .onboarding-status-panel.full_setup,
+  .onboarding-status-panel.register_and_claim,
+  .onboarding-status-panel.storage_and_claim {
+    background: linear-gradient(145deg, #2a2651 0%, #3d3a75 100%);
+    border: 1px solid #805ad5;
+  }
+  
+  .onboarding-status-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .onboarding-status-icon {
+    font-size: 2rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .onboarding-status-message {
+    flex: 1;
+  }
+  
+  .onboarding-status-message h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    color: #90cdf4;
+  }
+  
+  .onboarding-status-message p {
+    margin: 0 0 15px 0;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+  
+  .onboarding-progress {
+    margin-top: 15px;
+  }
+  
+  .progress-bar {
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4c51bf 0%, #6b46c1 100%);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+  }
+  
+  .progress-text {
+    font-size: 0.9rem;
+    color: #a0aec0;
+  }
+  
+  .next-action-button {
+    min-width: 180px;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+  }
+  
+  .onboarding-status-details {
+    display: flex;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .status-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  
+  .status-item.completed {
+    background-color: rgba(72, 187, 120, 0.2);
+    border-left: 3px solid #48bb78;
+  }
+  
+  .status-item.pending {
+    background-color: rgba(160, 174, 192, 0.2);
+    border-left: 3px solid #a0aec0;
+  }
+  
+  .status-marker {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+  }
+  
+  .status-label {
+    font-weight: 500;
   }
 `; 
