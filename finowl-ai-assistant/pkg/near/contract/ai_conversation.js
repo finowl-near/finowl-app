@@ -71,6 +71,7 @@ export function grant_free_tokens() {
  * Backend-triggered token grant when user paid in NEAR.
  */
 export function grant_paid_tokens() {
+  const { timestamp } = JSON.parse(env.input());
   const account_id = env.signer_account_id();
   const profile_key = `user_${account_id}_metadata`;
   const profile = JSON.parse(env.get_data(profile_key) || "{}");
@@ -79,11 +80,12 @@ export function grant_paid_tokens() {
   env.ft_transfer_internal(env.current_account_id(), account_id, amount.toString());
 
   profile.token_grants = profile.token_grants || [];
-  profile.token_grants.push({ type: "purchase", amount: amount.toString(), ts: Date.now() });
+  profile.token_grants.push({ type: "purchase", amount: amount.toString(), ts: timestamp });
   env.set_data(profile_key, JSON.stringify(profile));
 
   env.value_return(JSON.stringify({ granted: amount.toString(), source: "purchase" }));
 }
+
 
 /**
  * Starts a new conversation with reserved tokens from the user.
