@@ -19,13 +19,18 @@ export const TokenManagement = ({ tokenBalance, registrationStep, freeTokensClai
     }
 
     try {
+      // Get current timestamp in seconds
+      const timestamp = Math.floor(Date.now() / 1000);
+      
       // Call the API to grant paid tokens - backend has hardcoded recipient
       const response = await fetch('http://localhost:8080/api/grant-paid-tokens', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
-        // No body needed - backend has hardcoded wallet
+        },
+        body: JSON.stringify({
+          timestamp: timestamp
+        })
       });
       
       if (!response.ok) {
