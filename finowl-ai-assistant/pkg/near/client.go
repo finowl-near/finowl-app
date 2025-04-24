@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	near "github.com/aurora-is-near/near-api-go"
 	"github.com/aurora-is-near/near-api-go/utils"
@@ -212,6 +213,7 @@ func (c *Client) ViewFunction(methodName string, args map[string]interface{}) (m
 func (c *Client) GrantFreeTokens() (map[string]interface{}, error) {
 	args := map[string]interface{}{
 		"function_name": "grant_free_tokens",
+		"timestamp":     time.Now().Unix(),
 	}
 	argsJSON, _ := json.Marshal(args)
 
@@ -227,6 +229,7 @@ func (c *Client) StartConversation(conversationID string, reserveAmount string) 
 		"function_name":   "start_ai_conversation",
 		"conversation_id": conversationID,
 		"reserve_amount":  reserveAmount,
+		"timestamp":       time.Now().Unix(),
 	}
 	argsJSON, err := json.Marshal(args)
 	if err != nil {
@@ -280,6 +283,7 @@ func (c *Client) StoreMessage(conversationID, role, content string) (map[string]
 		"conversation_id": conversationID,
 		"role":            role,
 		"content":         content,
+		"timestamp":       time.Now().Unix(),
 	}
 	argsJSON, _ := json.Marshal(args)
 
@@ -401,6 +405,7 @@ func (c *Client) GetUserTokenBalance(accountID string) (string, error) {
 func (c *Client) GrantPaidTokens() (map[string]interface{}, error) {
 	args := map[string]interface{}{
 		"function_name": "grant_paid_tokens",
+		"timestamp":     time.Now().Unix(),
 	}
 	argsJSON, _ := json.Marshal(args)
 	gas := uint64(50_000_000_000_000)
@@ -438,6 +443,7 @@ func (c *Client) DeductTokens(conversationID string, amount string) (map[string]
 		"function_name":   "deduct_tokens_from_conversation",
 		"conversation_id": conversationID,
 		"amount":          amount,
+		"timestamp":       time.Now().Unix(),
 	}
 	argsJSON, _ := json.Marshal(args)
 
