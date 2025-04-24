@@ -123,7 +123,7 @@ export function start_ai_conversation() {
  * Stores a message in a conversation and deducts reserved tokens.
  */
 export function store_message() {
-  const { conversation_id, role, content } = JSON.parse(env.input());
+  const { conversation_id, role, content, timestamp } = JSON.parse(env.input());
   const account_id = env.signer_account_id();
   const metadata_key = `conversation_${conversation_id}_metadata`;
   const messages_key = `conversation_${conversation_id}_messages`;
@@ -140,17 +140,29 @@ export function store_message() {
 
   const messages = JSON.parse(env.get_data(messages_key) || "[]");
   const message_id = `${conversation_id}_msg_${metadata.message_count || 0}`;
-  const message = { id: message_id, role, content, timestamp: Date.now(), tokens: token_count };
+
+  const message = {
+    id: message_id,
+    role,
+    content,
+    timestamp: Number(timestamp), // ← Use passed timestamp
+    tokens: token_count
+  };
 
   messages.push(message);
   metadata.tokens_used = (used + token_count).toString();
   metadata.message_count += 1;
-  metadata.last_active = Date.now();
+  metadata.last_active = Number(timestamp); // ← Use passed timestamp
 
   env.set_data(messages_key, JSON.stringify(messages));
   env.set_data(metadata_key, JSON.stringify(metadata));
 
-  env.value_return(JSON.stringify({ success: true, stored: true, message_id, tokens: token_count }));
+  env.value_return(JSON.stringify({
+    success: true,
+    stored: true,
+    message_id,
+    tokens: token_count
+  }));
 }
 
 /**
