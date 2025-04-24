@@ -246,6 +246,9 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
     try {
       setLoading(true);
+      // Get current timestamp in seconds
+      const timestamp = Math.floor(Date.now() / 1000);
+      
       // Store message needs to be a call method since it modifies state
       const result = await callFunction({
         contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
@@ -254,7 +257,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           function_name: "store_message",
           conversation_id: storeMessageConvId,
           role: messageRole,
-          content: messageContent
+          content: messageContent,
+          timestamp: timestamp
         }
       });
       
@@ -361,7 +365,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         args: {
           function_name: "start_ai_conversation",
           conversation_id: generatedConversationId,
-          reserve_amount: reserveAmount
+          reserve_amount: reserveAmount,
+          timestamp: timestamp
         }
       });
       
@@ -596,7 +601,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                       <div className="message-header">
                         <strong>{message.role}</strong>
                         <span className="timestamp">
-                          {new Date(message.timestamp / 1000000).toLocaleString()}
+                        {new Date(message.timestamp * 1000).toLocaleString()}
                         </span>
                       </div>
                       <div className="message-content">{message.content}</div>
