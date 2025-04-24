@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 )
 
 // TransactionRequest represents a transaction request that can be signed by the wallet
@@ -73,8 +74,10 @@ func (w *WalletAdapter) GenerateCheckUserStatusRequest(callbackURL string) *Tran
 
 // GenerateGrantFreeTokensRequest creates a transaction request for granting free tokens
 func (w *WalletAdapter) GenerateGrantFreeTokensRequest(callbackURL string) *TransactionRequest {
+	// Get current timestamp in seconds
 	args := map[string]interface{}{
 		"function_name": "grant_free_tokens",
+		"timestamp":     fmt.Sprintf("%d", time.Now().Unix()),
 	}
 
 	return &TransactionRequest{
@@ -95,6 +98,7 @@ func (w *WalletAdapter) GenerateStartConversationRequest(conversationID, reserve
 		"function_name":   "start_ai_conversation",
 		"conversation_id": conversationID,
 		"reserve_amount":  reserveAmount,
+		"timestamp":       fmt.Sprintf("%d", time.Now().Unix()),
 	}
 
 	return &TransactionRequest{
@@ -116,6 +120,7 @@ func (w *WalletAdapter) GenerateStoreMessageRequest(conversationID, role, conten
 		"conversation_id": conversationID,
 		"role":            role,
 		"content":         content,
+		"timestamp":       fmt.Sprintf("%d", time.Now().Unix()),
 	}
 
 	return &TransactionRequest{
