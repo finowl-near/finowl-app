@@ -216,7 +216,7 @@ export function refund_reserved_tokens() {
  * Contract-only: deduct tokens from a conversation (e.g. AI backend usage).
  */
 export function deduct_tokens_from_conversation() {
-  const { conversation_id, amount } = JSON.parse(env.input());
+  const { conversation_id, amount, timestamp } = JSON.parse(env.input());
   const caller = env.predecessor_account_id();
   if (caller !== env.current_account_id()) env.panic("Only the contract can deduct tokens");
 
@@ -231,12 +231,16 @@ export function deduct_tokens_from_conversation() {
   if ((used + deduct) > reserved) env.panic("Insufficient reserved tokens to deduct");
 
   metadata.tokens_used = (used + deduct).toString();
-  metadata.last_active = Date.now();
+  metadata.last_active = timestamp;
   env.set_data(metadata_key, JSON.stringify(metadata));
 
-  env.value_return(JSON.stringify({ success: true, conversation_id, new_used: metadata.tokens_used, remaining: (reserved - used - deduct).toString() }));
+  env.value_return(JSON.stringify({
+    success: true,
+    conversation_id,
+    new_used: metadata.tokens_used,
+    remaining: (reserved - used - deduct).toString()
+  }));
 }
-
 /**
  * Estimate token usage based on content length.
  */
