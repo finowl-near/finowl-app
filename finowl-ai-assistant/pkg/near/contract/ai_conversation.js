@@ -91,19 +91,19 @@ export function grant_paid_tokens() {
  * Starts a new conversation with reserved tokens from the user.
  */
 export function start_ai_conversation() {
-  const { conversation_id, reserve_amount } = JSON.parse(env.input());
+  const { conversation_id, reserve_amount, timestamp } = JSON.parse(env.input());
   const account_id = env.signer_account_id();
 
-  if (!conversation_id || !reserve_amount) {
-    env.panic("Must provide conversation_id and reserve_amount");
+  if (!conversation_id || !reserve_amount || !timestamp) {
+    env.panic("Must provide conversation_id, reserve_amount, and timestamp");
     return;
   }
 
   const metadata = {
     id: conversation_id,
     owner: account_id,
-    created_at: Date.now(),
-    last_active: Date.now(),
+    created_at: timestamp,
+    last_active: timestamp,
     tokens_reserved: reserve_amount,
     tokens_used: "0",
     message_count: 0,
