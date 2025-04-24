@@ -10,19 +10,31 @@
  * - Seamless token grants (free and backend-verified paid).
  */
 
+/**
+ * Checks if the user already has a profile.
+ * If not, registers a new user by creating metadata and conversation tracking entries.
+ * Requires an explicit `timestamp` from the caller to ensure consistent time tracking.
+ */
 export function check_user_status() {
   const account_id = env.signer_account_id();
   const key = `user_${account_id}_metadata`;
   const existing = env.get_data(key);
+
   if (existing) {
     env.value_return(JSON.stringify({ status: "existing_user" }));
   } else {
+    const { timestamp } = JSON.parse(env.input());
+    if (!timestamp) {
+      env.panic("Missing required timestamp");
+    }
+
     const profile = {
       account_id,
-      created_at: Date.now(),
+      created_at: timestamp,
       storage_enabled: true,
       token_grants: [],
     };
+
     env.set_data(key, JSON.stringify(profile));
     env.set_data(`user_${account_id}_conversations`, JSON.stringify([]));
 
