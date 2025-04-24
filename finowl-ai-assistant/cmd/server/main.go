@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"finowl-ai-assistant/internal/app"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"finowl-ai-assistant/internal/app"
 
 	"github.com/joho/godotenv"
 )
@@ -104,9 +105,9 @@ func setupServer(application *app.App) *http.Server {
 	return &http.Server{
 		Addr:         ":" + application.Config.Server.Port,
 		Handler:      corsMiddleware(mux), // Apply CORS middleware
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  300 * time.Second,   // Increased from 15s to 5 minutes
+		WriteTimeout: 300 * time.Second,   // Increased from 15s to 5 minutes
+		IdleTimeout:  120 * time.Second,   // Increased from 60s to 2 minutes
 	}
 }
 

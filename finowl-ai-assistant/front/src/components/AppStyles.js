@@ -550,6 +550,29 @@ export default css.global`
     display: flex;
     flex-direction: column;
     gap: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom scrollbar for history container */
+  .history-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .history-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  .history-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+  
+  .history-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 
   .message {
@@ -1185,5 +1208,159 @@ export default css.global`
   
   .status-label {
     font-weight: 500;
+  }
+
+  /* AI Analysis Indicator */
+  .ai-analyzing-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+    padding: 10px;
+    background-color: rgba(52, 152, 219, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #3498db;
+  }
+
+  .ai-analyzing-indicator .spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(52, 152, 219, 0.3);
+    border-radius: 50%;
+    border-top: 3px solid #3498db;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+  }
+
+  .ai-analyzing-indicator span {
+    color: #3498db;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Make market analysis response messages stand out */
+  .message.system {
+    background-color: rgba(255, 250, 230, 0.8);
+    border-left: 4px solid #f39c12;
+  }
+
+  /* AI Trigger Indicator */
+  textarea.will-trigger-ai {
+    border: 1px solid #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+
+  .ai-trigger-note {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #3498db;
+    display: flex;
+    align-items: center;
+  }
+
+  .ai-trigger-note span {
+    font-size: 16px;
+    margin-right: 6px;
+  }
+
+  /* Markdown Styling */
+  .message.system .message-content h1 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    color: #2c3e50;
+  }
+
+  .message.system .message-content h2 {
+    font-size: 1.2rem;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: #2c3e50;
+  }
+
+  .message.system .message-content strong {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .message.system .message-content p {
+    margin-bottom: 8px;
+  }
+
+  .message.system .message-content ul, 
+  .message.system .message-content ol {
+    margin-left: 20px;
+    margin-bottom: 12px;
+  }
+
+  /* Retry button styling */
+  .retry-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    background-color: #3498db;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+  }
+  
+  .retry-button:hover:not(:disabled) {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+  }
+  
+  .retry-button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+  }
+
+  /* Panel title with message count */
+  .panel-title .message-count {
+    font-size: 0.85rem;
+    color: #a0aec0;
+    margin-left: 12px;
+    font-weight: normal;
+  }
+  
+  /* History controls */
+  .history-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .history-toggle-button {
+    background-color: rgba(99, 179, 237, 0.2);
+    color: #63b3ed;
+    border: 1px solid rgba(99, 179, 237, 0.5);
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .history-toggle-button:hover {
+    background-color: rgba(99, 179, 237, 0.3);
+    transform: translateY(-1px);
+  }
+  
+  .message-note {
+    font-size: 0.85rem;
+    color: #a0aec0;
+    font-style: italic;
   }
 `; 
