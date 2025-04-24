@@ -37,7 +37,8 @@
     "next": "15.2.1",
     "react": "^18",
     "react-dom": "^18",
-    "viem": "^2.26.2"
+    "viem": "^2.26.2",
+    "react-markdown": "^8.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
