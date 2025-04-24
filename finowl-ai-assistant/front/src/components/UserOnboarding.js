@@ -264,12 +264,15 @@ export const UserOnboarding = () => {
       setLoading(true);
       
       const gas = "50000000000000"; // 50 TGas
+      // Get current timestamp in seconds
+      const timestamp = Math.floor(Date.now() / 1000);
       
       const result = await callFunction({
         contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
         method: "call_js_func",
         args: {
-          function_name: "grant_free_tokens"
+          function_name: "grant_free_tokens",
+          timestamp: timestamp
         },
         gas
       });
