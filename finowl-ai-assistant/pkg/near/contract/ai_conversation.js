@@ -10,19 +10,31 @@
  * - Seamless token grants (free and backend-verified paid).
  */
 
+/**
+ * Checks if the user already has a profile.
+ * If not, registers a new user by creating metadata and conversation tracking entries.
+ * Requires an explicit `timestamp` from the caller to ensure consistent time tracking.
+ */
 export function check_user_status() {
   const account_id = env.signer_account_id();
   const key = `user_${account_id}_metadata`;
   const existing = env.get_data(key);
+
   if (existing) {
     env.value_return(JSON.stringify({ status: "existing_user" }));
   } else {
+    const { timestamp } = JSON.parse(env.input());
+    if (!timestamp) {
+      env.panic("Missing required timestamp");
+    }
+
     const profile = {
       account_id,
-      created_at: Date.now(),
+      created_at: timestamp,
       storage_enabled: true,
       token_grants: [],
     };
+
     env.set_data(key, JSON.stringify(profile));
     env.set_data(`user_${account_id}_conversations`, JSON.stringify([]));
 
@@ -46,8 +58,14 @@ export function list_all_users() {
 
 /**
  * Grant 100 free tokens to a new user (only once).
+ * Requires an explicit `timestamp` for consistent and auditable token grant logging.
  */
 export function grant_free_tokens() {
+  const { timestamp } = JSON.parse(env.input());
+  if (!timestamp) {
+    env.panic("Missing required timestamp");
+  }
+
   const account_id = env.signer_account_id();
   const profile_key = `user_${account_id}_metadata`;
   const profile = JSON.parse(env.get_data(profile_key) || "{}");
@@ -61,9 +79,13 @@ export function grant_free_tokens() {
   env.ft_transfer_internal(env.current_account_id(), account_id, amount.toString());
 
   profile.token_grants = profile.token_grants || [];
-  profile.token_grants.push({ type: "welcome", amount: amount.toString(), ts: Date.now() });
-  env.set_data(profile_key, JSON.stringify(profile));
+  profile.token_grants.push({
+    type: "welcome",
+    amount: amount.toString(),
+    ts: timestamp
+  });
 
+  env.set_data(profile_key, JSON.stringify(profile));
   env.value_return(JSON.stringify({ granted: amount.toString() }));
 }
 
@@ -71,6 +93,7 @@ export function grant_free_tokens() {
  * Backend-triggered token grant when user paid in NEAR.
  */
 export function grant_paid_tokens() {
+  const { timestamp } = JSON.parse(env.input());
   const account_id = env.signer_account_id();
   const profile_key = `user_${account_id}_metadata`;
   const profile = JSON.parse(env.get_data(profile_key) || "{}");
@@ -79,29 +102,30 @@ export function grant_paid_tokens() {
   env.ft_transfer_internal(env.current_account_id(), account_id, amount.toString());
 
   profile.token_grants = profile.token_grants || [];
-  profile.token_grants.push({ type: "purchase", amount: amount.toString(), ts: Date.now() });
+  profile.token_grants.push({ type: "purchase", amount: amount.toString(), ts: timestamp });
   env.set_data(profile_key, JSON.stringify(profile));
 
   env.value_return(JSON.stringify({ granted: amount.toString(), source: "purchase" }));
 }
 
+
 /**
  * Starts a new conversation with reserved tokens from the user.
  */
 export function start_ai_conversation() {
-  const { conversation_id, reserve_amount } = JSON.parse(env.input());
+  const { conversation_id, reserve_amount, timestamp } = JSON.parse(env.input());
   const account_id = env.signer_account_id();
 
-  if (!conversation_id || !reserve_amount) {
-    env.panic("Must provide conversation_id and reserve_amount");
+  if (!conversation_id || !reserve_amount || !timestamp) {
+    env.panic("Must provide conversation_id, reserve_amount, and timestamp");
     return;
   }
 
   const metadata = {
     id: conversation_id,
     owner: account_id,
-    created_at: Date.now(),
-    last_active: Date.now(),
+    created_at: timestamp,
+    last_active: timestamp,
     tokens_reserved: reserve_amount,
     tokens_used: "0",
     message_count: 0,
@@ -123,7 +147,7 @@ export function start_ai_conversation() {
  * Stores a message in a conversation and deducts reserved tokens.
  */
 export function store_message() {
-  const { conversation_id, role, content } = JSON.parse(env.input());
+  const { conversation_id, role, content, timestamp } = JSON.parse(env.input());
   const account_id = env.signer_account_id();
   const metadata_key = `conversation_${conversation_id}_metadata`;
   const messages_key = `conversation_${conversation_id}_messages`;
@@ -140,17 +164,29 @@ export function store_message() {
 
   const messages = JSON.parse(env.get_data(messages_key) || "[]");
   const message_id = `${conversation_id}_msg_${metadata.message_count || 0}`;
-  const message = { id: message_id, role, content, timestamp: Date.now(), tokens: token_count };
+
+  const message = {
+    id: message_id,
+    role,
+    content,
+    timestamp: Number(timestamp), // ← Use passed timestamp
+    tokens: token_count
+  };
 
   messages.push(message);
   metadata.tokens_used = (used + token_count).toString();
   metadata.message_count += 1;
-  metadata.last_active = Date.now();
+  metadata.last_active = Number(timestamp); // ← Use passed timestamp
 
   env.set_data(messages_key, JSON.stringify(messages));
   env.set_data(metadata_key, JSON.stringify(metadata));
 
-  env.value_return(JSON.stringify({ success: true, stored: true, message_id, tokens: token_count }));
+  env.value_return(JSON.stringify({
+    success: true,
+    stored: true,
+    message_id,
+    tokens: token_count
+  }));
 }
 
 /**
@@ -202,7 +238,7 @@ export function refund_reserved_tokens() {
  * Contract-only: deduct tokens from a conversation (e.g. AI backend usage).
  */
 export function deduct_tokens_from_conversation() {
-  const { conversation_id, amount } = JSON.parse(env.input());
+  const { conversation_id, amount, timestamp } = JSON.parse(env.input());
   const caller = env.predecessor_account_id();
   if (caller !== env.current_account_id()) env.panic("Only the contract can deduct tokens");
 
@@ -217,12 +253,16 @@ export function deduct_tokens_from_conversation() {
   if ((used + deduct) > reserved) env.panic("Insufficient reserved tokens to deduct");
 
   metadata.tokens_used = (used + deduct).toString();
-  metadata.last_active = Date.now();
+  metadata.last_active = timestamp;
   env.set_data(metadata_key, JSON.stringify(metadata));
 
-  env.value_return(JSON.stringify({ success: true, conversation_id, new_used: metadata.tokens_used, remaining: (reserved - used - deduct).toString() }));
+  env.value_return(JSON.stringify({
+    success: true,
+    conversation_id,
+    new_used: metadata.tokens_used,
+    remaining: (reserved - used - deduct).toString()
+  }));
 }
-
 /**
  * Estimate token usage based on content length.
  */
