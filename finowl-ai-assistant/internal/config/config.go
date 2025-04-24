@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -87,7 +88,17 @@ func LoadConfig() *AppConfig {
 		},
 	}
 
-	fmt.Printf("🔧 Configuration loaded successfully\n")
+	// Log configuration details for debug
+	log.Printf("🔧 Server configuration: Port=%s", config.Server.Port)
+	log.Printf("🔧 AI configuration: Endpoint=%s, Model=%s, API Key Set=%v",
+		config.AI.Endpoint,
+		config.AI.Model,
+		config.AI.APIKey != "")
+	log.Printf("🔧 Feedstock configuration: API=%s, Timeout=%v, Summary Count=%d",
+		config.Feedstock.APIBaseURL,
+		config.Feedstock.HTTPTimeout,
+		config.Feedstock.SummaryCount)
+	log.Printf("🔧 Prompts Path: %s", config.ResourcePaths.PromptsPath)
 
 	return config
 }
