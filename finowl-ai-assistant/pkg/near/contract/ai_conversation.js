@@ -190,6 +190,71 @@ export function store_message() {
 }
 
 /**
+ * Save the full conversation at once.
+ * 
+ * This is used at conversation "Exit and Save" moment,
+ * when the user wants to persist all messages in one transaction.
+ */
+export function save_full_conversation() {
+  const { conversation_id, messages, metadata, timestamp } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+
+  if (!conversation_id || !messages || !metadata || !timestamp) {
+    env.panic("Missing required fields: conversation_id, messages, metadata, timestamp");
+    return;
+  }
+
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const messages_key = `conversation_${conversation_id}_messages`;
+
+  const existing_metadata_raw = env.get_data(metadata_key);
+  if (existing_metadata_raw) {
+    env.panic("Conversation already exists. Cannot overwrite.");
+    return;
+  }
+
+  const validatedMetadata = {
+    id: conversation_id,
+    owner: account_id,
+    created_at: Number(timestamp),
+    last_active: Number(timestamp),
+    tokens_reserved: metadata.tokens_reserved || "0",
+    tokens_used: metadata.tokens_used || "0",
+    message_count: Array.isArray(messages) ? messages.length : 0
+  };
+
+  // Validate messages structure
+  if (!Array.isArray(messages)) {
+    env.panic("Messages must be an array");
+    return;
+  }
+  for (let msg of messages) {
+    if (!msg.role || !msg.content || !msg.timestamp) {
+      env.panic("Each message must have role, content, and timestamp");
+      return;
+    }
+  }
+
+  // Save metadata and messages
+  env.set_data(metadata_key, JSON.stringify(validatedMetadata));
+  env.set_data(messages_key, JSON.stringify(messages));
+
+  // Update user conversation list
+  const user_conversations_key = `user_${account_id}_conversations`;
+  const conversationList = JSON.parse(env.get_data(user_conversations_key) || "[]");
+  if (!conversationList.includes(conversation_id)) {
+    conversationList.push(conversation_id);
+    env.set_data(user_conversations_key, JSON.stringify(conversationList));
+  }
+
+  env.value_return(JSON.stringify({
+    success: true,
+    conversation_id,
+    message_count: messages.length
+  }));
+}
+
+/**
  * Add more tokens to an existing conversation.
  */
 export function add_tokens_to_conversation() {
