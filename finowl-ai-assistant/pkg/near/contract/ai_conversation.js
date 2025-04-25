@@ -189,69 +189,54 @@ export function store_message() {
   }));
 }
 
-/**
- * Save the full conversation at once.
- * 
- * This is used at conversation "Exit and Save" moment,
- * when the user wants to persist all messages in one transaction.
- */
 export function save_full_conversation() {
   const { conversation_id, messages, metadata, timestamp } = JSON.parse(env.input());
   const account_id = env.signer_account_id();
 
   if (!conversation_id || !messages || !metadata || !timestamp) {
-    env.panic("Missing required fields: conversation_id, messages, metadata, timestamp");
+    env.panic("Missing required fields");
     return;
   }
 
   const metadata_key = `conversation_${conversation_id}_metadata`;
   const messages_key = `conversation_${conversation_id}_messages`;
 
-  const existing_metadata_raw = env.get_data(metadata_key);
-  if (existing_metadata_raw) {
-    env.panic("Conversation already exists. Cannot overwrite.");
-    return;
+  let existing_metadata = env.get_data(metadata_key);
+  let existing_messages = env.get_data(messages_key);
+
+  let parsed_metadata;
+  let parsed_messages;
+
+  if (existing_metadata && existing_messages) {
+    parsed_metadata = JSON.parse(existing_metadata);
+    parsed_messages = JSON.parse(existing_messages);
+
+    // Merge messages
+    parsed_messages = parsed_messages.concat(messages);
+
+    // Update metadata
+    parsed_metadata.tokens_reserved = (BigInt(parsed_metadata.tokens_reserved || "0") + BigInt(metadata.tokens_reserved || "0")).toString();
+    parsed_metadata.tokens_used = (BigInt(parsed_metadata.tokens_used || "0") + BigInt(metadata.tokens_used || "0")).toString();
+    parsed_metadata.message_count = (parsed_metadata.message_count || 0) + messages.length;
+    parsed_metadata.last_active = timestamp;
+  } else {
+    // New conversation
+    parsed_metadata = {
+      id: conversation_id,
+      owner: account_id,
+      created_at: timestamp,
+      last_active: timestamp,
+      tokens_reserved: metadata.tokens_reserved || "0",
+      tokens_used: metadata.tokens_used || "0",
+      message_count: messages.length,
+    };
+    parsed_messages = messages;
   }
 
-  const validatedMetadata = {
-    id: conversation_id,
-    owner: account_id,
-    created_at: Number(timestamp),
-    last_active: Number(timestamp),
-    tokens_reserved: metadata.tokens_reserved || "0",
-    tokens_used: metadata.tokens_used || "0",
-    message_count: Array.isArray(messages) ? messages.length : 0
-  };
+  env.set_data(messages_key, JSON.stringify(parsed_messages));
+  env.set_data(metadata_key, JSON.stringify(parsed_metadata));
 
-  // Validate messages structure
-  if (!Array.isArray(messages)) {
-    env.panic("Messages must be an array");
-    return;
-  }
-  for (let msg of messages) {
-    if (!msg.role || !msg.content || !msg.timestamp) {
-      env.panic("Each message must have role, content, and timestamp");
-      return;
-    }
-  }
-
-  // Save metadata and messages
-  env.set_data(metadata_key, JSON.stringify(validatedMetadata));
-  env.set_data(messages_key, JSON.stringify(messages));
-
-  // Update user conversation list
-  const user_conversations_key = `user_${account_id}_conversations`;
-  const conversationList = JSON.parse(env.get_data(user_conversations_key) || "[]");
-  if (!conversationList.includes(conversation_id)) {
-    conversationList.push(conversation_id);
-    env.set_data(user_conversations_key, JSON.stringify(conversationList));
-  }
-
-  env.value_return(JSON.stringify({
-    success: true,
-    conversation_id,
-    message_count: messages.length
-  }));
+  env.value_return(JSON.stringify({ success: true, conversation_id, message_count: parsed_messages.length }));
 }
 
 /**
