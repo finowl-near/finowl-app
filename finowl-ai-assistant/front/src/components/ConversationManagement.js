@@ -26,6 +26,23 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   // Add reference to conversation history container
   const historyContainerRef = useRef(null);
 
+  // Add a new state variable to track in-memory messages
+  const [inMemoryMessages, setInMemoryMessages] = useState([]);
+  const [showSaveButton, setShowSaveButton] = useState(false);
+  const [calculatedTokens, setCalculatedTokens] = useState(0);
+
+  // Function to calculate tokens based on text length
+  const calculateTokens = (text) => {
+    return Math.max(1, Math.ceil(text.length / 4));
+  };
+
+  // Function to calculate total tokens for all messages
+  const calculateTotalTokens = (messages) => {
+    return messages.reduce((total, msg) => {
+      return total + calculateTokens(msg.content);
+    }, 0);
+  };
+
   // Listen for registration, storage and token status events to determine full registration
   useEffect(() => {
     let claimStatus = false;
@@ -297,6 +314,228 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     }
   };
 
+  // Effect to update conversation history when in-memory messages change
+  useEffect(() => {
+    if (inMemoryMessages.length > 0) {
+      // Deep clone the array to ensure React detects the change
+      setConversationHistory([...inMemoryMessages]);
+      
+      // Calculate and update total tokens whenever messages change
+      const totalTokens = calculateTotalTokens(inMemoryMessages);
+      setCalculatedTokens(totalTokens);
+      
+      // Scroll to bottom after a short delay to allow rendering
+      setTimeout(() => {
+        if (historyContainerRef.current) {
+          historyContainerRef.current.scrollTop = historyContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    }
+  }, [inMemoryMessages]);
+
+  // Function to send message to AI without storing on blockchain
+  const handleSendMessage = async () => {
+    if (!storeMessageConvId) {
+      console.log('Please enter a conversation ID');
+      return;
+    }
+
+    if (!messageContent) {
+      console.log('Please enter message content');
+      return;
+    }
+
+    if (!signedAccountId) {
+      console.log('Please connect your wallet first');
+      if (modal) {
+        modal.show();
+      } else if (signIn) {
+        signIn();
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Get current timestamp in seconds
+      const timestamp = Math.floor(Date.now() / 1000);
+      
+      // Create user message object
+      const userMessage = {
+        role: messageRole,
+        content: messageContent,
+        timestamp: timestamp
+      };
+      
+      // Add to in-memory messages
+      setInMemoryMessages(prev => [...prev, userMessage]);
+      
+      // Calculate tokens for this message
+      const userMessageTokens = calculateTokens(messageContent);
+      console.log(`User message uses ${userMessageTokens} tokens`);
+      
+      // If this is a user message that looks like a market analysis question,
+      // call the AI analyzer without storing its response on blockchain
+      if (messageRole === 'user' && isMarketAnalysisQuestion(messageContent)) {
+        try {
+          const aiResponse = await analyzeMarket(messageContent);
+          
+          if (aiResponse) {
+            // Format the AI response for display with better structure
+            const formattedResponse = 
+              `# Market Analysis\n\n` +
+              `**Market Sentiment:** ${aiResponse.market_sentiment}\n` +
+              `**Investment Decision:** ${aiResponse.investment_decision}\n` +
+              `**Justification:** ${aiResponse.justification}\n\n` +
+              `## Top Tokens to Consider\n\n` +
+              aiResponse.top_tokens.map(token => 
+                `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
+              ).join('\n');
+            
+            // Calculate tokens for AI response
+            const aiMessageTokens = calculateTokens(formattedResponse);
+            console.log(`AI response uses ${aiMessageTokens} tokens`);
+            
+            // Create system message for the AI response
+            const systemMessage = {
+              role: "system",
+              content: formattedResponse,
+              timestamp: Math.floor(Date.now() / 1000)
+            };
+            
+            // Add to in-memory messages
+            setInMemoryMessages(prev => [...prev, systemMessage]);
+            
+            console.log('AI response added to in-memory messages');
+          } else {
+            // If AI analysis failed, create an error message
+            const errorMessage = {
+              role: "system",
+              content: `# Analysis Request Failed\n\n` +
+                `I wasn't able to analyze your request due to a server connection issue.\n\n` +
+                `**Please try again in a few minutes.** The market analysis server might be busy or temporarily unavailable.`,
+              timestamp: Math.floor(Date.now() / 1000)
+            };
+            
+            // Calculate tokens for error message
+            const errorMessageTokens = calculateTokens(errorMessage.content);
+            console.log(`Error message uses ${errorMessageTokens} tokens`);
+            
+            // Add to in-memory messages
+            setInMemoryMessages(prev => [...prev, errorMessage]);
+            
+            console.log('AI error message added to in-memory messages');
+          }
+        } catch (aiError) {
+          console.error('Error processing AI response:', aiError);
+          
+          // Add error message to in-memory messages
+          const criticalErrorMessage = {
+            role: "system",
+            content: `# Analysis Error\n\n` +
+              `There was an error processing your market analysis request.\n\n` +
+              `**Please try again later.** If the problem persists, contact support.`,
+            timestamp: Math.floor(Date.now() / 1000)
+          };
+          
+          setInMemoryMessages(prev => [...prev, criticalErrorMessage]);
+        }
+      }
+      
+      // Clear the message content after sending
+      setMessageContent('');
+      
+      // Show the save button once we have messages
+      setShowSaveButton(true);
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Function to save the full conversation to the blockchain
+  const handleSaveFullConversation = async () => {
+    if (!storeMessageConvId) {
+      console.log('Please enter a conversation ID');
+      return;
+    }
+
+    if (inMemoryMessages.length === 0) {
+      console.log('No messages to save');
+      return;
+    }
+
+    if (!signedAccountId) {
+      console.log('Please connect your wallet first');
+      if (modal) {
+        modal.show();
+      } else if (signIn) {
+        signIn();
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Get current timestamp
+      const timestamp = Math.floor(Date.now() / 1000);
+      
+      // Calculate total tokens for all messages
+      const totalTokens = calculateTotalTokens(inMemoryMessages);
+      console.log(`Total tokens used for conversation: ${totalTokens}`);
+      
+      // Convert to internal token format (multiply by 1,000,000)
+      const internalTokens = (totalTokens * 1000000).toString();
+      
+      // Prepare metadata
+      const metadata = {
+        tokens_reserved: "10000000", // 10 tokens reserved in internal units
+        tokens_used: internalTokens
+      };
+      
+      console.log(`Saving conversation with ${inMemoryMessages.length} messages using ${internalTokens} tokens`);
+      
+      // Call the contract method to save full conversation
+      const result = await callFunction({
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        method: "call_js_func",
+        args: {
+          function_name: "save_full_conversation",
+          conversation_id: storeMessageConvId,
+          messages: inMemoryMessages,
+          metadata: metadata,
+          timestamp: timestamp
+        }
+      });
+      
+      console.log('Full conversation saved successfully:', result);
+      
+      // Clear in-memory messages after saving
+      setInMemoryMessages([]);
+      setShowSaveButton(false);
+      setCalculatedTokens(0);
+      
+      // Refresh conversation history
+      handleGetConversationHistory();
+      
+      // Refresh token balance
+      if (refreshTokenBalance) {
+        await refreshTokenBalance();
+      }
+      
+      alert('Conversation saved successfully!');
+    } catch (error) {
+      console.error('Error saving full conversation:', error);
+      alert(`Error saving conversation: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Original function to store a single message on the blockchain
   const handleStoreMessage = async () => {
     if (!storeMessageConvId) {
       console.log('Please enter a conversation ID');
@@ -746,18 +985,48 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                   )}
                 </div>
                 
-                <button 
-                  onClick={handleStoreMessage} 
-                  disabled={loading || !storeMessageConvId || !messageContent}
-                  className="accent-button full-width"
-                >
-                  {loading ? 'Storing...' : '💾 Store Message'}
-                </button>
+                <div className="button-group">
+                  <button 
+                    onClick={handleSendMessage} 
+                    disabled={loading || !storeMessageConvId || !messageContent}
+                    className="primary-button"
+                    style={{ flex: 2 }}
+                  >
+                    {loading ? 'Sending...' : '📤 Send Message'}
+                  </button>
+                  
+                  <button 
+                    onClick={handleStoreMessage} 
+                    disabled={loading || !storeMessageConvId || !messageContent}
+                    className="accent-button"
+                    style={{ flex: 1 }}
+                  >
+                    {loading ? 'Storing...' : '💾 Store'}
+                  </button>
+                </div>
+                
+                {showSaveButton && (
+                  <button 
+                    onClick={handleSaveFullConversation} 
+                    disabled={loading || inMemoryMessages.length === 0}
+                    className="feature-button full-width"
+                    style={{ marginTop: '15px' }}
+                  >
+                    {loading ? 'Saving...' : `📥 Save Full Conversation (${calculatedTokens} tokens)`}
+                  </button>
+                )}
                 
                 {aiAnalyzing && (
                   <div className="ai-analyzing-indicator">
                     <div className="spinner"></div>
                     <span>AI analyzing market data...</span>
+                  </div>
+                )}
+                
+                {inMemoryMessages.length > 0 && (
+                  <div className="memory-message-indicator">
+                    <div className="memory-icon">💬</div>
+                    <span>{inMemoryMessages.length} messages in memory • {calculatedTokens} tokens used</span>
                   </div>
                 )}
               </div>
