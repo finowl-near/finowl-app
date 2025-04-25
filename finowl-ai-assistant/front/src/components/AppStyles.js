@@ -1268,6 +1268,37 @@ export default css.global`
     margin-right: 6px;
   }
 
+  /* Button group for side-by-side buttons */
+  .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    width: 100%;
+  }
+  
+  /* Memory messages indicator */
+  .memory-message-indicator {
+    display: flex;
+    align-items: center;
+    margin-top: 12px;
+    padding: 10px;
+    background-color: rgba(246, 173, 85, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #f6ad55;
+  }
+  
+  .memory-icon {
+    font-size: 16px;
+    margin-right: 10px;
+    animation: pulse 2s infinite;
+  }
+  
+  .memory-message-indicator span {
+    color: #ed8936;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
   /* Markdown Styling */
   .message.system .message-content h1 {
     font-size: 1.5rem;
