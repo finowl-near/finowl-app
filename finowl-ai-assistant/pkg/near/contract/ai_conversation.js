@@ -189,6 +189,56 @@ export function store_message() {
   }));
 }
 
+export function save_full_conversation() {
+  const { conversation_id, messages, metadata, timestamp } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+
+  if (!conversation_id || !messages || !metadata || !timestamp) {
+    env.panic("Missing required fields");
+    return;
+  }
+
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const messages_key = `conversation_${conversation_id}_messages`;
+
+  let existing_metadata = env.get_data(metadata_key);
+  let existing_messages = env.get_data(messages_key);
+
+  let parsed_metadata;
+  let parsed_messages;
+
+  if (existing_metadata && existing_messages) {
+    parsed_metadata = JSON.parse(existing_metadata);
+    parsed_messages = JSON.parse(existing_messages);
+
+    // Merge messages
+    parsed_messages = parsed_messages.concat(messages);
+
+    // Update metadata
+    parsed_metadata.tokens_reserved = (BigInt(parsed_metadata.tokens_reserved || "0") + BigInt(metadata.tokens_reserved || "0")).toString();
+    parsed_metadata.tokens_used = (BigInt(parsed_metadata.tokens_used || "0") + BigInt(metadata.tokens_used || "0")).toString();
+    parsed_metadata.message_count = (parsed_metadata.message_count || 0) + messages.length;
+    parsed_metadata.last_active = timestamp;
+  } else {
+    // New conversation
+    parsed_metadata = {
+      id: conversation_id,
+      owner: account_id,
+      created_at: timestamp,
+      last_active: timestamp,
+      tokens_reserved: metadata.tokens_reserved || "0",
+      tokens_used: metadata.tokens_used || "0",
+      message_count: messages.length,
+    };
+    parsed_messages = messages;
+  }
+
+  env.set_data(messages_key, JSON.stringify(parsed_messages));
+  env.set_data(metadata_key, JSON.stringify(parsed_metadata));
+
+  env.value_return(JSON.stringify({ success: true, conversation_id, message_count: parsed_messages.length }));
+}
+
 /**
  * Add more tokens to an existing conversation.
  */
