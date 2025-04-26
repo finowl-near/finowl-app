@@ -57,7 +57,7 @@ export function list_all_users() {
 }
 
 /**
- * Grant 100 free tokens to a new user (only once).
+ * Grant 10000 free tokens to a new user (only once).
  * Requires an explicit `timestamp` for consistent and auditable token grant logging.
  */
 export function grant_free_tokens() {
@@ -75,7 +75,7 @@ export function grant_free_tokens() {
     return;
   }
 
-  const amount = 100_000_000n; // 100 tokens
+  const amount = 10_000_000_000n; // 10,000 tokens
   env.ft_transfer_internal(env.current_account_id(), account_id, amount.toString());
 
   profile.token_grants = profile.token_grants || [];

@@ -97,7 +97,7 @@ func (ma *MarketAnalyzer) AnalyzeMarket(summaries []feedstock.Summary, question 
 
 	// Call AI API
 	log.Printf("🔄 Sending request to AI model: %s", ma.model)
-	aiResponse, err := ma.aiClient.GetCompletion(prompt, ma.model, 0, 500)
+	aiResponse, err := ma.aiClient.GetCompletion(prompt, ma.model, 0, 2000)
 	if err != nil {
 		log.Printf("❌ AI API error: %v", err)
 		return nil, fmt.Errorf("AI API error: %w", err)

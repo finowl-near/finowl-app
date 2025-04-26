@@ -67,7 +67,7 @@ func LoadConfig() *AppConfig {
 		AI: AIConfig{
 			APIKey:   getFirstEnv("FINOWL_AI_API_KEY", "AI_API_KEY", ""),
 			Endpoint: getFirstEnv("FINOWL_AI_ENDPOINT", "AI_API_ENDPOINT", "https://api.deepseek.com/v1/chat/completions"),
-			Model:    getEnvWithDefault("FINOWL_AI_MODEL", "deepseek-chat"),
+			Model:    getEnvWithDefault("FINOWL_AI_MODEL", "deepseek-reasoner"),
 		},
 		Feedstock: FeedstockConfig{
 			APIBaseURL:   getEnvWithDefault("FINOWL_API_BASE_URL", "http://localhost:8080"),

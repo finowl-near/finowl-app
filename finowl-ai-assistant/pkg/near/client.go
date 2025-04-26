@@ -438,12 +438,12 @@ func (c *Client) RefundReservedTokens(conversationID string) (map[string]interfa
 	return c.userAccount.FunctionCall(c.contractID, "call_js_func", argsJSON, gas, *deposit)
 }
 
-func (c *Client) DeductTokens(conversationID string, amount string) (map[string]interface{}, error) {
+func (c *Client) DeductTokens(conversationID string, amount string, timestamp int64) (map[string]interface{}, error) {
 	args := map[string]interface{}{
 		"function_name":   "deduct_tokens_from_conversation",
 		"conversation_id": conversationID,
 		"amount":          amount,
-		"timestamp":       time.Now().Unix(),
+		"timestamp":       timestamp,
 	}
 	argsJSON, _ := json.Marshal(args)
 
