@@ -1095,6 +1095,51 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     return conversationHistory.slice(-DEFAULT_VISIBLE_MESSAGES);
   };
 
+  // Add a new function for refunding tokens
+  const handleRefundTokens = async (conversationId) => {
+    if (!signedAccountId) {
+      console.log('Please connect your wallet first');
+      if (modal) {
+        modal.show();
+      } else if (signIn) {
+        signIn();
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      console.log(`Refunding tokens from conversation: ${conversationId}`);
+      
+      const result = await callFunction({
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        method: "call_js_func",
+        args: {
+          function_name: "refund_reserved_tokens",
+          conversation_id: conversationId
+        }
+      });
+      
+      console.log('Tokens refunded successfully:', result);
+      
+      // Refresh token balance since tokens were transferred back to wallet
+      if (refreshTokenBalance) {
+        await refreshTokenBalance();
+      }
+      
+      // Refresh conversations list to update token balances
+      handleListConversations(false);
+      
+      alert(`Successfully refunded tokens from conversation: ${conversationId}`);
+    } catch (error) {
+      console.error('Error refunding tokens:', error);
+      alert(`Error refunding tokens: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <style jsx>{`
@@ -1123,6 +1168,38 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           display: flex;
           align-items: center;
           justify-content: space-between;
+        }
+        
+        .conversation-actions {
+          display: flex;
+          gap: 5px;
+        }
+        
+        .refund-btn {
+          padding: 3px 8px;
+          background-color: #28a745;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.8rem;
+          display: flex;
+          align-items: center;
+        }
+        
+        .refund-btn:hover {
+          background-color: #218838;
+        }
+        
+        .refund-btn:disabled {
+          background-color: #6c757d;
+          cursor: not-allowed;
+        }
+        
+        .refund-btn::before {
+          content: '↩️';
+          margin-right: 2px;
+          font-size: 0.8rem;
         }
       `}</style>
       
@@ -1336,12 +1413,24 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                           </span>
                         )}
                       </div>
-                      <button 
-                        className="copy-btn" 
-                        onClick={() => handleCopyConversationId(conv.id)}
-                      >
-                        Use
-                      </button>
+                      <div className="conversation-actions">
+                        <button 
+                          className="copy-btn" 
+                          onClick={() => handleCopyConversationId(conv.id)}
+                        >
+                          Use
+                        </button>
+                        {conv.tokensRemaining > 0 && (
+                          <button
+                            className="refund-btn"
+                            onClick={() => handleRefundTokens(conv.id)}
+                            disabled={loading}
+                            title="Refund remaining tokens back to your wallet"
+                          >
+                            Refund
+                          </button>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
