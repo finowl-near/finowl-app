@@ -444,3 +444,26 @@ export function conversation_exists() {
   const exists = !!env.get_data(`conversation_${conversation_id}_metadata`);
   env.value_return(JSON.stringify({ exists }));
 }
+
+export function buy_tokens_for_near() {
+  const { attached_deposit } = JSON.parse(env.input());
+
+  if (!attached_deposit) {
+    env.panic("Missing attached_deposit");
+    return;
+  }
+
+  const account_id = env.signer_account_id();
+  const attached = BigInt(attached_deposit);
+
+  if (attached < 50_000_000_000_000_000_000_000n) { // 0.05 NEAR
+    env.panic("Minimum 0.05 NEAR required to purchase tokens");
+    return;
+  }
+
+  const tokenAmount = (attached * 200_000_000_000n) / 1_000_000_000_000_000_000_000_000n;
+
+  env.ft_transfer_internal(env.current_account_id(), account_id, tokenAmount.toString());
+
+  env.value_return(JSON.stringify({ purchased: tokenAmount.toString() }));
+}
