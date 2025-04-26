@@ -122,14 +122,7 @@ func extractSuccessValue(result map[string]interface{}) map[string]interface{} {
 	return out
 }
 
-// DeductTokensRequest represents the input for deducting tokens
-type DeductTokensRequest struct {
-	ConversationID string `json:"conversation_id"`
-	Amount         string `json:"amount"` // Pass as string to avoid float precision issues
-}
-
 // DeductTokensFromConversationHandler lets the contract deduct tokens from a conversation
-
 func (h *Handler) DeductTokensHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
@@ -139,19 +132,23 @@ func (h *Handler) DeductTokensHandler(w http.ResponseWriter, r *http.Request) {
 	req := struct {
 		ConversationID string `json:"conversation_id"`
 		Amount         string `json:"amount"`
+		Timestamp      int64  `json:"timestamp"`
 	}{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ConversationID == "" || req.Amount == "" {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ConversationID == "" || req.Amount == "" || req.Timestamp == 0 {
 		http.Error(w, "Invalid JSON or missing fields", http.StatusBadRequest)
 		return
 	}
 
-	result, err := h.NearClient.DeductTokens(req.ConversationID, req.Amount)
+	// 🪵 Add simple logs
+	fmt.Printf("[DeductTokens] Request received: ConversationID=%s | Amount=%s | Timestamp=%d\n", req.ConversationID, req.Amount, req.Timestamp)
+
+	result, err := h.NearClient.DeductTokens(req.ConversationID, req.Amount, req.Timestamp)
 	if err != nil {
+		fmt.Printf("[DeductTokens] Error deducting tokens: %v\n", err)
 		http.Error(w, "Failed to deduct tokens: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Decode base64 string from contract response
 	statusMap, ok := result["status"].(map[string]interface{})
 	if !ok {
 		http.Error(w, "Invalid contract result: missing status", http.StatusInternalServerError)
@@ -176,7 +173,10 @@ func (h *Handler) DeductTokensHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Final clean response
+	// 🪵 Log success
+	fmt.Printf("[DeductTokens] Successfully deducted tokens for ConversationID=%s | New Used=%v | Remaining=%v\n",
+		parsed["conversation_id"], parsed["new_used"], parsed["remaining"])
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":         true,
