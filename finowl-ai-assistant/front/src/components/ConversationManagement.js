@@ -235,7 +235,45 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           }
         });
         console.log('Conversations list (view method):', result);
-        setConversations(result);
+        
+        // Fetch metadata for each conversation
+        const conversationsWithMetadata = await Promise.all(
+          result.map(async (convId) => {
+            try {
+              const metadata = await viewFunction({
+                contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+                method: "view_js_func",
+                args: {
+                  function_name: "get_conversation_metadata",
+                  conversation_id: convId
+                }
+              });
+              
+              // Calculate remaining tokens
+              const tokensReserved = BigInt(metadata.tokens_reserved || "0");
+              const tokensUsed = BigInt(metadata.tokens_used || "0");
+              const tokensRemaining = tokensReserved > tokensUsed ? tokensReserved - tokensUsed : BigInt(0);
+              
+              // Convert to display format (divide by 1_000_000)
+              const displayRemaining = Number(tokensRemaining) / 1_000_000;
+              
+              return {
+                id: convId,
+                metadata,
+                tokensRemaining: displayRemaining
+              };
+            } catch (error) {
+              console.error(`Error fetching metadata for conversation ${convId}:`, error);
+              return {
+                id: convId,
+                metadata: null,
+                tokensRemaining: 0
+              };
+            }
+          })
+        );
+        
+        setConversations(conversationsWithMetadata);
       } catch (viewError) {
         console.log('View method failed, trying call method:', viewError);
         
@@ -249,7 +287,45 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           }
         });
         console.log('Conversations list (call method):', result);
-        setConversations(result);
+        
+        // Fetch metadata for each conversation
+        const conversationsWithMetadata = await Promise.all(
+          result.map(async (convId) => {
+            try {
+              const metadata = await callFunction({
+                contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+                method: "call_js_func",
+                args: {
+                  function_name: "get_conversation_metadata",
+                  conversation_id: convId
+                }
+              });
+              
+              // Calculate remaining tokens
+              const tokensReserved = BigInt(metadata.tokens_reserved || "0");
+              const tokensUsed = BigInt(metadata.tokens_used || "0");
+              const tokensRemaining = tokensReserved > tokensUsed ? tokensReserved - tokensUsed : BigInt(0);
+              
+              // Convert to display format (divide by 1_000_000)
+              const displayRemaining = Number(tokensRemaining) / 1_000_000;
+              
+              return {
+                id: convId,
+                metadata,
+                tokensRemaining: displayRemaining
+              };
+            } catch (error) {
+              console.error(`Error fetching metadata for conversation ${convId}:`, error);
+              return {
+                id: convId,
+                metadata: null,
+                tokensRemaining: 0
+              };
+            }
+          })
+        );
+        
+        setConversations(conversationsWithMetadata);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -396,17 +472,71 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             const aiMessageTokens = calculateTokens(formattedResponse);
             console.log(`AI response uses ${aiMessageTokens} tokens`);
             
-            // Create system message for the AI response
-            const systemMessage = {
-              role: "system",
-              content: formattedResponse,
-              timestamp: Math.floor(Date.now() / 1000)
-            };
+            // Call the backend to deduct tokens before showing AI response
+            try {
+              // Calculate the total tokens needed for this AI response
+              const tokensToDeduct = (aiMessageTokens * 1_000_000).toFixed(0);
+              
+              console.log(`Deducting ${tokensToDeduct} tokens for AI response`);
+              
+              // Call the backend API to deduct tokens
+              const deductResponse = await fetch('http://localhost:8080/api/deduct-tokens', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  conversation_id: storeMessageConvId,
+                  amount: tokensToDeduct,
+                  timestamp: Math.floor(Date.now() / 1000)
+                }),
+              });
+              
+              if (!deductResponse.ok) {
+                throw new Error(`Failed to deduct tokens: ${deductResponse.status}`);
+              }
+              
+              const deductResult = await deductResponse.json();
+              console.log('Token deduction result:', deductResult);
+              
+              if (!deductResult.success) {
+                throw new Error('Token deduction failed');
+              }
+              
+              // If we're here, token deduction succeeded, so show the AI response
+              console.log(`Successfully deducted tokens. Remaining: ${deductResult.remaining}`);
+              
+              // Create system message for the AI response
+              const systemMessage = {
+                role: "system",
+                content: formattedResponse,
+                timestamp: Math.floor(Date.now() / 1000)
+              };
+              
+              // Add to in-memory messages
+              setInMemoryMessages(prev => [...prev, systemMessage]);
+              console.log('AI response added to in-memory messages');
+              
+              // Refresh conversations list to update token balances
+              handleListConversations(false);
+              
+            } catch (deductError) {
+              console.error('Token deduction failed:', deductError);
+              
+              // Create an error message for insufficient tokens
+              const tokenErrorMessage = {
+                role: "system",
+                content: `# Insufficient Tokens\n\n` +
+                  `I cannot provide a response because there are insufficient tokens in this conversation.\n\n` +
+                  `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`,
+                timestamp: Math.floor(Date.now() / 1000)
+              };
+              
+              // Add the error message to in-memory messages
+              setInMemoryMessages(prev => [...prev, tokenErrorMessage]);
+              console.log('Token error message added to in-memory messages');
+            }
             
-            // Add to in-memory messages
-            setInMemoryMessages(prev => [...prev, systemMessage]);
-            
-            console.log('AI response added to in-memory messages');
           } else {
             // If AI analysis failed, create an error message
             const errorMessage = {
@@ -488,7 +618,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       console.log(`Total tokens used for conversation: ${totalTokens}`);
       
       // Convert to internal token format (multiply by 1,000,000)
-      const internalTokens = (totalTokens * 1000000).toString();
+      const internalTokens = (totalTokens * 1_000_000).toFixed(0);
       
       // Prepare metadata
       const metadata = {
@@ -525,6 +655,9 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       if (refreshTokenBalance) {
         await refreshTokenBalance();
       }
+      
+      // Refresh conversations list to update token balances
+      handleListConversations(false);
       
       alert('Conversation saved successfully!');
     } catch (error) {
@@ -703,7 +836,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       setLoading(true);
       // Convert UI token amount (e.g., 5) to internal representation (e.g., 5000000)
       // Multiplying by 1,000,000 to match the contract's internal representation
-      const internalAmount = (tokenAmount * 1000000).toString();
+      const internalAmount = (tokenAmount * 1_000_000).toFixed(0);
       
       const result = await callFunction({
         contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
@@ -723,6 +856,9 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       if (refreshTokenBalance) {
         await refreshTokenBalance();
       }
+      
+      // Refresh conversations list to update token balances
+      handleListConversations(false);
       
       alert(`Successfully added ${tokenAmount} tokens to conversation!`);
     } catch (error) {
@@ -751,8 +887,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       const timestamp = Math.floor(Date.now() / 1000);
       const generatedConversationId = `${signedAccountId}_${timestamp}`;
       
-      // Reserve amount is 10 tokens (10 * 1000000 internal units)
-      const reserveAmount = "10000000";
+      // Reserve amount is 1000 tokens (1000 * 1000000 internal units)
+      const reserveAmount = "1000000000";
       
       const result = await callFunction({
         contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
@@ -823,24 +959,95 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
           ).join('\n');
         
-        // Store the AI response as a system message
-        await callFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
-          method: "call_js_func",
-          args: {
-            function_name: "store_message",
-            conversation_id: storeMessageConvId,
-            role: "system",
-            content: formattedResponse,
-            timestamp: Math.floor(Date.now() / 1000)
+        // Calculate tokens for AI response
+        const aiMessageTokens = calculateTokens(formattedResponse);
+        console.log(`Retry AI response uses ${aiMessageTokens} tokens`);
+        
+        // Call the backend to deduct tokens before showing AI response
+        try {
+          // Calculate the total tokens needed for this AI response
+          const tokensToDeduct = (aiMessageTokens * 1_000_000).toFixed(0);
+          
+          console.log(`Deducting ${tokensToDeduct} tokens for retry AI response`);
+          
+          // Call the backend API to deduct tokens
+          const deductResponse = await fetch('http://localhost:8080/api/deduct-tokens', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              conversation_id: storeMessageConvId,
+              amount: tokensToDeduct,
+              timestamp: Math.floor(Date.now() / 1000)
+            }),
+          });
+          
+          if (!deductResponse.ok) {
+            throw new Error(`Failed to deduct tokens: ${deductResponse.status}`);
           }
-        });
-        
-        console.log('Retry successful, AI response stored');
-        
-        // Refresh conversation history if needed
-        if (storeMessageConvId === conversationId) {
-          handleGetConversationHistory();
+          
+          const deductResult = await deductResponse.json();
+          console.log('Token deduction result for retry:', deductResult);
+          
+          if (!deductResult.success) {
+            throw new Error('Token deduction failed for retry');
+          }
+          
+          // If token deduction succeeded, store the AI response
+          console.log(`Successfully deducted tokens for retry. Remaining: ${deductResult.remaining}`);
+          
+          // Store the AI response as a system message
+          await callFunction({
+            contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+            method: "call_js_func",
+            args: {
+              function_name: "store_message",
+              conversation_id: storeMessageConvId,
+              role: "system",
+              content: formattedResponse,
+              timestamp: Math.floor(Date.now() / 1000)
+            }
+          });
+          
+          console.log('Retry successful, AI response stored');
+          
+          // Refresh conversation history if needed
+          if (storeMessageConvId === conversationId) {
+            handleGetConversationHistory();
+          }
+          
+          // Refresh conversations list to update token balances
+          handleListConversations(false);
+          
+        } catch (deductError) {
+          console.error('Token deduction failed for retry:', deductError);
+          
+          // Store an error message for insufficient tokens
+          const tokenErrorResponse = 
+            `# Insufficient Tokens\n\n` +
+            `I cannot provide a response because there are insufficient tokens in this conversation.\n\n` +
+            `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`;
+          
+          await callFunction({
+            contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+            method: "call_js_func",
+            args: {
+              function_name: "store_message",
+              conversation_id: storeMessageConvId,
+              role: "system",
+              content: tokenErrorResponse,
+              timestamp: Math.floor(Date.now() / 1000)
+            }
+          });
+          
+          // Refresh conversation history if needed
+          if (storeMessageConvId === conversationId) {
+            handleGetConversationHistory();
+          }
+          
+          // Refresh conversations list to update token balances
+          handleListConversations(false);
         }
       } else {
         // If retry still fails, store another error message
@@ -865,6 +1072,9 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         if (storeMessageConvId === conversationId) {
           handleGetConversationHistory();
         }
+        
+        // Refresh conversations list to update token balances
+        handleListConversations(false);
       }
     } catch (error) {
       console.error('Error during retry:', error);
@@ -887,6 +1097,35 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
   return (
     <>
+      <style jsx>{`
+        .conversation-details {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          overflow: hidden;
+        }
+        
+        .tokens-remaining {
+          font-size: 0.85rem;
+          color: #6c757d;
+          margin-top: 2px;
+          display: flex;
+          align-items: center;
+        }
+        
+        .tokens-remaining::before {
+          content: '💰';
+          margin-right: 4px;
+          font-size: 0.8rem;
+        }
+        
+        .conversation-list li {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+      `}</style>
+      
       <section className="section">
         <h1 className="section-title">Conversation Management</h1>
         <div className="two-column-layout">
@@ -1059,7 +1298,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                       className="token-amount-input"
                     />
                     <span className="token-hint">
-                      Sends as {tokenAmount * 1000000} internal units
+                      Sends as {tokenAmount * 1_000_000} internal units
                     </span>
                   </div>
                 </div>
@@ -1087,12 +1326,19 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
               <h2 className="panel-title">Your Conversations</h2>
               {conversations.length > 0 ? (
                 <ul className="conversation-list">
-                  {conversations.map((convId, index) => (
+                  {conversations.map((conv, index) => (
                     <li key={index}>
-                      <span className="conversation-id">{convId}</span>
+                      <div className="conversation-details">
+                        <span className="conversation-id">{conv.id}</span>
+                        {conv.tokensRemaining !== undefined && (
+                          <span className="tokens-remaining">
+                            {conv.tokensRemaining.toFixed(2)} tokens left
+                          </span>
+                        )}
+                      </div>
                       <button 
                         className="copy-btn" 
-                        onClick={() => handleCopyConversationId(convId)}
+                        onClick={() => handleCopyConversationId(conv.id)}
                       >
                         Use
                       </button>
