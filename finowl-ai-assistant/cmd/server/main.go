@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"finowl-ai-assistant/internal/app"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"finowl-ai-assistant/internal/app"
 
 	"github.com/joho/godotenv"
 )
@@ -40,6 +41,25 @@ func main() {
 	waitForShutdown(server)
 }
 
+// corsMiddleware adds CORS headers to responses
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow any origin for development
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Call the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 // setupServer creates and configures the HTTP server
 func setupServer(application *app.App) *http.Server {
 	// Create router and register handlers
@@ -53,8 +73,23 @@ func setupServer(application *app.App) *http.Server {
 
 	// NEAR blockchain endpoints
 	if application.APIHandler != nil {
-		mux.HandleFunc("/create-conversation", application.APIHandler.CreateConversationHandler)
+		mux.HandleFunc("/api/register-storage", application.APIHandler.RegisterStorageHandler)
 		mux.HandleFunc("/register", application.APIHandler.RegisterHandler)
+		mux.HandleFunc("/api/check-user", application.APIHandler.CheckUserStatusHandler)
+		mux.HandleFunc("/api/list-users", application.APIHandler.ListAllUsersHandler)
+		mux.HandleFunc("/api/grant-free-tokens", application.APIHandler.GrantFreeTokensHandler)
+		mux.HandleFunc("/api/start-conversation", application.APIHandler.StartConversationHandler)
+		mux.HandleFunc("/api/get-user-conversations", application.APIHandler.GetUserConversationsHandler)
+		// in setupServer
+		mux.HandleFunc("/api/store-message", application.APIHandler.StoreMessageHandler)
+		mux.HandleFunc("/api/get-conversation-history", application.APIHandler.GetConversationHistoryHandler)
+		mux.HandleFunc("/api/get-user-balance", application.APIHandler.GetUserTokenBalanceHandler)
+
+		mux.HandleFunc("/api/grant-paid-tokens", application.APIHandler.GrantPaidTokensHandler)
+		mux.HandleFunc("/api/add-tokens-to-conversation", application.APIHandler.AddTokensToConversationHandler)
+		mux.HandleFunc("/api/refund-tokens", application.APIHandler.RefundTokensHandler)
+		mux.HandleFunc("/api/deduct-tokens", application.APIHandler.DeductTokensHandler)
+		mux.HandleFunc("/api/get-conversation-metadata", application.APIHandler.GetConversationMetadataHandler)
 	} else {
 		// Add placeholder handlers when NEAR functionality is not available
 		unavailableHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -69,10 +104,10 @@ func setupServer(application *app.App) *http.Server {
 	// Create and configure the server
 	return &http.Server{
 		Addr:         ":" + application.Config.Server.Port,
-		Handler:      mux,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Handler:      corsMiddleware(mux), // Apply CORS middleware
+		ReadTimeout:  300 * time.Second,   // Increased from 15s to 5 minutes
+		WriteTimeout: 300 * time.Second,   // Increased from 15s to 5 minutes
+		IdleTimeout:  120 * time.Second,   // Increased from 60s to 2 minutes
 	}
 }
 
@@ -96,7 +131,7 @@ func waitForShutdown(server *http.Server) {
 	log.Println("⚠️ Shutting down server...")
 
 	// Create a deadline context for shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Attempt graceful shutdown

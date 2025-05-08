@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 // App is the main application container
@@ -108,21 +109,57 @@ func NewApp() (*App, error) {
 
 // fetchSummaries fetches the latest summaries with error handling and fallback
 func fetchSummaries(client *feedstock.Client, count int) ([]feedstock.Summary, error) {
+	log.Printf("🔍 Attempting to fetch %d summaries...", count)
+
 	// Try to get the last summary ID
 	lastID, err := client.GetLastSummaryID()
 	if err != nil {
-		log.Printf("Warning: Failed to get last summary ID: %v", err)
-		log.Printf("Using default ID of %d for summaries", count)
+		log.Printf("⚠️ Warning: Failed to get last summary ID: %v", err)
+		log.Printf("⚠️ Using default ID of %d for summaries", count)
 		lastID = count // Fallback to using the count as the last ID
+	} else {
+		log.Printf("✅ Successfully retrieved last summary ID: %d", lastID)
 	}
 
 	// Fetch the latest summaries
+	log.Printf("🔍 Fetching %d summaries from ID %d...", count, lastID)
+	startTime := time.Now()
+
 	summaries, err := client.FetchSummaries(lastID, count)
 	if err != nil {
+		log.Printf("❌ Failed to fetch summaries: %v", err)
 		return nil, err
 	}
 
-	log.Printf("Fetched %d summaries for analysis", len(summaries))
+	fetchTime := time.Since(startTime)
+
+	log.Printf("✅ Fetched %d summaries in %v", len(summaries), fetchTime)
+
+	// Log summary IDs and timestamps for debugging
+	if len(summaries) > 0 {
+		ids := make([]int, 0, len(summaries))
+		var oldestTime, newestTime time.Time
+
+		for i, s := range summaries {
+			ids = append(ids, s.ID)
+
+			if i == 0 || s.Timestamp.After(newestTime) {
+				newestTime = s.Timestamp
+			}
+
+			if i == 0 || s.Timestamp.Before(oldestTime) {
+				oldestTime = s.Timestamp
+			}
+		}
+
+		log.Printf("📊 Summary IDs: %v", ids)
+		log.Printf("📊 Newest summary: %s", newestTime.Format(time.RFC3339))
+		log.Printf("📊 Oldest summary: %s", oldestTime.Format(time.RFC3339))
+		log.Printf("📊 Date range: %v", newestTime.Sub(oldestTime))
+	} else {
+		log.Printf("⚠️ No summaries were fetched!")
+	}
+
 	return summaries, nil
 }
 

@@ -2,12 +2,14 @@ package ai
 
 import (
 	"encoding/json"
-	"finowl-ai-assistant/pkg/feedstock"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"finowl-ai-assistant/pkg/feedstock"
 )
 
 // Token represents a cryptocurrency token
@@ -68,33 +70,60 @@ func (ma *MarketAnalyzer) Configure(promptsPath, model string) {
 // AnalyzeMarket analyzes the market based on summaries and a question
 func (ma *MarketAnalyzer) AnalyzeMarket(summaries []feedstock.Summary, question string) (*MarketAnalysisResponse, error) {
 	// Pre-process question
+	log.Printf("🔍 Analyzing question: '%s'", question)
+
 	if !isCryptoRelated(question) {
+		log.Printf("❌ Question rejected: Not crypto-related: '%s'", question)
 		return nil, fmt.Errorf("i specialize in analyzing crypto markets and providing investment insights. Please ask about crypto trends, strategies, or investments")
+	}
+
+	log.Printf("✅ Question is crypto-related, proceeding with analysis")
+
+	// Check if we have any summaries to analyze
+	if len(summaries) == 0 {
+		log.Printf("⚠️ No summaries provided for analysis")
+		return nil, fmt.Errorf("no market data available for analysis")
 	}
 
 	// Prepare the AI prompt
 	prompt, err := ma.buildPrompt(summaries, question)
 	if err != nil {
+		log.Printf("❌ Failed to build prompt: %v", err)
 		return nil, fmt.Errorf("failed to build prompt: %w", err)
 	}
 
+	// Log prompt length for debugging
+	log.Printf("📝 Prompt built successfully (%d characters)", len(prompt))
+
 	// Call AI API
-	aiResponse, err := ma.aiClient.GetCompletion(prompt, ma.model, 0, 500)
+	log.Printf("🔄 Sending request to AI model: %s", ma.model)
+	aiResponse, err := ma.aiClient.GetCompletion(prompt, ma.model, 0, 2000)
 	if err != nil {
+		log.Printf("❌ AI API error: %v", err)
 		return nil, fmt.Errorf("AI API error: %w", err)
 	}
+
+	// Log response length for debugging
+	log.Printf("📝 Received AI response (%d characters)", len(aiResponse))
 
 	// Extract JSON from the response (in case it's embedded in text/markdown)
 	jsonStr := extractJSON(aiResponse)
 	if jsonStr == "" {
+		log.Printf("❌ Could not find valid JSON in the AI response")
+		log.Printf("📝 Raw AI response: %s", aiResponse)
 		return nil, fmt.Errorf("could not find valid JSON in the AI response")
 	}
 
 	// Parse the response
 	var marketResponse MarketAnalysisResponse
 	if err := json.Unmarshal([]byte(jsonStr), &marketResponse); err != nil {
+		log.Printf("❌ Failed to parse AI response: %v", err)
+		log.Printf("📝 JSON content: %s", jsonStr)
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}
+
+	log.Printf("✅ Analysis complete: sentiment=%s, decision=%s",
+		marketResponse.MarketSentiment, marketResponse.InvestmentDecision)
 
 	return &marketResponse, nil
 }
@@ -151,16 +180,24 @@ func extractJSON(text string) string {
 // Helper function to check if a question is crypto-related
 func isCryptoRelated(question string) bool {
 	keywords := []string{
-		"crypto", "token", "coin", "bitcoin", "ethereum",
-		"market", "trend", "buy", "sell", "hold", "invest",
-		"defi", "nft", "blockchain", "altcoin", "exchange",
+		"crypto", "token", "coin", "bitcoin", "ethereum", "btc", "eth",
+		"market", "trend", "buy", "sell", "hold", "invest", "trading",
+		"defi", "nft", "blockchain", "altcoin", "exchange", "price",
+		"binance", "coinbase", "wallet", "mining", "staking", "chain",
 	}
+
 	lowerQuestion := strings.ToLower(question)
+
+	log.Printf("🔍 Checking if question is crypto-related: '%s'", lowerQuestion)
+
 	for _, kw := range keywords {
 		if strings.Contains(lowerQuestion, kw) {
+			log.Printf("✅ Crypto keyword matched: '%s'", kw)
 			return true
 		}
 	}
+
+	log.Printf("❌ No crypto keywords matched in question")
 	return false
 }
 

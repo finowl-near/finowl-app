@@ -3,53 +3,32 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"log"
-	"math/big"
-	"net/http"
-
 	"finowl-ai-assistant/pkg/near"
+	"fmt"
+	"net/http"
+	"time"
 )
 
-type CreateConversationRequest struct {
-	ConversationID string `json:"conversation_id"`
-}
-
-func (h *Handler) CreateConversationHandler(w http.ResponseWriter, r *http.Request) {
+// StartConversationHandler creates a new conversation and reserves tokens for it
+func (h *Handler) StartConversationHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var req CreateConversationRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ConversationID == "" {
-		http.Error(w, "Invalid JSON or missing conversation_id", http.StatusBadRequest)
-		return
-	}
+	// Generate a unique conversation ID using account ID + timestamp
+	accountID := h.NearClient.GetUserAccountID()
+	timestamp := time.Now().Unix()
+	convoID := fmt.Sprintf("%s_%d", accountID, timestamp)
+	reserveAmount := "10000000" // 10 FT tokens
 
-	userBalance, err := h.NearClient.GetUserBalance(h.NearClient.GetUserAccountID())
-	if err != nil {
-		http.Error(w, "Could not check user balance: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	minTokens := big.NewInt(1_000_000)
-	if userBalance.Cmp(minTokens) < 0 {
-		log.Printf("⚠️ Low balance (%s), funding user...\n", userBalance.String())
-		err := h.NearClient.FundUser(h.NearClient.GetUserAccountID(), "1000000")
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Auto-funding failed: %v", err), http.StatusInternalServerError)
-			return
-		}
-		log.Println("✅ Auto-funded user successfully")
-	}
-
-	result, err := h.NearClient.CreateConversation(req.ConversationID)
+	result, err := h.NearClient.StartConversation(convoID, reserveAmount)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Transaction failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	// Check the contract call result
 	status, ok := result["status"].(map[string]interface{})
 	if !ok {
 		http.Error(w, "Invalid contract result (missing status)", http.StatusInternalServerError)
@@ -62,10 +41,12 @@ func (h *Handler) CreateConversationHandler(w http.ResponseWriter, r *http.Reque
 			http.Error(w, "Base64 decode failed", http.StatusInternalServerError)
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success":         true,
 			"conversation_id": string(decodedBytes),
+			"reserved_tokens": reserveAmount,
 		})
 		return
 	}
@@ -84,5 +65,86 @@ func (h *Handler) CreateConversationHandler(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": false,
 		"error":   "Unexpected result format",
+	})
+}
+
+func (h *Handler) GetUserConversationsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	req := struct {
+		AccountID string `json:"account_id"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.AccountID == "" {
+		http.Error(w, "Missing account_id", http.StatusBadRequest)
+		return
+	}
+
+	conversations, err := h.NearClient.GetUserConversations(req.AccountID)
+	if err != nil {
+		http.Error(w, "Failed to fetch conversations: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":       true,
+		"conversations": conversations,
+	})
+}
+
+func (h *Handler) GetConversationHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	req := struct {
+		ConversationID string `json:"conversation_id"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ConversationID == "" {
+		http.Error(w, "Invalid JSON or missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.NearClient.GetConversationHistory(req.ConversationID)
+	if err != nil {
+		http.Error(w, "Failed to fetch history: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":   true,
+		"messages":  messages,
+		"msg_count": len(messages),
+	})
+}
+
+func (h *Handler) GetConversationMetadataHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		ConversationID string `json:"conversation_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ConversationID == "" {
+		http.Error(w, "Invalid request or missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	metadata, err := h.NearClient.GetConversationMetadata(req.ConversationID)
+	if err != nil {
+		http.Error(w, "Failed to fetch metadata: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":  true,
+		"metadata": metadata,
 	})
 }
