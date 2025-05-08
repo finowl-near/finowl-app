@@ -9,6 +9,7 @@ import wifiIcon from "@/app/assets/svg/wifiIcon.svg";
 import Image from "next/image";
 import ChatListIcon from "./Icons/ChatListIcon";
 import WifiIcon from "./Icons/WifiIcon";
+import Link from "next/link";
 
 export default function TableSearch() {
   const { switchTabs, setSwitchTabs } = useSwitchTabs();
@@ -17,14 +18,14 @@ export default function TableSearch() {
       <div className="flex gap-5">
         <div
           className={`${
-            !switchTabs &&
+            switchTabs === "mindshare" &&
             "bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content] transition-all duration-300 ease-in-out"
           } rounded-md p-px `}
         >
           <button
-            onClick={() => setSwitchTabs(false)}
+            onClick={() => setSwitchTabs("mindshare")}
             className={`${
-              switchTabs
+              switchTabs !== "mindshare"
                 ? "text-[#9D9D9D] "
                 : "bg-black/80 rounded-md  text-white "
             } font-normal px-2 py-px text-lg flex items-center`}
@@ -34,42 +35,47 @@ export default function TableSearch() {
         </div>
         <div
           className={`${
-            switchTabs &&
+            switchTabs === "feed" &&
             " bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content]"
           } rounded-md p-px transition-all duration-300 ease-in-out`}
         >
           <button
             className={`${
-              switchTabs
+              switchTabs === "feed"
                 ? "bg-black/80 rounded-md  text-white "
                 : "text-[#9D9D9D] "
             } font-normal px-2 py-px text-lg flex items-center`}
-            onClick={() => setSwitchTabs(true)}
+            onClick={() => setSwitchTabs("feed")}
           >
-            <WifiIcon/>
+            <WifiIcon />
             Feed
           </button>
         </div>
-        <div
-          className={`${
-            switchTabs &&
-            " bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content]"
-          } rounded-md p-px transition-all duration-300 ease-in-out`}
-        >
-          <button
+        <Link href={'/chat'}>
+          <div
             className={`${
-              switchTabs
-                ? "bg-black/80 rounded-md  text-white"
-                : "text-[#9D9D9D]"
-            } font-normal px-2 py-px text-lg flex items-center`}
-            onClick={() => setSwitchTabs(true)}
+              switchTabs === "chat" &&
+              " bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content]"
+            } rounded-md p-px transition-all duration-300 ease-in-out`}
           >
-            <ChatListIcon/>
-            Chat
-          </button>
-        </div>
+            <button
+              className={`${
+                switchTabs === "chat"
+                  ? "bg-black/80 rounded-md  text-white"
+                  : "text-[#9D9D9D]"
+              } font-normal px-2 py-px text-lg flex items-center`}
+            >
+              <ChatListIcon />
+              Chat
+            </button>
+          </div>
+        </Link>
       </div>
-      <div className={`flex justify-end items-center gap-5 ${switchTabs && "hidden"}`}>
+      <div
+        className={`flex justify-end items-center gap-5 ${
+          switchTabs !== "mindshare" && "hidden"
+        }`}
+      >
         <div className="relative overflow-hidden flex-grow">
           <MagnifyingGlassIcon
             className="w-10 p-2 absolute top-0"

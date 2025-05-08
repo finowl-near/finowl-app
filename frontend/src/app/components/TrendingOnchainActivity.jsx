@@ -22,7 +22,35 @@ export default function TrendingOnchainActivity() {
   //     setBlur(true);
   //   }
   // }, [signedAccountId]);
-  if (!onChainData) return null;
+  if (!onChainData) {
+    // Skeleton loader
+    return (
+      <div className="relative m-4 border border-[#292929] rounded-[10px] overflow-hidden animate-pulse">
+        <div className="flex items-center p-4 justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-[#42354c] rounded-full" />
+            <div className="h-6 w-40 bg-[#42354c] rounded" />
+          </div>
+          <div className="w-5 h-5 bg-[#42354c] rounded" />
+        </div>
+        <div className="px-4">
+          {[...Array(3)].map((_, idx) => (
+            <div key={idx} className="flex justify-between items-center py-3 border-b border-[#333]">
+              <div className="flex gap-4">
+                <div className="w-4 h-4 bg-[#42354c] rounded" />
+                <div className="w-24 h-4 bg-[#42354c] rounded" />
+              </div>
+              <div className="flex gap-2">
+                <div className="w-8 h-8 bg-[#42354c] rounded-full" />
+                <div className="w-8 h-8 bg-[#42354c] rounded-full" />
+              </div>
+              <div className="w-12 h-4 bg-[#42354c] rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <>
       <div className=" relative m-4 border border-[#292929] rounded-[10px] overflow-hidden">
