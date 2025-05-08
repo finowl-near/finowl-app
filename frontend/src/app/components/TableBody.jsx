@@ -12,6 +12,7 @@ import dophin from "@/app/assets/svg/dophin.svg";
 import whale from "@/app/assets/svg/whale.svg";
 import TopInfluencers from "./TopInfluencers";
 import moment from "moment";
+import Link from "next/link";
 
 const UnderRadar = (
   <div className="flex justify-center">
@@ -40,7 +41,6 @@ const Alpha = (
   </div>
 );
 
-
 export default function TableBody() {
   const tableData = useTableData((state) => state.tableData);
   const allInfluencers = useTableData((state) => state.allInfluencers);
@@ -51,7 +51,7 @@ export default function TableBody() {
       <tbody className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <tr>
           <td>
-            <InboxIcon className="w-20" color="#D8E864" />
+            <InboxIcon className="w-20" color="var(--primary-color)" />
           </td>
         </tr>
         <tr>
@@ -79,25 +79,25 @@ export default function TableBody() {
               <div className="flex">
                 <StarIcon className="w-6 mr-4" color="white" />
                 <div className="flex gap-4">
-                  <span className="text-[#D8E864] text-base font-bold">
+                  <span className="text-[var(--primary-color)] text-base font-bold">
                     {idx + 1}
                   </span>
                   <div className="flex items-center">
-                    {/* <Image
-                      src={CoinLogo}
-                      alt="Coin Logo"
-                      width={20}
-                      height={20}
-                    /> */}
-                    <span className="text-[#D0D0D0] text-base font-bold ml-2">
-                      {info.ticker_symbol}
-                    </span>
+                    <Link
+                      href={linkToTweet}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className="text-[#D0D0D0] text-base font-bold ml-2">
+                        {info.ticker_symbol}
+                      </span>
+                    </Link>
                   </div>
                 </div>
               </div>
             </td>
             <td align="center" className="py-4 px-3">
-              <p className="text-[#D8E864] font-medium text-center">
+              <p className="text-[var(--primary-color)] font-medium text-center">
                 {Math.floor(info.mindshare_score)}
               </p>
             </td>
@@ -127,26 +127,17 @@ export default function TableBody() {
                 </div>
               </Tooltip>
             </td>
-            {/* <td align="center" className="py-4 px-3">
-              <p className="text-[#E02828] font-medium text-center">-0.2%</p>
-            </td> */}
             <td align="center" className="py-4 px-3">
-              <p className="text-[#D0D0D0] font-medium text-center">{moment(info.first_mentioned_at).fromNow()}</p>
+              <p className="text-[#D0D0D0] font-medium text-center">
+                {moment(info.first_mentioned_at).fromNow()}
+              </p>
             </td>
             <td className="p-4">{tier}</td>
             <td align="center" className="py-4 px-3">
-              <TopInfluencers tickerSymbol={info.ticker_symbol} influencers={allInfluencers}/>
-              {/* <div className="flex items-center justify-center relative">
-                <div className="w-10 h-10 flex absolute left-0 z-20 justify-center items-center rounded-full bg-[#FF6347]/30 border border-[#FF6B34]">
-                  <p className="text-[#FF6B34] font-semibold text-lg ">5</p>
-                </div>
-                <div className="w-10 h-10 mask flex absolute left-8 z-10 justify-center items-center rounded-full bg-[#1E90FF]/30 border border-[#00BFFF]">
-                  <p className="text-[#00BFFF] font-semibold text-lg ">3</p>
-                </div>
-                <div className="w-10 h-10 mask flex absolute left-16 justify-center items-center rounded-full bg-[#32CD32]/30 border border-[#60FF60]">
-                  <p className="text-[#60FF60] font-semibold text-lg ">1</p>
-                </div>
-              </div> */}
+              <TopInfluencers
+                tickerSymbol={info.ticker_symbol}
+                influencers={allInfluencers}
+              />
             </td>
             <td className="py-4 px-3">
               <div className="flex items-center w-[25rem] justify-between">
@@ -155,12 +146,16 @@ export default function TableBody() {
                   {content}
                 </p>
                 {/* </Tooltip> */}
-                <a href={linkToTweet} target="_blank" rel="noopener noreferrer">
-                  <button className="text-[#141414] font-bold flex items-center px-2 py-px ml-5 rounded-md bg-[#D8E864]">
+                <Link
+                  href={linkToTweet}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <button className="text-[#141414] font-bold flex items-center px-2 py-px ml-5 rounded-md bg-[var(--primary-color)]">
                     <EyeIcon className="w-4 mr-1" color="#141414" />
                     View
                   </button>
-                </a>
+                </Link>
               </div>
             </td>
           </tr>

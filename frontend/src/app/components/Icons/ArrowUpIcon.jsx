@@ -3,7 +3,7 @@ import React from "react";
 export default function ArrowUpIcon() {
   return (
     <svg
-      fill="#D8E864"
+      fill="var(--primary-color)"
       width="8px"
       height="8px"
       viewBox="0 0 24 24"

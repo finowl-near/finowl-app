@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary-color: #BA98D5;
+  scroll-behavior: smooth;
+}
+
+.bg-image {
+  background-image: url('../app/assets/svg/bgDesktop.svg'); /* replace with your image path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.landing-bg {
+  background-image: url("./assets/bg-land.png");
+    background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.button-syle {
+  background: linear-gradient(#643989 60%, #BA98D5);
+  
+   /* background-image: repeating-linear-gradient(36deg, rgba(255,255,255, 0.25), rgba(255,255,255, 0.25) 1px, transparent 0px, transparent 2px);
+    background-size: 12px; */
+    box-shadow: inset 0px 1px 1px #ffffff4b, inset 0 0px 0px white, inset 0 -2px 1px #643989, inset 0 0px 0px white;
+}
+
 .custom-table {
   border-collapse: separate;
   border-spacing: 0;
@@ -22,7 +49,7 @@
   width: 48px;
   height: 48px;
   border: 5px solid #b4b4b4;
-  border-bottom-color: #d6e755;
+  border-bottom-color: var(--primary-color);
   border-radius: 50%;
   display: inline-block;
   box-sizing: border-box;

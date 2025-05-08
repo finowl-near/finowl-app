@@ -1,7 +1,7 @@
 const { create } = require("zustand");
 
 const useSwitchTabs = create((set) => ({
-    switchTabs: false,
+    switchTabs: "mindshare",
     setSwitchTabs: (sw) => {
         set({ switchTabs: sw })
     }
