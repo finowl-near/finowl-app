@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { IoClose } from "react-icons/io5";
-import React from "react";
+import React, { useEffect } from "react";
 
 export default function Modal({ isOpen, onClose, title, children }) {
   return (

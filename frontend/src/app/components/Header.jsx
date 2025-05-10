@@ -8,28 +8,28 @@ import { urbanist } from "../fonts";
 import { FaPlus } from "react-icons/fa";
 
 
-// import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import { useWalletSelector } from "@near-wallet-selector/react-hook";
 
 export default function Header() {
   const [action, setAction] = useState(() => {});
   const [label, setLabel] = useState("Loading...");
-  // const { signedAccountId, signIn, signOut } = useWalletSelector();
+  const { signedAccountId, signIn, signOut } = useWalletSelector();
 
-  // useEffect(() => {
-  //   if (signedAccountId) {
-  //     setAction(() => signOut);
-  //     setLabel(`Logout ${signedAccountId}`);
-  //   } else {
-  //     setAction(() => signIn);
-  //     setLabel("Connect Wallet");
-  //   }
-  // }, [signedAccountId, signIn, signOut]);
+  useEffect(() => {
+    if (signedAccountId) {
+      setAction(() => signOut);
+      setLabel(`Logout ${signedAccountId}`);
+    } else {
+      setAction(() => signIn);
+      setLabel("Connect Wallet");
+    }
+  }, [signedAccountId, signIn, signOut]);
   return (
     <>
       <div className="p-4 ">
         <div className="flex items-center justify-between">
           <LogoIcon />
-          <div className="space-x-3 flex">
+          <div className="flex gap-3">
             <button
               onClick={action}
               className="flex gap-2 items-center text-white bg-[#1F1923] border border-[#643989] truncate max-w-[150px] font-bold p-2 rounded-xl"

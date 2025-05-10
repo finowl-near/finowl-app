@@ -1,4 +1,6 @@
-import React, { useEffect, useCallback } from "react";
+"use client";
+
+import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation"; // Import useRouter
 import Header from "./Header";
 import TrendingMindshareScore from "./TrendingMindshareScore";
@@ -9,10 +11,11 @@ import TableSearch from "./TableSearch";
 import Table from "./Table";
 import useSwitchTabs from "../hooks/useSwitchTabs";
 import Feeds0 from "./Feeds0";
-import Modal from "./oldModal";
 import { useSearchParams } from "next/navigation";
 import Feeds from "./Feeds";
 import Chat from "./Chat";
+import OnBoarding from "./onboarding/OnBoarding";
+import Modal from "./Modal";
 
 export default function LandingPage() {
   const switchTabs = useSwitchTabs((state) => state.switchTabs);

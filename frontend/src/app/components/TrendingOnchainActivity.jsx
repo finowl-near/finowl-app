@@ -8,20 +8,20 @@ import Image from "next/image";
 import dophin from "@/app/assets/svg/dophin.svg";
 import whale from "@/app/assets/svg/whale.svg";
 import useTableData from "../hooks/useTableData";
-// import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import { useWalletSelector } from "@near-wallet-selector/react-hook";
 
 export default function TrendingOnchainActivity() {
   const onChainData = useTableData((state) => state.onChainData);
   console.log("on chain", onChainData);
-  // const { signedAccountId, signIn, signOut } = useWalletSelector();
+  const { signedAccountId, signIn, signOut } = useWalletSelector();
   const [blur, setBlur] = useState(true);
-  // useEffect(() => {
-  //   if (signedAccountId) {
-  //     setBlur(false);
-  //   } else {
-  //     setBlur(true);
-  //   }
-  // }, [signedAccountId]);
+  useEffect(() => {
+    if (signedAccountId) {
+      setBlur(false);
+    } else {
+      setBlur(true);
+    }
+  }, [signedAccountId]);
   if (!onChainData) {
     // Skeleton loader
     return (

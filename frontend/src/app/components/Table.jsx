@@ -67,31 +67,6 @@ export function extractCategories(markdown) {
   return sections;
 }
 
-// export function extractCategories(markdown) {
-//   const sections = {};
-
-//   // Regex to match section headers (both # and ##)
-//   const headerRegex = /##\s*(.*?)\n([\s\S]*?)(?=\n##|$)/g;
-
-//   let match;
-//   while ((match = headerRegex.exec(markdown)) !== null) {
-//     const header = match[1].trim();
-//     const content = match[2].trim();
-
-//     // Map headers to standardized keys
-//     if (header.toLowerCase().includes("featured tickers and projects")) {
-//       sections.featuredTickersAndProjects = content;
-//     } else if (header.toLowerCase().includes("key insights from influencers")) {
-//       sections.keyInsightsFromInfluencers = content;
-//     } else if (
-//       header.toLowerCase().includes("market sentiment and directions")
-//     ) {
-//       sections.marketSentimentAndDirections = content;
-//     }
-//   }
-
-//   return sections;
-// }
 
 export default function Table() {
   const router = useRouter();
