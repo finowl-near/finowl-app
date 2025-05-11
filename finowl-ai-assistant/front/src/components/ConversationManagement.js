@@ -169,7 +169,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         throw new Error(`AI analyzer responded with status: ${response.status}`);
       }
       
-      const analysisResult = await response.json();
+      const analysisResult = await response.text(); // Changed from response.json() to response.text()
       console.log('AI market analysis result:', analysisResult);
       return analysisResult;
     } catch (error) {
@@ -182,25 +182,13 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     }
   };
 
-  // Function to check if a message appears to be a market analysis question
-  const isMarketAnalysisQuestion = (message) => {
-    const lowerMessage = message.toLowerCase();
-    const keywords = [
-      'token', 'crypto', 'buy', 'sell', 'market', 'price', 'invest',
-      'coin', 'bitcoin', 'ethereum', 'trend', 'trading', 'holder',
-      'bull', 'bear', 'defi', 'nft', 'blockchain', 'altcoin'
-    ];
-    
-    return keywords.some(keyword => lowerMessage.includes(keyword));
-  };
-
   // Handle message content change
   const handleMessageContentChange = (e) => {
     const content = e.target.value;
     setMessageContent(content);
     
     // Check if this message will trigger AI analysis
-    const willTrigger = messageRole === 'user' && isMarketAnalysisQuestion(content);
+    const willTrigger = messageRole === 'user';
     setWillTriggerAI(willTrigger);
   };
 
@@ -452,21 +440,13 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       // If this is a user message that looks like a market analysis question,
       // call the AI analyzer without storing its response on blockchain
-      if (messageRole === 'user' && isMarketAnalysisQuestion(messageContent)) {
+      if (messageRole === 'user') {
         try {
           const aiResponse = await analyzeMarket(messageContent);
           
           if (aiResponse) {
             // Format the AI response for display with better structure
-            const formattedResponse = 
-              `# Market Analysis\n\n` +
-              `**Market Sentiment:** ${aiResponse.market_sentiment}\n` +
-              `**Investment Decision:** ${aiResponse.investment_decision}\n` +
-              `**Justification:** ${aiResponse.justification}\n\n` +
-              `## Top Tokens to Consider\n\n` +
-              aiResponse.top_tokens.map(token => 
-                `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
-              ).join('\n');
+            const formattedResponse = aiResponse; // Use the Markdown response directly
             
             // Calculate tokens for AI response
             const aiMessageTokens = calculateTokens(formattedResponse);
@@ -712,21 +692,13 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       // If this is a user message that looks like a market analysis question,
       // call the AI analyzer and store its response
-      if (messageRole === 'user' && isMarketAnalysisQuestion(messageContent)) {
+      if (messageRole === 'user') {
         try {
           const aiResponse = await analyzeMarket(messageContent);
           
           if (aiResponse) {
             // Format the AI response for display with better structure
-            const formattedResponse = 
-              `# Market Analysis\n\n` +
-              `**Market Sentiment:** ${aiResponse.market_sentiment}\n` +
-              `**Investment Decision:** ${aiResponse.investment_decision}\n` +
-              `**Justification:** ${aiResponse.justification}\n\n` +
-              `## Top Tokens to Consider\n\n` +
-              aiResponse.top_tokens.map(token => 
-                `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
-              ).join('\n');
+            const formattedResponse = aiResponse; // Use the Markdown response directly
             
             // Store the AI response as a system message
             await callFunction({
@@ -949,15 +921,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       if (aiResponse) {
         // Format the AI response for display with better structure
-        const formattedResponse = 
-          `# Market Analysis (Retry)\n\n` +
-          `**Market Sentiment:** ${aiResponse.market_sentiment}\n` +
-          `**Investment Decision:** ${aiResponse.investment_decision}\n` +
-          `**Justification:** ${aiResponse.justification}\n\n` +
-          `## Top Tokens to Consider\n\n` +
-          aiResponse.top_tokens.map(token => 
-            `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
-          ).join('\n');
+        const formattedResponse = aiResponse; // Use the Markdown response directly
         
         // Calculate tokens for AI response
         const aiMessageTokens = calculateTokens(formattedResponse);
@@ -1200,6 +1164,47 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           content: '↩️';
           margin-right: 2px;
           font-size: 0.8rem;
+        }
+        
+        .markdown-table-container {
+          overflow-x: auto;
+          margin: 1rem 0;
+        }
+        
+        .markdown-table-container table {
+          border-collapse: collapse;
+          width: 100%;
+          margin: 1rem 0;
+        }
+        
+        .markdown-table-container th,
+        .markdown-table-container td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: left;
+        }
+        
+        .markdown-table-container th {
+          background-color: #f5f5f5;
+          font-weight: bold;
+        }
+        
+        .markdown-table-container tr:nth-child(even) {
+          background-color: #f9f9f9;
+        }
+        
+        .message-content {
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
+        
+        .message-content p {
+          margin: 1rem 0;
+          line-height: 1.5;
+        }
+        
+        .message-content strong {
+          font-weight: 600;
         }
       `}</style>
       
@@ -1486,7 +1491,20 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                         <div className="message-content">
                           {message.role === 'system' ? (
                             <>
-                              <ReactMarkdown>{message.content}</ReactMarkdown>
+                              <ReactMarkdown
+                                components={{
+                                  table: ({node, ...props}) => (
+                                    <div className="markdown-table-container">
+                                      <table {...props} />
+                                    </div>
+                                  ),
+                                  p: ({node, ...props}) => (
+                                    <p style={{ whiteSpace: 'pre-wrap' }} {...props} />
+                                  )
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
                               {message.content.includes('Analysis Request Failed') && (
                                 <button 
                                   onClick={() => {
