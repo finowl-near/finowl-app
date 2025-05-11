@@ -1104,6 +1104,51 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     }
   };
 
+  // Add a new function for clearing conversation history
+  const handleClearHistory = async (conversationId) => {
+    if (!signedAccountId) {
+      console.log('Please connect your wallet first');
+      if (modal) {
+        modal.show();
+      } else if (signIn) {
+        signIn();
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      console.log(`Clearing history for conversation: ${conversationId}`);
+      
+      const result = await callFunction({
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        method: "call_js_func",
+        args: {
+          function_name: "clear_conversation_history",
+          conversation_id: conversationId
+        }
+      });
+      
+      console.log('Conversation history cleared successfully:', result);
+      
+      // Refresh conversation history if this is the currently viewed conversation
+      if (conversationId === conversationId) {
+        handleGetConversationHistory();
+      }
+      
+      // Refresh conversations list
+      handleListConversations(false);
+      
+      alert(`Successfully cleared history for conversation: ${conversationId}`);
+    } catch (error) {
+      console.error('Error clearing conversation history:', error);
+      alert(`Error clearing history: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <style jsx>{`
@@ -1205,6 +1250,33 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         
         .message-content strong {
           font-weight: 600;
+        }
+        
+        .clear-btn {
+          padding: 3px 8px;
+          background-color: #dc3545;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.8rem;
+          display: flex;
+          align-items: center;
+        }
+        
+        .clear-btn:hover {
+          background-color: #c82333;
+        }
+        
+        .clear-btn:disabled {
+          background-color: #6c757d;
+          cursor: not-allowed;
+        }
+        
+        .clear-btn::before {
+          content: '🗑️';
+          margin-right: 2px;
+          font-size: 0.8rem;
         }
       `}</style>
       
@@ -1424,6 +1496,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                           onClick={() => handleCopyConversationId(conv.id)}
                         >
                           Use
+                        </button>
+                        <button
+                          className="clear-btn"
+                          onClick={() => handleClearHistory(conv.id)}
+                          disabled={loading}
+                          title="Clear conversation history"
+                        >
+                          Clear
                         </button>
                         {conv.tokensRemaining > 0 && (
                           <button
