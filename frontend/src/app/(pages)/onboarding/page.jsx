@@ -10,13 +10,13 @@ export default function page() {
   return (
     <>
       {/* <Header /> */}
-      <Modal
+      {/* <Modal
         isOpen={isOnboarding}
         onClose={() => setIsOnboarding(false)}
         title={"onBoarding..."}
-      >
+      > */}
         <OnBoarding />
-      </Modal>
+      {/* </Modal> */}
     </>
   );
 }
