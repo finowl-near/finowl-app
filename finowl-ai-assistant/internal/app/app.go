@@ -5,6 +5,7 @@ import (
 	"finowl-ai-assistant/internal/config"
 	"finowl-ai-assistant/internal/handlers"
 	"finowl-ai-assistant/pkg/ai"
+	netconfig "finowl-ai-assistant/pkg/config"
 	"finowl-ai-assistant/pkg/feedstock"
 	"finowl-ai-assistant/pkg/near"
 	"fmt"
@@ -23,12 +24,23 @@ type App struct {
 	APIHandler      *api.Handler
 	NearClient      *near.Client
 	Summaries       []feedstock.Summary
+	NetworkConfig   *netconfig.Config
 }
 
 // NewApp creates and initializes a new application
-func NewApp() (*App, error) {
+func NewApp(networkType string) (*App, error) {
 	// Load configuration
 	cfg := config.LoadConfig()
+
+	// Load network configuration
+	netCfg, err := netconfig.LoadConfig(networkType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load network configuration: %w", err)
+	}
+
+	// Log network configuration
+	log.Printf("🔧 Network configuration: Network=%s, Contract=%s",
+		netCfg.Network, netCfg.ContractName)
 
 	// Validate configuration
 	validationResult := cfg.Validate()
@@ -72,27 +84,28 @@ func NewApp() (*App, error) {
 	var nearClient *near.Client
 	var apiHandler *api.Handler
 
-	if cfg.NEAR.UserAccountID != "" && cfg.NEAR.UserPrivateKey != "" &&
-		cfg.NEAR.OwnerAccountID != "" && cfg.NEAR.OwnerPrivateKey != "" &&
-		cfg.NEAR.ContractID != "" && cfg.NEAR.RPCURL != "" {
+	// Try to initialize the NEAR client with network configuration
+	if netCfg.PrivateKey == "" {
+		log.Printf("⚠️ Warning: No private key found for %s network", netCfg.Network)
+		log.Println("⚠️ Warning: NEAR blockchain functionality will not be available")
+	} else {
 		nearClient, err = near.NewClient(
-			cfg.NEAR.UserAccountID,
-			cfg.NEAR.UserPrivateKey,
-			cfg.NEAR.OwnerAccountID,
-			cfg.NEAR.OwnerPrivateKey,
-			cfg.NEAR.ContractID,
-			cfg.NEAR.RPCURL,
+			netCfg.OwnerAccountID, // Owner account ID from network config
+			netCfg.PrivateKey,     // Owner private key
+			netCfg.ContractName,   // Contract name from network config
+			netCfg.RPCURL,         // RPC URL from network config
 		)
+
 		if err != nil {
 			log.Printf("⚠️ Warning: Failed to initialize NEAR client: %v", err)
-			log.Println("NEAR blockchain functionality will not be available")
+			log.Println("⚠️ NEAR blockchain functionality will not be available")
 			// Continue without NEAR functionality
 		} else {
 			// Create API handler only if NEAR client was created successfully
 			apiHandler = api.NewHandler(nearClient)
+			log.Printf("✅ NEAR client initialized for network %s with contract %s and owner %s",
+				netCfg.Network, netCfg.ContractName, netCfg.OwnerAccountID)
 		}
-	} else {
-		log.Println("⚠️ Warning: NEAR configuration incomplete, blockchain features will be unavailable")
 	}
 
 	return &App{
@@ -104,6 +117,7 @@ func NewApp() (*App, error) {
 		APIHandler:      apiHandler,
 		NearClient:      nearClient,
 		Summaries:       summaries,
+		NetworkConfig:   netCfg,
 	}, nil
 }
 

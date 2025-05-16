@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -15,13 +16,24 @@ import (
 )
 
 func main() {
-	// Load .env file if present
+	// Define command line flags
+	network := flag.String("network", "testnet", "Network to use (testnet or mainnet)")
+	flag.Parse()
+
+	// Validate network flag
+	if *network != "testnet" && *network != "mainnet" {
+		log.Fatalf("Invalid network: %s. Must be either 'testnet' or 'mainnet'", *network)
+	}
+
+	// Load .env file for non-network related configuration (AI keys, Feedstock, etc.)
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found: %v", err)
+		log.Printf("Notice: .env file not found - using defaults for non-network configuration")
+	} else {
+		log.Printf("Loaded configuration from .env file")
 	}
 
 	// Create and initialize the application
-	application, err := app.NewApp()
+	application, err := app.NewApp(*network)
 	if err != nil {
 		log.Fatalf("❌ Failed to initialize application: %v", err)
 	}
