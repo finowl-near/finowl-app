@@ -6,7 +6,7 @@ import OnBoarding from "@/app/components/onboarding/OnBoarding";
 import React, { useState } from "react";
 
 export default function page() {
-  const [isOnboarding, setIsOnboarding] = useState(true);
+  // const [isOnboarding, setIsOnboarding] = useState(true);
   return (
     <>
       {/* <Header /> */}

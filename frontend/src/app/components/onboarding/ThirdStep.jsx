@@ -75,7 +75,7 @@ export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
         className="text-white mb-6"
       >
         Now that storage is set up, you need to register your account on-chain.
-        This step tells Finowl's contract to recognize your NEAR address and
+        This step tells Finowl&apos;s contract to recognize your NEAR address and
         unlock the rest of the features—no extra deposit required.
       </motion.p>
 

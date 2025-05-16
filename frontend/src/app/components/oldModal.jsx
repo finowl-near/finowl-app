@@ -14,7 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import getSummary from "../api/getSummary";
 import { extractCategories } from "./Table";
 
-export default function oldModal() {
+export default function OldModal() {
   const { isOpen, setModalOpen } = useModal();
   const searchParams = useSearchParams();
   const router = useRouter();

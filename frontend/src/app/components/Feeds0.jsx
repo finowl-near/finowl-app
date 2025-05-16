@@ -5,7 +5,7 @@ import feed2 from "@/app/assets/svg/Feed2.svg";
 import feed3 from "@/app/assets/svg/Feed3.svg";
 import calenderIcon from "@/app/assets/svg/calenderIcon.svg";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
-import Modal from "./oldModal";
+import Modal from "./OldModal";
 import useModal from "../hooks/useModal";
 import useTableData from "../hooks/useTableData";
 import ReactMarkdown from "react-markdown";

@@ -81,7 +81,7 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
         transition={{ delay: 0.3 }}
         className="text-white mb-6"
       >
-        You're almost there! Click “Claim” to receive your welcome tokens (1,000
+        You&apos;re almost there! Click “Claim” to receive your welcome tokens (1,000
         FINOWL) directly into your NEAR wallet. These tokens power our AI
         features—go ahead and grab them now.
       </motion.p>
