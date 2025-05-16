@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"finowl-ai-assistant/pkg/feedstock"
@@ -131,9 +132,13 @@ func isCryptoRelated(question string) bool {
 }
 
 func (ma *MarketAnalyzer) buildPrompt(summaries []feedstock.Summary, question string) (string, error) {
+	sort.SliceStable(summaries, func(i, j int) bool {
+		return summaries[i].Timestamp.After(summaries[j].Timestamp)
+	})
+
 	var parts []string
 	for _, s := range summaries {
-		parts = append(parts, fmt.Sprintf("Summary ID %d: %s", s.ID, s.Content))
+		parts = append(parts, fmt.Sprintf("((%s)) %s", s.Timestamp.Format("2006-01-02"), s.Content))
 	}
 	formatted := strings.Join(parts, "\n\n")
 

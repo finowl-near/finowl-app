@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 import ReactMarkdown from 'react-markdown';
+import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
 
 export const ConversationManagement = ({ refreshTokenBalance }) => {
   const { signedAccountId, viewFunction, callFunction, modal, signIn } = useWalletSelector();
@@ -196,14 +197,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     try {
       if (!signedAccountId) {
         console.log('Please connect your wallet first');
-        // Check if modal exists before showing it
         if (modal) {
           modal.show();
         } else if (signIn) {
-          // Fallback to direct signIn if modal is not available
           signIn();
-        } else {
-          console.log('Please sign in to view conversations');
         }
         return;
       }
@@ -212,10 +209,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         setLoading(true);
       }
       
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       // Try to get conversations using view method first
       try {
         const result = await viewFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "view_js_func",
           args: {
             function_name: "get_user_conversations",
@@ -229,7 +230,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           result.map(async (convId) => {
             try {
               const metadata = await viewFunction({
-                contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+                contractId: CONTRACT_NAME,
                 method: "view_js_func",
                 args: {
                   function_name: "get_conversation_metadata",
@@ -265,9 +266,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       } catch (viewError) {
         console.log('View method failed, trying call method:', viewError);
         
-        // If view method fails, try with call method
         const result = await callFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "call_js_func",
           args: {
             function_name: "get_user_conversations",
@@ -281,7 +281,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           result.map(async (convId) => {
             try {
               const metadata = await callFunction({
-                contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+                contractId: CONTRACT_NAME,
                 method: "call_js_func",
                 args: {
                   function_name: "get_conversation_metadata",
@@ -344,10 +344,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
     try {
       setLoading(true);
-      // Try to get conversation history using view method
+      
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       try {
         const result = await viewFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "view_js_func",
           args: {
             function_name: "get_conversation_history",
@@ -359,9 +363,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       } catch (viewError) {
         console.log('View method failed, trying call method:', viewError);
         
-        // If view method fails, try with call method
         const result = await callFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "view_js_func",
           args: {
             function_name: "get_conversation_history",
@@ -610,7 +613,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       // Call the contract method to save full conversation
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "save_full_conversation",
@@ -672,12 +675,15 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
     try {
       setLoading(true);
-      // Get current timestamp in seconds
+      
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       const timestamp = Math.floor(Date.now() / 1000);
       
-      // Store the user's message
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "store_message",
@@ -702,7 +708,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             
             // Store the AI response as a system message
             await callFunction({
-              contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+              contractId: CONTRACT_NAME,
               method: "call_js_func",
               args: {
                 function_name: "store_message",
@@ -723,7 +729,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
               `Click the "Retry Analysis" button in the conversation when you want to try again.`;
             
             await callFunction({
-              contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+              contractId: CONTRACT_NAME,
               method: "call_js_func",
               args: {
                 function_name: "store_message",
@@ -747,7 +753,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
               `**Please try again later.** If the problem persists, contact support.`;
             
             await callFunction({
-              contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+              contractId: CONTRACT_NAME,
               method: "call_js_func",
               args: {
                 function_name: "store_message",
@@ -806,12 +812,15 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
     try {
       setLoading(true);
-      // Convert UI token amount (e.g., 5) to internal representation (e.g., 5000000)
-      // Multiplying by 1,000,000 to match the contract's internal representation
+      
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       const internalAmount = (tokenAmount * 1_000_000).toFixed(0);
       
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "add_tokens_to_conversation",
@@ -855,15 +864,16 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     try {
       setLoading(true);
       
-      // Generate a conversation ID using the account ID and current timestamp
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       const timestamp = Math.floor(Date.now() / 1000);
       const generatedConversationId = `${signedAccountId}_${timestamp}`;
-      
-      // Reserve amount is 1000 tokens (1000 * 1000000 internal units)
       const reserveAmount = "1000000000";
       
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "start_ai_conversation",
@@ -963,7 +973,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           
           // Store the AI response as a system message
           await callFunction({
-            contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+            contractId: CONTRACT_NAME,
             method: "call_js_func",
             args: {
               function_name: "store_message",
@@ -994,7 +1004,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`;
           
           await callFunction({
-            contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+            contractId: CONTRACT_NAME,
             method: "call_js_func",
             args: {
               function_name: "store_message",
@@ -1021,7 +1031,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           `Please try again later or contact support if the issue persists.`;
         
         await callFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "call_js_func",
           args: {
             function_name: "store_message",
@@ -1077,7 +1087,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       console.log(`Refunding tokens from conversation: ${conversationId}`);
       
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "refund_reserved_tokens",
@@ -1119,10 +1129,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     try {
       setLoading(true);
       
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       console.log(`Clearing history for conversation: ${conversationId}`);
       
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "clear_conversation_history",

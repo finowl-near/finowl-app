@@ -20,24 +20,17 @@ type Client struct {
 }
 
 // NewClient creates a new NEAR blockchain client
-func NewClient(userAccountID, userPrivateKey, ownerAccountID, ownerPrivateKey, contractID, rpcURL string) (*Client, error) {
-	userKey, err := utils.Ed25519PrivateKeyFromString(userPrivateKey)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user private key: %w", err)
-	}
-
+func NewClient(ownerAccountID, ownerPrivateKey, contractID, rpcURL string) (*Client, error) {
 	ownerKey, err := utils.Ed25519PrivateKeyFromString(ownerPrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid owner private key: %w", err)
 	}
 
 	conn := near.NewConnection(rpcURL)
-	userAccount := near.LoadAccountWithPrivateKey(conn, userAccountID, userKey)
 	ownerAccount := near.LoadAccountWithPrivateKey(conn, ownerAccountID, ownerKey)
 
 	return &Client{
 		conn:         conn,
-		userAccount:  userAccount,
 		ownerAccount: ownerAccount,
 		contractID:   contractID,
 	}, nil
