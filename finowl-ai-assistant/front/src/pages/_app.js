@@ -15,6 +15,8 @@ import { setupWelldoneWallet } from '@near-wallet-selector/welldone-wallet';
 import { WalletSelectorProvider } from '@near-wallet-selector/react-hook';
 import { HelloNearContract, NetworkId } from '@/config';
 import { Navigation } from '@/components/navigation';
+import { NetworkProvider } from '@/contexts/NetworkContext';
+import NetworkToggle from '@/components/NetworkToggle';
 
 // ethereum wallets
 import { wagmiConfig, web3Modal } from '@/wallets/web3modal';
@@ -40,9 +42,12 @@ const walletSelectorConfig = {
 export default function App({ Component, pageProps }) {
 
   return (
-    <WalletSelectorProvider config={walletSelectorConfig}>
-      <Navigation />
-      <Component {...pageProps} />
-    </WalletSelectorProvider>
+    <NetworkProvider>
+      <WalletSelectorProvider config={walletSelectorConfig}>
+        <Navigation />
+        <NetworkToggle />
+        <Component {...pageProps} />
+      </WalletSelectorProvider>
+    </NetworkProvider>
   );
 }

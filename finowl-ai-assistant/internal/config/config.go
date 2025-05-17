@@ -67,7 +67,7 @@ func LoadConfig() *AppConfig {
 		AI: AIConfig{
 			APIKey:   getFirstEnv("FINOWL_AI_API_KEY", "AI_API_KEY", ""),
 			Endpoint: getFirstEnv("FINOWL_AI_ENDPOINT", "AI_API_ENDPOINT", "https://api.deepseek.com/v1/chat/completions"),
-			Model:    getEnvWithDefault("FINOWL_AI_MODEL", "deepseek-reasoner"),
+			Model:    getEnvWithDefault("FINOWL_AI_MODEL", "deepseek-chat"),
 		},
 		Feedstock: FeedstockConfig{
 			APIBaseURL:   getEnvWithDefault("FINOWL_API_BASE_URL", "http://localhost:8080"),
@@ -121,20 +121,6 @@ func (c *AppConfig) Validate() ValidationResult {
 	// Check AI configuration
 	if c.AI.APIKey == "" {
 		result.Warnings = append(result.Warnings, "AI API key not set - will use mock client")
-	}
-
-	// Check NEAR configuration
-	if c.NEAR.UserAccountID == "" || c.NEAR.UserPrivateKey == "" {
-		result.Warnings = append(result.Warnings, "NEAR user credentials not set")
-	}
-	if c.NEAR.OwnerAccountID == "" || c.NEAR.OwnerPrivateKey == "" {
-		result.Warnings = append(result.Warnings, "NEAR owner credentials not set")
-	}
-	if c.NEAR.ContractID == "" {
-		result.Warnings = append(result.Warnings, "NEAR contract ID not set")
-	}
-	if c.NEAR.RPCURL == "" {
-		result.Warnings = append(result.Warnings, "NEAR RPC URL not set")
 	}
 
 	// Check prompts directory

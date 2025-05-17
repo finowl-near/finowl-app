@@ -467,3 +467,37 @@ export function buy_tokens_for_near() {
 
   env.value_return(JSON.stringify({ purchased: tokenAmount.toString() }));
 }
+/**
+ * Deletes all messages and resets metadata for a conversation.
+ * ⚠️ Only the conversation owner can perform this action.
+ */
+export function clear_conversation_history() {
+  const { conversation_id } = JSON.parse(env.input());
+  const account_id = env.signer_account_id();
+
+  const metadata_key = `conversation_${conversation_id}_metadata`;
+  const messages_key = `conversation_${conversation_id}_messages`;
+
+  const metadata_raw = env.get_data(metadata_key);
+  if (!metadata_raw) env.panic("Conversation does not exist");
+
+  const metadata = JSON.parse(metadata_raw);
+  if (metadata.owner !== account_id) env.panic("Only the conversation owner can clear it");
+
+  // Reset message list and metadata
+  env.set_data(messages_key, JSON.stringify([]));
+
+  const resetMetadata = {
+    ...metadata,
+    tokens_used: "0",
+    message_count: 0,
+    last_active: Math.floor(Date.now() / 1000)
+  };
+  env.set_data(metadata_key, JSON.stringify(resetMetadata));
+
+  env.value_return(JSON.stringify({
+    success: true,
+    cleared: true,
+    conversation_id
+  }));
+}

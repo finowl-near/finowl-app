@@ -19,6 +19,7 @@ const evmWalletChains = {
   },
 };
 
-export const NetworkId = 'testnet';
+// Force mainnet regardless of environment variables
+export const NetworkId = 'mainnet';
 export const HelloNearContract = contractPerNetwork[NetworkId];
 export const EVMWalletChain = evmWalletChains[NetworkId];

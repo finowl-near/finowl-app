@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 import ReactMarkdown from 'react-markdown';
+import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
 
 export const ConversationManagement = ({ refreshTokenBalance }) => {
   const { signedAccountId, viewFunction, callFunction, modal, signIn } = useWalletSelector();
@@ -169,7 +170,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         throw new Error(`AI analyzer responded with status: ${response.status}`);
       }
       
-      const analysisResult = await response.json();
+      const analysisResult = await response.text(); // Changed from response.json() to response.text()
       console.log('AI market analysis result:', analysisResult);
       return analysisResult;
     } catch (error) {
@@ -182,25 +183,13 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     }
   };
 
-  // Function to check if a message appears to be a market analysis question
-  const isMarketAnalysisQuestion = (message) => {
-    const lowerMessage = message.toLowerCase();
-    const keywords = [
-      'token', 'crypto', 'buy', 'sell', 'market', 'price', 'invest',
-      'coin', 'bitcoin', 'ethereum', 'trend', 'trading', 'holder',
-      'bull', 'bear', 'defi', 'nft', 'blockchain', 'altcoin'
-    ];
-    
-    return keywords.some(keyword => lowerMessage.includes(keyword));
-  };
-
   // Handle message content change
   const handleMessageContentChange = (e) => {
     const content = e.target.value;
     setMessageContent(content);
     
     // Check if this message will trigger AI analysis
-    const willTrigger = messageRole === 'user' && isMarketAnalysisQuestion(content);
+    const willTrigger = messageRole === 'user';
     setWillTriggerAI(willTrigger);
   };
 
@@ -208,14 +197,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     try {
       if (!signedAccountId) {
         console.log('Please connect your wallet first');
-        // Check if modal exists before showing it
         if (modal) {
           modal.show();
         } else if (signIn) {
-          // Fallback to direct signIn if modal is not available
           signIn();
-        } else {
-          console.log('Please sign in to view conversations');
         }
         return;
       }
@@ -224,10 +209,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         setLoading(true);
       }
       
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       // Try to get conversations using view method first
       try {
         const result = await viewFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "view_js_func",
           args: {
             function_name: "get_user_conversations",
@@ -241,7 +230,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           result.map(async (convId) => {
             try {
               const metadata = await viewFunction({
-                contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+                contractId: CONTRACT_NAME,
                 method: "view_js_func",
                 args: {
                   function_name: "get_conversation_metadata",
@@ -277,9 +266,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       } catch (viewError) {
         console.log('View method failed, trying call method:', viewError);
         
-        // If view method fails, try with call method
         const result = await callFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "call_js_func",
           args: {
             function_name: "get_user_conversations",
@@ -293,7 +281,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           result.map(async (convId) => {
             try {
               const metadata = await callFunction({
-                contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+                contractId: CONTRACT_NAME,
                 method: "call_js_func",
                 args: {
                   function_name: "get_conversation_metadata",
@@ -356,10 +344,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
     try {
       setLoading(true);
-      // Try to get conversation history using view method
+      
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       try {
         const result = await viewFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "view_js_func",
           args: {
             function_name: "get_conversation_history",
@@ -371,9 +363,8 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       } catch (viewError) {
         console.log('View method failed, trying call method:', viewError);
         
-        // If view method fails, try with call method
         const result = await callFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "view_js_func",
           args: {
             function_name: "get_conversation_history",
@@ -452,21 +443,13 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       // If this is a user message that looks like a market analysis question,
       // call the AI analyzer without storing its response on blockchain
-      if (messageRole === 'user' && isMarketAnalysisQuestion(messageContent)) {
+      if (messageRole === 'user') {
         try {
           const aiResponse = await analyzeMarket(messageContent);
           
           if (aiResponse) {
             // Format the AI response for display with better structure
-            const formattedResponse = 
-              `# Market Analysis\n\n` +
-              `**Market Sentiment:** ${aiResponse.market_sentiment}\n` +
-              `**Investment Decision:** ${aiResponse.investment_decision}\n` +
-              `**Justification:** ${aiResponse.justification}\n\n` +
-              `## Top Tokens to Consider\n\n` +
-              aiResponse.top_tokens.map(token => 
-                `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
-              ).join('\n');
+            const formattedResponse = aiResponse; // Use the Markdown response directly
             
             // Calculate tokens for AI response
             const aiMessageTokens = calculateTokens(formattedResponse);
@@ -630,7 +613,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       // Call the contract method to save full conversation
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "save_full_conversation",
@@ -692,12 +675,15 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
     try {
       setLoading(true);
-      // Get current timestamp in seconds
+      
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       const timestamp = Math.floor(Date.now() / 1000);
       
-      // Store the user's message
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "store_message",
@@ -712,25 +698,17 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       // If this is a user message that looks like a market analysis question,
       // call the AI analyzer and store its response
-      if (messageRole === 'user' && isMarketAnalysisQuestion(messageContent)) {
+      if (messageRole === 'user') {
         try {
           const aiResponse = await analyzeMarket(messageContent);
           
           if (aiResponse) {
             // Format the AI response for display with better structure
-            const formattedResponse = 
-              `# Market Analysis\n\n` +
-              `**Market Sentiment:** ${aiResponse.market_sentiment}\n` +
-              `**Investment Decision:** ${aiResponse.investment_decision}\n` +
-              `**Justification:** ${aiResponse.justification}\n\n` +
-              `## Top Tokens to Consider\n\n` +
-              aiResponse.top_tokens.map(token => 
-                `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
-              ).join('\n');
+            const formattedResponse = aiResponse; // Use the Markdown response directly
             
             // Store the AI response as a system message
             await callFunction({
-              contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+              contractId: CONTRACT_NAME,
               method: "call_js_func",
               args: {
                 function_name: "store_message",
@@ -751,7 +729,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
               `Click the "Retry Analysis" button in the conversation when you want to try again.`;
             
             await callFunction({
-              contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+              contractId: CONTRACT_NAME,
               method: "call_js_func",
               args: {
                 function_name: "store_message",
@@ -775,7 +753,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
               `**Please try again later.** If the problem persists, contact support.`;
             
             await callFunction({
-              contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+              contractId: CONTRACT_NAME,
               method: "call_js_func",
               args: {
                 function_name: "store_message",
@@ -834,12 +812,15 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
 
     try {
       setLoading(true);
-      // Convert UI token amount (e.g., 5) to internal representation (e.g., 5000000)
-      // Multiplying by 1,000,000 to match the contract's internal representation
+      
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       const internalAmount = (tokenAmount * 1_000_000).toFixed(0);
       
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "add_tokens_to_conversation",
@@ -883,15 +864,16 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     try {
       setLoading(true);
       
-      // Generate a conversation ID using the account ID and current timestamp
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
       const timestamp = Math.floor(Date.now() / 1000);
       const generatedConversationId = `${signedAccountId}_${timestamp}`;
-      
-      // Reserve amount is 1000 tokens (1000 * 1000000 internal units)
       const reserveAmount = "1000000000";
       
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "start_ai_conversation",
@@ -949,15 +931,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       
       if (aiResponse) {
         // Format the AI response for display with better structure
-        const formattedResponse = 
-          `# Market Analysis (Retry)\n\n` +
-          `**Market Sentiment:** ${aiResponse.market_sentiment}\n` +
-          `**Investment Decision:** ${aiResponse.investment_decision}\n` +
-          `**Justification:** ${aiResponse.justification}\n\n` +
-          `## Top Tokens to Consider\n\n` +
-          aiResponse.top_tokens.map(token => 
-            `**${token.rank}. ${token.ticker}**\n${token.reason}\n`
-          ).join('\n');
+        const formattedResponse = aiResponse; // Use the Markdown response directly
         
         // Calculate tokens for AI response
         const aiMessageTokens = calculateTokens(formattedResponse);
@@ -999,7 +973,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           
           // Store the AI response as a system message
           await callFunction({
-            contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+            contractId: CONTRACT_NAME,
             method: "call_js_func",
             args: {
               function_name: "store_message",
@@ -1030,7 +1004,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`;
           
           await callFunction({
-            contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+            contractId: CONTRACT_NAME,
             method: "call_js_func",
             args: {
               function_name: "store_message",
@@ -1057,7 +1031,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           `Please try again later or contact support if the issue persists.`;
         
         await callFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+          contractId: CONTRACT_NAME,
           method: "call_js_func",
           args: {
             function_name: "store_message",
@@ -1113,7 +1087,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       console.log(`Refunding tokens from conversation: ${conversationId}`);
       
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
+        contractId: CONTRACT_NAME,
         method: "call_js_func",
         args: {
           function_name: "refund_reserved_tokens",
@@ -1135,6 +1109,55 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     } catch (error) {
       console.error('Error refunding tokens:', error);
       alert(`Error refunding tokens: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add a new function for clearing conversation history
+  const handleClearHistory = async (conversationId) => {
+    if (!signedAccountId) {
+      console.log('Please connect your wallet first');
+      if (modal) {
+        modal.show();
+      } else if (signIn) {
+        signIn();
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      if (!validateNetworkConfig()) {
+        throw new Error('Invalid network configuration');
+      }
+      
+      console.log(`Clearing history for conversation: ${conversationId}`);
+      
+      const result = await callFunction({
+        contractId: CONTRACT_NAME,
+        method: "call_js_func",
+        args: {
+          function_name: "clear_conversation_history",
+          conversation_id: conversationId
+        }
+      });
+      
+      console.log('Conversation history cleared successfully:', result);
+      
+      // Refresh conversation history if this is the currently viewed conversation
+      if (conversationId === conversationId) {
+        handleGetConversationHistory();
+      }
+      
+      // Refresh conversations list
+      handleListConversations(false);
+      
+      alert(`Successfully cleared history for conversation: ${conversationId}`);
+    } catch (error) {
+      console.error('Error clearing conversation history:', error);
+      alert(`Error clearing history: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -1198,6 +1221,74 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         
         .refund-btn::before {
           content: '↩️';
+          margin-right: 2px;
+          font-size: 0.8rem;
+        }
+        
+        .markdown-table-container {
+          overflow-x: auto;
+          margin: 1rem 0;
+        }
+        
+        .markdown-table-container table {
+          border-collapse: collapse;
+          width: 100%;
+          margin: 1rem 0;
+        }
+        
+        .markdown-table-container th,
+        .markdown-table-container td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: left;
+        }
+        
+        .markdown-table-container th {
+          background-color: #f5f5f5;
+          font-weight: bold;
+        }
+        
+        .markdown-table-container tr:nth-child(even) {
+          background-color: #f9f9f9;
+        }
+        
+        .message-content {
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
+        
+        .message-content p {
+          margin: 1rem 0;
+          line-height: 1.5;
+        }
+        
+        .message-content strong {
+          font-weight: 600;
+        }
+        
+        .clear-btn {
+          padding: 3px 8px;
+          background-color: #dc3545;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.8rem;
+          display: flex;
+          align-items: center;
+        }
+        
+        .clear-btn:hover {
+          background-color: #c82333;
+        }
+        
+        .clear-btn:disabled {
+          background-color: #6c757d;
+          cursor: not-allowed;
+        }
+        
+        .clear-btn::before {
+          content: '🗑️';
           margin-right: 2px;
           font-size: 0.8rem;
         }
@@ -1420,6 +1511,14 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                         >
                           Use
                         </button>
+                        <button
+                          className="clear-btn"
+                          onClick={() => handleClearHistory(conv.id)}
+                          disabled={loading}
+                          title="Clear conversation history"
+                        >
+                          Clear
+                        </button>
                         {conv.tokensRemaining > 0 && (
                           <button
                             className="refund-btn"
@@ -1486,7 +1585,20 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                         <div className="message-content">
                           {message.role === 'system' ? (
                             <>
-                              <ReactMarkdown>{message.content}</ReactMarkdown>
+                              <ReactMarkdown
+                                components={{
+                                  table: ({node, ...props}) => (
+                                    <div className="markdown-table-container">
+                                      <table {...props} />
+                                    </div>
+                                  ),
+                                  p: ({node, ...props}) => (
+                                    <p style={{ whiteSpace: 'pre-wrap' }} {...props} />
+                                  )
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
                               {message.content.includes('Analysis Request Failed') && (
                                 <button 
                                   onClick={() => {
