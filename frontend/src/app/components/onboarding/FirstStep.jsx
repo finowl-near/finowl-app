@@ -51,7 +51,7 @@ export default function FirstStep({ onNext }) {
           transition={{ delay: 0.3 }}
           className="text-white mb-6"
         >
-          Your userName is { signedAccountId }
+          Your userName is {signedAccountId}
         </motion.p>
       )}
 
@@ -60,11 +60,14 @@ export default function FirstStep({ onNext }) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="bg-[#BA98D5] text-[#231C28] font-semibold py-2 px-6 rounded-lg shadow-md"
-          onClick={() => signIn()}
+          onClick={() => {
+            signIn();
+          }}
         >
           Connect Wallet
         </motion.button>
-      ) : (
+      ) 
+      : (
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

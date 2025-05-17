@@ -5,7 +5,8 @@ import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { motion } from "motion/react";
 
 export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
-  const { signedAccountId, callFunction, signIn, signOut } = useWalletSelector();
+  const { signedAccountId, callFunction, viewFunction, signIn, signOut } =
+    useWalletSelector();
   const [loading, setLoading] = useState(false);
 
   async function handleClaimTokens() {
@@ -29,7 +30,7 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
       console.log("Free tokens claim result:", result);
 
       // Check token balance to confirm tokens were received
-      const balance = await getUserTokenBalance();
+      const balance = await getUserTokenBalance(signedAccountId, viewFunction);
 
       setTokensClaim(true);
       // Close the welcome token popup if it was showing
@@ -38,7 +39,8 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
       // Cache the token claimed status
 
       alert(
-        "Free tokens successfully claimed! You can now start using Finowl services.", balance
+        "Free tokens successfully claimed! You can now start using Finowl services.",
+        balance
       );
     } catch (error) {
       console.error("Error claiming free tokens:", error);
@@ -75,16 +77,27 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
       >
         Claim Your Tokens
       </motion.h2>
-      <motion.p
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="text-white mb-6"
-      >
-        You&apos;re almost there! Click “Claim” to receive your welcome tokens (1,000
-        FINOWL) directly into your NEAR wallet. These tokens power our AI
-        features—go ahead and grab them now.
-      </motion.p>
+      {!tokensClaim ? (
+        <motion.p
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-white mb-6"
+        >
+          You&apos;re almost there! Click “Claim” to receive your welcome tokens
+          (1,000 FINOWL) directly into your NEAR wallet. These tokens power our
+          AI features—go ahead and grab them now.
+        </motion.p>
+      ) : (
+        <motion.p
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-green-400 mb-4"
+        >
+          Tokens Claimed successfully!
+        </motion.p>
+      )}
       {!tokensClaim ? (
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -93,7 +106,7 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
           onClick={handleClaimTokens}
           disabled={loading}
         >
-          { loading ? "Claiming...": "Claim" }
+          {loading ? "Claiming..." : "Claim"}
         </motion.button>
       ) : (
         <motion.button
@@ -109,53 +122,51 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
   );
 }
 
-
-
-const getUserTokenBalance = async () => {
-    try {
-      if (!signedAccountId) {
-        return null;
-      }
-      
-      // First try with view_js_func
-      try {
-        const result = await viewFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
-          method: "view_js_func",
-          args: {
-            function_name: "get_user_token_balance",
-            account_id: signedAccountId
-          }
-        });
-        
-        console.log("User token balance (view_js_func):", result);
-        
-        // The result might be an object with a balance property or just a string
-        if (typeof result === 'object' && result !== null && result.balance) {
-          return result.balance;
-        } else if (typeof result === 'string') {
-          return result;
-        } else {
-          return "0"; // Default to 0 if we can't parse the result
-        }
-      } catch (viewError) {
-        console.log('Error with view_js_func:', viewError);
-        
-        // Try with get_user as fallback
-        const userData = await viewFunction({
-          contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || 'finowl.testnet',
-          method: "get_user",
-          args: { account_id: signedAccountId }
-        });
-        
-        if (userData && userData.token_balance) {
-          return userData.token_balance;
-        }
-      }
-      
-      return "0"; // Default to 0 if all attempts fail
-    } catch (error) {
-      console.error("Error getting user token balance:", error);
+const getUserTokenBalance = async (signedAccountId, viewFunction) => {
+  try {
+    if (!signedAccountId) {
       return null;
     }
-  };
+
+    // First try with view_js_func
+    try {
+      const result = await viewFunction({
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        method: "view_js_func",
+        args: {
+          function_name: "get_user_token_balance",
+          account_id: signedAccountId,
+        },
+      });
+
+      console.log("User token balance (view_js_func):", result);
+
+      // The result might be an object with a balance property or just a string
+      if (typeof result === "object" && result !== null && result.balance) {
+        return result.balance;
+      } else if (typeof result === "string") {
+        return result;
+      } else {
+        return "0"; // Default to 0 if we can't parse the result
+      }
+    } catch (viewError) {
+      console.log("Error with view_js_func:", viewError);
+
+      // Try with get_user as fallback
+      const userData = await viewFunction({
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        method: "get_user",
+        args: { account_id: signedAccountId },
+      });
+
+      if (userData && userData.token_balance) {
+        return userData.token_balance;
+      }
+    }
+
+    return "0"; // Default to 0 if all attempts fail
+  } catch (error) {
+    console.error("Error getting user token balance:", error);
+    return null;
+  }
+};

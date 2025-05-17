@@ -51,7 +51,7 @@ export default function Chat() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   return (
-    <article className="relative bg-[#0F0F0F]/40 mx-4 rounded-[15px] h-[calc(100dvh_-_100px)] lg:h-[calc(100vh_-_100px)] overflow-hidden grid grid-cols-5">
+    <article className="relative bg-[#0F0F0F]/40 mx-4 rounded-[15px] h-[100dvh] lg:h-[100vh] overflow-hidden grid grid-cols-5">
       {/* <FirstMessage /> */}
 
       {/* Scrollable Chat Messages Area */}
@@ -175,7 +175,7 @@ function SideBarConversations({ isCollapsed, setIsCollapsed }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -200, opacity: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className={`bg-[#2D2633] fixed h-[calc(100dvh_-_100px)] lg:static lg:col-span-1 p-2 rounded-[15px] flex flex-col overflow-hidden`}
+      className={`bg-[#2D2633] fixed h-[100dvh] lg:static lg:col-span-1 p-2 rounded-[15px] flex flex-col overflow-hidden`}
     >
       <div className="flex items-center justify-between">
         <button

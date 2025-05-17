@@ -68,6 +68,8 @@ export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
       >
         Register Your Account
       </motion.h2>
+      { !registerUser ? (
+
       <motion.p
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -78,6 +80,17 @@ export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
         This step tells Finowl&apos;s contract to recognize your NEAR address and
         unlock the rest of the features—no extra deposit required.
       </motion.p>
+      ): (
+      <motion.p
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="text-green-400 mb-4"
+      >
+        Account registred successfully!
+      </motion.p>
+
+      ) }
 
       {!registerUser ? (
         <motion.button

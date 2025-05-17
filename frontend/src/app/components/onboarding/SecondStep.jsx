@@ -9,7 +9,8 @@ export default function SecondStep({
   registerStorage,
   setRegisterStorage,
 }) {
-  const { signedAccountId, callFunction, signIn, signOut } = useWalletSelector();
+  const { signedAccountId, callFunction, signIn, signOut } =
+    useWalletSelector();
   const [loading, setLoading] = useState(false);
 
   async function handleRegisterStorage() {
@@ -79,16 +80,26 @@ export default function SecondStep({
       >
         Register Storage
       </motion.h2>
-
-      <motion.p
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="text-white mb-6"
-      >
-        Every NEAR account needs a modest storage balance to keep data on the
-        blockchain.
-      </motion.p>
+      {!registerStorage ? (
+        <motion.p
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-white mb-6"
+        >
+          Every NEAR account needs a modest storage balance to keep data on the
+          blockchain.
+        </motion.p>
+      ) : (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-green-400 mb-4"
+        >
+          Storage deposit successful!
+        </motion.p>
+      )}
 
       {!registerStorage ? (
         <motion.button
