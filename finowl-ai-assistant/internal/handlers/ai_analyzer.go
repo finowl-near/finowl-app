@@ -30,7 +30,7 @@ func NewHandler(marketAnalyzer *ai.MarketAnalyzer, summaries []feedstock.Summary
 	}
 }
 
-// AIAnalyzer handles market analysis requests and now returns **Markdown**, not JSON.
+// AIAnalyzer handles market analysis requests and returns Markdown-formatted response
 func (h *Handler) AIAnalyzer(w http.ResponseWriter, r *http.Request) {
 	log.Printf("📝 Init AI analyzer")
 	if r.Method != http.MethodPost {
@@ -39,45 +39,25 @@ func (h *Handler) AIAnalyzer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Read the request body so we can log it if needed
-	body, err := io.ReadAll(r.Body)
+	question, err := decodeQuestion(r)
 	if err != nil {
-		log.Printf("❌ [%s] Error reading request body: %v", r.RemoteAddr, err)
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
-		return
-	}
-	r.Body = io.NopCloser(bytes.NewBuffer(body))
-
-	// Decode JSON {"question":"..."}
-	var request struct {
-		Question string `json:"question"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		log.Printf("❌ [%s] Invalid request body: %v (Body: %s)", r.RemoteAddr, err, string(body))
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("❌ [%s] %v", r.RemoteAddr, err)
 		return
 	}
 
-	// Basic validation
-	if strings.TrimSpace(request.Question) == "" {
-		http.Error(w, "Question cannot be empty", http.StatusBadRequest)
-		return
-	}
+	reqID := fmt.Sprintf("%x", md5.Sum([]byte(time.Now().String()+question)))[:8]
+	logRequest(reqID, "Question", question)
+	logRequest(reqID, "Using summaries", fmt.Sprintf("%d", len(h.summaries)))
 
-	// ---- Metadata for logging ----
-	reqID := fmt.Sprintf("%x", md5.Sum([]byte(time.Now().String()+request.Question)))[:8]
-	log.Printf("📝 [REQ-%s] Question: %s", reqID, request.Question)
-	log.Printf("📝 [REQ-%s] Using %d summaries", reqID, len(h.summaries))
-
-	// Long‑running context (5 min)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer cancel()
 
-	// Run analysis concurrently
 	answerCh := make(chan string, 1)
 	errCh := make(chan error, 1)
+
 	go func() {
-		answer, err := h.marketAnalyzer.AnalyzeMarketMarkdown(h.summaries, request.Question)
+		answer, err := h.marketAnalyzer.AnalyzeMarketMarkdown(h.summaries, question)
 		if err != nil {
 			errCh <- err
 			return
@@ -85,31 +65,51 @@ func (h *Handler) AIAnalyzer(w http.ResponseWriter, r *http.Request) {
 		answerCh <- answer
 	}()
 
-	// Wait for result / error / timeout
 	select {
 	case answer := <-answerCh:
 		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
-		log.Printf("📝 [REQ-%s] Response content:\n%s", reqID, answer)
+		logRequest(reqID, "Response content", answer)
 		log.Printf("📊 [REQ-%s] Response stats: %d chars, %d words", reqID, len(answer), len(strings.Fields(answer)))
 		if _, err := w.Write([]byte(answer)); err != nil {
 			log.Printf("❌ [REQ-%s] Failed writing response: %v", reqID, err)
 		}
 		log.Printf("✅ [REQ-%s] Successfully sent response", reqID)
-		return
 
 	case err := <-errCh:
 		log.Printf("❌ [REQ-%s] Analysis error: %v", reqID, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 
 	case <-ctx.Done():
-		log.Printf("⏱️ [REQ-%s] Timeout after 5 minutes", reqID)
+		log.Printf("⏱️ [REQ-%s] Timeout after 5 minutes", reqID)
 		http.Error(w, "Analysis timed out after 5 minutes", http.StatusGatewayTimeout)
-		return
 	}
 }
 
 // HealthCheckHandler returns simple liveness probe
 func (h *Handler) HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("OK"))
+}
+
+// decodeQuestion parses JSON from the request body and extracts the question
+func decodeQuestion(r *http.Request) (string, error) {
+	var request struct {
+		Question string `json:"question"`
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading request body: %w", err)
+	}
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return "", fmt.Errorf("invalid request body: %w", err)
+	}
+	if strings.TrimSpace(request.Question) == "" {
+		return "", fmt.Errorf("question cannot be empty")
+	}
+	return request.Question, nil
+}
+
+// logRequest is a helper to standardize request logs
+func logRequest(reqID, label, msg string) {
+	log.Printf("📝 [REQ-%s] %s: %s", reqID, label, msg)
 }
