@@ -82,7 +82,6 @@ func setupServer(application *app.App) *http.Server {
 	mux.HandleFunc("/analyze", application.Handler.AIAnalyzer)
 
 	// AI chat endpoint (stateful)
-	application.Handler.MarketChatter().Preload("finowl_user_01.testnet", application.Summaries)
 	mux.HandleFunc("/preload-session", application.Handler.PreloadSessionHandler)
 	mux.HandleFunc("/ask", application.Handler.AIMarketChat)
 
