@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"finowl-ai-assistant/internal/api"
 	"finowl-ai-assistant/internal/app"
 
 	"github.com/joho/godotenv"
@@ -87,6 +88,10 @@ func setupServer(application *app.App) *http.Server {
 	// Health check endpoint
 	mux.HandleFunc("/health", application.Handler.HealthCheckHandler)
 
+	debugHandler := api.NewDebugHandler(application.SessionManager)
+	mux.HandleFunc("/debug/session", debugHandler.GetSessionState)
+	mux.HandleFunc("/debug/clear-session", debugHandler.ClearSession)
+	mux.HandleFunc("/debug/sessions", debugHandler.ListActiveSessions)
 	// NEAR blockchain endpoints
 	if application.APIHandler != nil {
 		mux.HandleFunc("/api/register-storage", application.APIHandler.RegisterStorageHandler)

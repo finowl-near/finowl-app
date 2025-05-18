@@ -27,6 +27,7 @@ type App struct {
 	NearClient      *near.Client
 	Summaries       []feedstock.Summary
 	NetworkConfig   *netconfig.Config
+	SessionManager  *session.ChatSessionManager
 }
 
 // NewApp creates and initializes a new application
@@ -120,6 +121,7 @@ func NewApp(networkType string) (*App, error) {
 		NearClient:      nearClient,
 		Summaries:       summaries,
 		NetworkConfig:   netCfg,
+		SessionManager:  sessionManager,
 	}, nil
 }
 
