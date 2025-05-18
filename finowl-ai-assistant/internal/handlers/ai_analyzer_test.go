@@ -65,7 +65,7 @@ Respond in Markdown format.`
 			Content:   "BTC is up 5% today.",
 		},
 	}
-	handler := NewHandler(analyzer, summaries, nil)
+	handler := NewHandler(analyzer, summaries, nil, nil)
 
 	// Step 4: Build request and response
 	body, _ := json.Marshal(map[string]string{
@@ -86,7 +86,7 @@ Respond in Markdown format.`
 func TestAIAnalyzer_EmptyQuestion(t *testing.T) {
 	mockClient := &mockAIClient{}
 	marketAnalyzer := ai.NewMarketAnalyzer(mockClient)
-	handler := NewHandler(marketAnalyzer, []feedstock.Summary{}, nil)
+	handler := NewHandler(marketAnalyzer, []feedstock.Summary{}, nil, nil)
 
 	body, _ := json.Marshal(map[string]string{
 		"question": "  ",
@@ -103,7 +103,7 @@ func TestAIAnalyzer_EmptyQuestion(t *testing.T) {
 }
 
 func TestAIAnalyzer_MethodNotAllowed(t *testing.T) {
-	handler := NewHandler(nil, nil, nil)
+	handler := NewHandler(nil, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/analyze", nil)
 	w := httptest.NewRecorder()
 
