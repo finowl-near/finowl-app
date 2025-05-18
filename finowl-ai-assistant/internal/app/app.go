@@ -85,7 +85,7 @@ func NewApp(networkType string) (*App, error) {
 	marketChatter := ai.NewMarketChatter(sessionManager, aiClient, cfg.AI.Model)
 
 	// Create handler
-	handler := handlers.NewHandler(marketAnalyzer, summaries, marketChatter)
+	handler := handlers.NewHandler(marketAnalyzer, summaries, marketChatter, sessionManager)
 
 	// Create NEAR client (optional)
 	var nearClient *near.Client

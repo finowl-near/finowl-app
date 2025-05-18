@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"finowl-ai-assistant/internal/session"
 	"finowl-ai-assistant/pkg/ai"
 	"finowl-ai-assistant/pkg/feedstock"
 	"fmt"
@@ -17,6 +18,7 @@ type Handler struct {
 	marketAnalyzer *ai.MarketAnalyzer
 	summaries      []feedstock.Summary
 	marketChatter  *ai.MarketChatter
+	sessionManager *session.ChatSessionManager
 }
 
 // NewHandler initializes a full-featured handler
@@ -24,12 +26,13 @@ func NewHandler(
 	marketAnalyzer *ai.MarketAnalyzer,
 	summaries []feedstock.Summary,
 	marketChatter *ai.MarketChatter,
-
+	sessionManager *session.ChatSessionManager,
 ) *Handler {
 	return &Handler{
 		marketAnalyzer: marketAnalyzer,
 		summaries:      summaries,
 		marketChatter:  marketChatter,
+		sessionManager: sessionManager,
 	}
 }
 
