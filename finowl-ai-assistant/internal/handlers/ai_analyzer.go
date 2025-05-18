@@ -1,53 +1,32 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
 	"time"
-
-	"finowl-ai-assistant/pkg/ai"
-	"finowl-ai-assistant/pkg/feedstock"
 )
 
-// analysisTimeout defines the maximum time allowed for AI market analysis requests.
-// If exceeded, the request is canceled and returns a 504 Gateway Timeout.
-// Keeping this short ensures responsiveness under load.
+// analysisTimeout defines the max time allowed for market analysis
 const analysisTimeout = 5 * time.Minute
 
-// Handler contains dependencies needed by the HTTP handlers
-type Handler struct {
-	marketAnalyzer *ai.MarketAnalyzer
-	summaries      []feedstock.Summary
-}
-
-// NewHandler creates a new HTTP handler
-func NewHandler(marketAnalyzer *ai.MarketAnalyzer, summaries []feedstock.Summary) *Handler {
-	return &Handler{
-		marketAnalyzer: marketAnalyzer,
-		summaries:      summaries,
-	}
-}
-
-// AIAnalyzer handles market analysis requests and returns Markdown-formatted response
+// AIAnalyzer handles POST /analyze and returns markdown
 func (h *Handler) AIAnalyzer(w http.ResponseWriter, r *http.Request) {
-	log.Printf("📝 Init AI analyzer")
+	log.Println("📝 Init AI analyzer")
+
 	if r.Method != http.MethodPost {
-		log.Printf("❌ [%s] Method not allowed: %s", r.RemoteAddr, r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		log.Printf("❌ [%s] Method not allowed: %s", r.RemoteAddr, r.Method)
 		return
 	}
 
 	question, err := decodeQuestion(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Printf("❌ [%s] %v", r.RemoteAddr, err)
+		log.Printf("❌ [%s] Decode error: %v", r.RemoteAddr, err)
 		return
 	}
 
@@ -75,10 +54,7 @@ func (h *Handler) AIAnalyzer(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 		logRequest(reqID, "Response content", answer)
 		log.Printf("📊 [REQ-%s] Response stats: %d chars, %d words", reqID, len(answer), len(strings.Fields(answer)))
-		if _, err := w.Write([]byte(answer)); err != nil {
-			log.Printf("❌ [REQ-%s] Failed writing response: %v", reqID, err)
-		}
-		log.Printf("✅ [REQ-%s] Successfully sent response", reqID)
+		_, _ = w.Write([]byte(answer))
 
 	case err := <-errCh:
 		log.Printf("❌ [REQ-%s] Analysis error: %v", reqID, err)
@@ -90,31 +66,7 @@ func (h *Handler) AIAnalyzer(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HealthCheckHandler returns simple liveness probe
+// HealthCheckHandler returns a simple OK status
 func (h *Handler) HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("OK"))
-}
-
-// decodeQuestion parses JSON from the request body and extracts the question
-func decodeQuestion(r *http.Request) (string, error) {
-	var request struct {
-		Question string `json:"question"`
-	}
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return "", fmt.Errorf("error reading request body: %w", err)
-	}
-	r.Body = io.NopCloser(bytes.NewBuffer(body))
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return "", fmt.Errorf("invalid request body: %w", err)
-	}
-	if strings.TrimSpace(request.Question) == "" {
-		return "", fmt.Errorf("question cannot be empty")
-	}
-	return request.Question, nil
-}
-
-// logRequest is a helper to standardize request logs
-func logRequest(reqID, label, msg string) {
-	log.Printf("📝 [REQ-%s] %s: %s", reqID, label, msg)
 }

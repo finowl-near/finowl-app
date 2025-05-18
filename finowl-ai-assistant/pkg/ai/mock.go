@@ -2,6 +2,7 @@ package ai
 
 import (
 	"encoding/json"
+	"finowl-ai-assistant/pkg/chat"
 	"fmt"
 )
 
@@ -16,7 +17,7 @@ func NewMockClient() *MockClient {
 }
 
 // GetChatCompletion returns a mock assistant reply for chat-based interaction
-func (c *MockClient) GetChatCompletion(messages []ChatMessage, model string, temperature float32, maxTokens int) (string, error) {
+func (c *MockClient) GetChatCompletion(messages []chat.Message, model string, temperature float32, maxTokens int) (string, error) {
 	fmt.Println("Using mock AI chat client")
 	for i, msg := range messages {
 		fmt.Printf("[%d] %s: %s\n", i, msg.Role, msg.Content)

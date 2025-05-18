@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"finowl-ai-assistant/pkg/ai"
+	"finowl-ai-assistant/pkg/chat"
 	"finowl-ai-assistant/pkg/feedstock"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +23,7 @@ func (m *mockAIClient) GetCompletion(prompt string, model string, temperature fl
 }
 
 // GetChatCompletion returns a mock assistant reply using message history
-func (m *mockAIClient) GetChatCompletion(messages []ai.ChatMessage, model string, temperature float32, maxTokens int) (string, error) {
+func (m *mockAIClient) GetChatCompletion(messages []chat.Message, model string, temperature float32, maxTokens int) (string, error) {
 	return "Sure, let's dive into your question based on the latest market summaries.", nil
 }
 
@@ -64,7 +65,7 @@ Respond in Markdown format.`
 			Content:   "BTC is up 5% today.",
 		},
 	}
-	handler := NewHandler(analyzer, summaries)
+	handler := NewHandler(analyzer, summaries, nil)
 
 	// Step 4: Build request and response
 	body, _ := json.Marshal(map[string]string{
@@ -85,7 +86,7 @@ Respond in Markdown format.`
 func TestAIAnalyzer_EmptyQuestion(t *testing.T) {
 	mockClient := &mockAIClient{}
 	marketAnalyzer := ai.NewMarketAnalyzer(mockClient)
-	handler := NewHandler(marketAnalyzer, []feedstock.Summary{})
+	handler := NewHandler(marketAnalyzer, []feedstock.Summary{}, nil)
 
 	body, _ := json.Marshal(map[string]string{
 		"question": "  ",
@@ -102,7 +103,7 @@ func TestAIAnalyzer_EmptyQuestion(t *testing.T) {
 }
 
 func TestAIAnalyzer_MethodNotAllowed(t *testing.T) {
-	handler := NewHandler(nil, nil)
+	handler := NewHandler(nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/analyze", nil)
 	w := httptest.NewRecorder()
 

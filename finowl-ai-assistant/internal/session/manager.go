@@ -4,20 +4,14 @@ import (
 	"sync"
 	"time"
 
+	"finowl-ai-assistant/pkg/chat"
 	"finowl-ai-assistant/pkg/feedstock"
 )
-
-// ChatMessage represents a message exchanged with the AI
-type ChatMessage struct {
-	Role    string    // "user" or "assistant"
-	Content string    // message content
-	Time    time.Time // timestamp of message
-}
 
 // ChatSession holds summaries and chat messages for a user
 type ChatSession struct {
 	Summaries []feedstock.Summary
-	Messages  []ChatMessage
+	Messages  []chat.Message
 	UpdatedAt time.Time // last activity time
 }
 
@@ -48,7 +42,7 @@ func (m *ChatSessionManager) StartSession(userID string, summaries []feedstock.S
 
 	m.sessions[userID] = &ChatSession{
 		Summaries: summaries,
-		Messages:  []ChatMessage{},
+		Messages:  []chat.Message{},
 		UpdatedAt: time.Now(),
 	}
 }
@@ -59,7 +53,7 @@ func (m *ChatSessionManager) AddMessage(userID, role, content string) {
 	defer m.mutex.Unlock()
 
 	if session, exists := m.sessions[userID]; exists {
-		session.Messages = append(session.Messages, ChatMessage{
+		session.Messages = append(session.Messages, chat.Message{
 			Role:    role,
 			Content: content,
 			Time:    time.Now(),
@@ -69,7 +63,7 @@ func (m *ChatSessionManager) AddMessage(userID, role, content string) {
 }
 
 // GetMessages returns the full message history for a session
-func (m *ChatSessionManager) GetMessages(userID string) []ChatMessage {
+func (m *ChatSessionManager) GetMessages(userID string) []chat.Message {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
