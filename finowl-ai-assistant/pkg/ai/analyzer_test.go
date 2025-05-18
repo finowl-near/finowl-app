@@ -16,6 +16,11 @@ func (m *MockClientWithErrorResponse) GetCompletion(prompt string, model string,
 	return "**Error:** simulated AI error", nil
 }
 
+// Satisfy interface (chat mode not tested in this case)
+func (m *MockClientWithErrorResponse) GetChatCompletion(messages []ChatMessage, model string, temperature float32, maxTokens int) (string, error) {
+	return "**Error:** simulated AI error (chat)", nil
+}
+
 // TestMarketAnalyzer tests the market analyzer functionality
 func TestMarketAnalyzer(t *testing.T) {
 	mockClient := NewMockClient()

@@ -42,6 +42,7 @@ type MarketAnalysisResponse struct {
 // AIClient defines the expected interface for interacting with AI models
 type AIClient interface {
 	GetCompletion(prompt string, model string, temperature float32, maxTokens int) (string, error)
+	GetChatCompletion(messages []ChatMessage, model string, temperature float32, maxTokens int) (string, error)
 }
 
 // MarketAnalyzer is the core engine for analyzing feedstock summaries via AI

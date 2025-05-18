@@ -21,6 +21,11 @@ func (m *mockAIClient) GetCompletion(prompt string, model string, temperature fl
 	return "# Mocked AI Response\n\nMarket is volatile today with BTC leading gains.", nil
 }
 
+// GetChatCompletion returns a mock assistant reply using message history
+func (m *mockAIClient) GetChatCompletion(messages []ai.ChatMessage, model string, temperature float32, maxTokens int) (string, error) {
+	return "Sure, let's dive into your question based on the latest market summaries.", nil
+}
+
 func TestAIAnalyzer_Success(t *testing.T) {
 	// Create a mock AI client that returns a fixed markdown response
 	mockClient := &mockAIClient{}
