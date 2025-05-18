@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"errors"
+	"finowl-ai-assistant/pkg/chat"
 	"fmt"
 	"io"
 	"log"
@@ -126,7 +127,7 @@ func (c *Client) GetCompletion(prompt string, model string, temperature float32,
 	return content, nil
 }
 
-func (c *Client) GetChatCompletion(messages []ChatMessage, model string, temperature float32, maxTokens int) (string, error) {
+func (c *Client) GetChatCompletion(messages []chat.Message, model string, temperature float32, maxTokens int) (string, error) {
 	if c.APIKey == "" {
 		return "", fmt.Errorf("API key not set")
 	}

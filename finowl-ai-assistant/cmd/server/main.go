@@ -80,6 +80,10 @@ func setupServer(application *app.App) *http.Server {
 	// AI analysis endpoint
 	mux.HandleFunc("/analyze", application.Handler.AIAnalyzer)
 
+	// AI chat endpoint (stateful)
+	application.Handler.MarketChatter().Preload("finowl_user_01.testnet", application.Summaries)
+	mux.HandleFunc("/ask", application.Handler.AIMarketChat)
+
 	// Health check endpoint
 	mux.HandleFunc("/health", application.Handler.HealthCheckHandler)
 

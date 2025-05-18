@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"finowl-ai-assistant/pkg/chat"
 	"finowl-ai-assistant/pkg/feedstock"
 	"os"
 	"path/filepath"
@@ -17,7 +18,7 @@ func (m *MockClientWithErrorResponse) GetCompletion(prompt string, model string,
 }
 
 // Satisfy interface (chat mode not tested in this case)
-func (m *MockClientWithErrorResponse) GetChatCompletion(messages []ChatMessage, model string, temperature float32, maxTokens int) (string, error) {
+func (m *MockClientWithErrorResponse) GetChatCompletion(messages []chat.Message, model string, temperature float32, maxTokens int) (string, error) {
 	return "**Error:** simulated AI error (chat)", nil
 }
 
