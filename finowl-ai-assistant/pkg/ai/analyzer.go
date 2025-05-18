@@ -13,12 +13,25 @@ import (
 	"finowl-ai-assistant/pkg/feedstock"
 )
 
+// Constants for model execution
+const (
+	DefaultPromptDir       = "config/prompts"
+	DefaultModelName       = "deepseek-chat"
+	JSONResponseMaxTokens  = 2000
+	MarkdownResponseTokens = 8000
+	MarkdownTemperature    = 0.1
+	JSONTemperature        = 0.0
+	promptFilename         = "market_analysis.txt"
+)
+
+// Token represents an investment recommendation with context
 type Token struct {
 	Rank   int    `json:"rank"`
 	Ticker string `json:"ticker"`
 	Reason string `json:"reason"`
 }
 
+// MarketAnalysisResponse represents the AI model's structured output
 type MarketAnalysisResponse struct {
 	MarketSentiment    string  `json:"market_sentiment"`
 	InvestmentDecision string  `json:"investment_decision"`
@@ -26,29 +39,32 @@ type MarketAnalysisResponse struct {
 	TopTokens          []Token `json:"top_tokens,omitempty"`
 }
 
+// AIClient defines the expected interface for interacting with AI models
 type AIClient interface {
 	GetCompletion(prompt string, model string, temperature float32, maxTokens int) (string, error)
 }
 
+// MarketAnalyzer is the core engine for analyzing feedstock summaries via AI
 type MarketAnalyzer struct {
 	aiClient    AIClient
 	promptsPath string
 	model       string
 }
 
+// NewMarketAnalyzer returns a properly configured analyzer with optional env override
 func NewMarketAnalyzer(aiClient AIClient) *MarketAnalyzer {
-	promptsPath := filepath.Join("config", "prompts")
+	promptsPath := DefaultPromptDir
 	if env := os.Getenv("FINOWL_PROMPTS_PATH"); env != "" {
 		promptsPath = env
 	}
 	return &MarketAnalyzer{
 		aiClient:    aiClient,
 		promptsPath: promptsPath,
-		model:       "deepseek-chat",
+		model:       DefaultModelName,
 	}
 }
 
-// Configure updates the market analyzer's configuration
+// Configure allows dynamic override of prompt path or model name
 func (ma *MarketAnalyzer) Configure(promptsPath, model string) {
 	if promptsPath != "" {
 		ma.promptsPath = promptsPath
@@ -58,27 +74,23 @@ func (ma *MarketAnalyzer) Configure(promptsPath, model string) {
 	}
 }
 
+// AnalyzeMarket returns a structured JSON response from the AI based on summaries and a question
 func (ma *MarketAnalyzer) AnalyzeMarket(summaries []feedstock.Summary, question string) (*MarketAnalysisResponse, error) {
-	// legacy path kept for backwards-compat
 	if len(summaries) == 0 {
 		return nil, fmt.Errorf("no market data available for analysis")
 	}
-
 	prompt, err := ma.buildPrompt(summaries, question)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build prompt: %w", err)
 	}
-
-	aiResp, err := ma.aiClient.GetCompletion(prompt, ma.model, 0.0, 2000)
+	aiResp, err := ma.aiClient.GetCompletion(prompt, ma.model, JSONTemperature, JSONResponseMaxTokens)
 	if err != nil {
 		return nil, fmt.Errorf("AI API error: %w", err)
 	}
-
 	jsonStr := extractJSON(aiResp)
 	if jsonStr == "" {
 		return nil, fmt.Errorf("could not find valid JSON in the AI response")
 	}
-
 	var resp MarketAnalysisResponse
 	if err := json.Unmarshal([]byte(jsonStr), &resp); err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
@@ -86,51 +98,27 @@ func (ma *MarketAnalyzer) AnalyzeMarket(summaries []feedstock.Summary, question 
 	return &resp, nil
 }
 
+// AnalyzeMarketMarkdown returns a markdown-formatted string using LLM reasoning
 func (ma *MarketAnalyzer) AnalyzeMarketMarkdown(summaries []feedstock.Summary, question string) (string, error) {
-	// 1. Validate input
 	if len(summaries) == 0 {
 		return "", fmt.Errorf("no market data available for analysis")
 	}
-
-	// 2. Build prompt
 	prompt, err := ma.buildPrompt(summaries, question)
 	if err != nil {
 		return "", fmt.Errorf("failed to build prompt: %w", err)
 	}
-
-	// 3. Call model – low temperature for determinism
-	aiResp, err := ma.aiClient.GetCompletion(prompt, ma.model, 0.1, 8000)
+	aiResp, err := ma.aiClient.GetCompletion(prompt, ma.model, MarkdownTemperature, MarkdownResponseTokens)
 	if err != nil {
 		return "", fmt.Errorf("AI API error: %w", err)
 	}
-
 	answer := strings.TrimSpace(aiResp)
-
-	// 4. Pass through model-level error signalling
 	if strings.HasPrefix(answer, "**Error:**") {
-		return "", errors.New(strings.TrimSpace(strings.TrimPrefix(answer, "**Error:**")))
+		return "", errors.New(strings.TrimPrefix(answer, "**Error:**"))
 	}
-
-	// 5. Final scrub for hidden helper notes (( ... ))
 	return scrubHiddenNotes(answer), nil
 }
 
-func scrubHiddenNotes(markdown string) string {
-	re := regexp.MustCompile(`\(\([\s\S]*?\)\)`) // match (( ... )) in non-greedy fashion
-	return strings.TrimSpace(re.ReplaceAllString(markdown, ""))
-}
-
-func isCryptoRelated(question string) bool {
-	keywords := []string{"crypto", "token", "coin", "bitcoin", "ethereum", "btc", "eth", "market", "trend", "buy", "sell", "hold", "invest", "trading", "defi", "nft", "blockchain", "altcoin", "exchange", "price", "binance", "coinbase", "wallet", "mining", "staking", "chain"}
-	lq := strings.ToLower(question)
-	for _, kw := range keywords {
-		if strings.Contains(lq, kw) {
-			return true
-		}
-	}
-	return true
-}
-
+// buildPrompt formats the summaries and loads the template file for prompt construction
 func (ma *MarketAnalyzer) buildPrompt(summaries []feedstock.Summary, question string) (string, error) {
 	sort.SliceStable(summaries, func(i, j int) bool {
 		return summaries[i].Timestamp.After(summaries[j].Timestamp)
@@ -142,8 +130,8 @@ func (ma *MarketAnalyzer) buildPrompt(summaries []feedstock.Summary, question st
 	}
 	formatted := strings.Join(parts, "\n\n")
 
-	promptTemplatePath := filepath.Join(ma.promptsPath, "market_analysis.txt")
-	tplBytes, err := os.ReadFile(promptTemplatePath)
+	promptPath := filepath.Join(ma.promptsPath, promptFilename)
+	tplBytes, err := os.ReadFile(promptPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read prompt template: %w", err)
 	}
@@ -153,15 +141,14 @@ func (ma *MarketAnalyzer) buildPrompt(summaries []feedstock.Summary, question st
 	return prompt, nil
 }
 
-// extractJSON (unchanged legacy helper)
+// extractJSON attempts to extract a valid JSON payload from an AI model response
 func extractJSON(text string) string {
 	var js json.RawMessage
 	if err := json.Unmarshal([]byte(text), &js); err == nil {
 		return text
 	}
 
-	codeBlockPattern := "```json\\s*([\\s\\S]*?)```"
-	re := regexp.MustCompile(codeBlockPattern)
+	re := regexp.MustCompile("```json\\s*([\\s\\S]*?)```")
 	if m := re.FindStringSubmatch(text); len(m) > 1 {
 		jc := strings.TrimSpace(m[1])
 		if json.Unmarshal([]byte(jc), &js) == nil {
@@ -189,4 +176,10 @@ func extractJSON(text string) string {
 		}
 	}
 	return ""
+}
+
+// scrubHiddenNotes removes (( ... )) sections from markdown output
+func scrubHiddenNotes(markdown string) string {
+	re := regexp.MustCompile(`\$begin:math:text\$$begin:math:text$([\\s\\S]*?)$end:math:text$\$end:math:text\$`)
+	return strings.TrimSpace(re.ReplaceAllString(markdown, ""))
 }

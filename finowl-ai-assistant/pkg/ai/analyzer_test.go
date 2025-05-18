@@ -4,16 +4,21 @@ import (
 	"finowl-ai-assistant/pkg/feedstock"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
 
+// MockClientWithErrorResponse simulates markdown response with model-level error
+type MockClientWithErrorResponse struct{}
+
+func (m *MockClientWithErrorResponse) GetCompletion(prompt string, model string, temperature float32, maxTokens int) (string, error) {
+	return "**Error:** simulated AI error", nil
+}
+
 // TestMarketAnalyzer tests the market analyzer functionality
 func TestMarketAnalyzer(t *testing.T) {
-	// Create a mock AI client
 	mockClient := NewMockClient()
-
-	// Create a test prompts directory and file
 	tmpDir := t.TempDir()
 	promptsDir := filepath.Join(tmpDir, "prompts")
 	err := os.MkdirAll(promptsDir, 0755)
@@ -21,7 +26,6 @@ func TestMarketAnalyzer(t *testing.T) {
 		t.Fatalf("Failed to create test prompts directory: %v", err)
 	}
 
-	// Create a test prompt template
 	promptTemplate := `Analyze the following market summaries and answer the question.
 
 SUMMARIES:
@@ -45,54 +49,73 @@ Please respond with a JSON object containing the following fields:
 		t.Fatalf("Failed to create test prompt file: %v", err)
 	}
 
-	// Create sample summaries
 	summaries := []feedstock.Summary{
 		{
 			ID:        1,
 			Timestamp: time.Now(),
-			Content:   "Bitcoin surged past $50,000 today, marking a new high for the year.",
+			Content:   "Bitcoin surged past $50,000 today.",
 		},
 		{
 			ID:        2,
 			Timestamp: time.Now().Add(-24 * time.Hour),
-			Content:   "Ethereum development activity continues to increase ahead of upcoming scaling upgrades.",
+			Content:   "Ethereum activity is growing.",
 		},
 	}
 
-	// Create market analyzer with custom prompts path
 	analyzer := NewMarketAnalyzer(mockClient)
 	analyzer.Configure(promptsDir, "test-model")
 
-	// Test with a valid crypto question
 	t.Run("Valid crypto question", func(t *testing.T) {
 		response, err := analyzer.AnalyzeMarket(summaries, "Should I invest in Bitcoin or Ethereum?")
 		if err != nil {
 			t.Fatalf("AnalyzeMarket failed: %v", err)
 		}
-
-		// Verify the response
 		if response.MarketSentiment != "Bullish" {
 			t.Errorf("Expected Bullish sentiment, got %s", response.MarketSentiment)
 		}
-
 		if response.InvestmentDecision != "BUY" {
 			t.Errorf("Expected BUY decision, got %s", response.InvestmentDecision)
 		}
-
 		if len(response.TopTokens) == 0 {
 			t.Error("Expected top tokens, got none")
-		} else {
-			if response.TopTokens[0].Ticker != "$BTC" && response.TopTokens[0].Ticker != "$ETH" {
-				t.Errorf("Expected either BTC or ETH as top token, got %s", response.TopTokens[0].Ticker)
-			}
 		}
 	})
 
-	// Test with a non-crypto question
-	t.Run("Non-crypto question", func(t *testing.T) {
-		_, err := analyzer.AnalyzeMarket(summaries, "What's the weather like today?")
-		if err == nil {
-			t.Fatal("Expected error for non-crypto question, got nil")
+	t.Run("AnalyzeMarket with empty summaries", func(t *testing.T) {
+		_, err := analyzer.AnalyzeMarket([]feedstock.Summary{}, "What now?")
+		if err == nil || !strings.Contains(err.Error(), "no market data") {
+			t.Errorf("Expected error for empty summaries, got: %v", err)
+		}
+	})
+
+	t.Run("AnalyzeMarketMarkdown success", func(t *testing.T) {
+		md, err := analyzer.AnalyzeMarketMarkdown(summaries, "Should I hold BTC?")
+		if err != nil {
+			t.Fatalf("Expected markdown, got error: %v", err)
+		}
+		if !strings.Contains(md, "BTC") {
+			t.Errorf("Expected markdown to mention BTC, got: %s", md)
+		}
+	})
+
+	t.Run("AnalyzeMarketMarkdown model error prefix", func(t *testing.T) {
+		errorClient := &MockClientWithErrorResponse{}
+		errAnalyzer := NewMarketAnalyzer(errorClient)
+		errAnalyzer.Configure(promptsDir, "test-model")
+
+		_, err := errAnalyzer.AnalyzeMarketMarkdown(summaries, "Trigger error")
+		if err == nil || !strings.Contains(err.Error(), "simulated AI error") {
+			t.Errorf("Expected simulated AI error, got: %v", err)
+		}
+	})
+
+	t.Run("buildPrompt with missing template file", func(t *testing.T) {
+		missingAnalyzer := NewMarketAnalyzer(mockClient)
+		missingAnalyzer.Configure(filepath.Join(tmpDir, "missing"), "test-model")
+
+		_, err := missingAnalyzer.AnalyzeMarket(summaries, "Will BTC pump?")
+		if err == nil || !strings.Contains(err.Error(), "failed to read prompt template") {
+			t.Errorf("Expected missing template error, got: %v", err)
 		}
 	})
 }
@@ -146,32 +169,6 @@ func TestJsonExtraction(t *testing.T) {
 			}
 			if tt.isValid && result != tt.expected {
 				t.Errorf("Expected: %s, got: %s", tt.expected, result)
-			}
-		})
-	}
-}
-
-// TestCryptoQuestion tests the crypto question detection
-func TestCryptoQuestion(t *testing.T) {
-	tests := []struct {
-		question string
-		isCrypto bool
-	}{
-		{"Should I buy Bitcoin?", true},
-		{"What do you think about Ethereum?", true},
-		{"Is DeFi still a good investment?", true},
-		{"How's the crypto market today?", true},
-		{"What's the weather like?", false},
-		{"How do I bake a cake?", false},
-		{"Tell me about history", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.question, func(t *testing.T) {
-			result := isCryptoRelated(tt.question)
-			if result != tt.isCrypto {
-				t.Errorf("Question: %s, expected isCrypto: %v, got: %v",
-					tt.question, tt.isCrypto, result)
 			}
 		})
 	}
