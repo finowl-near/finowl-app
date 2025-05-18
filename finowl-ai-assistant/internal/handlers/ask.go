@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"context"
 	"crypto/md5"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -35,7 +33,6 @@ func (h *Handler) MarketChatter() *ai.MarketChatter {
 	return h.marketChatter
 }
 
-// AIMarketChat handles POST /ask and returns a chat-based response from the AI assistant
 func (h *Handler) AIMarketChat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -60,23 +57,14 @@ func (h *Handler) AIMarketChat(w http.ResponseWriter, r *http.Request) {
 	log.Printf("💬 [CHAT-%s] New chat request from %s", reqID, req.UserID)
 	log.Printf("💬 [CHAT-%s] Question: %s", reqID, req.Question)
 
-	// Perform chat
 	answer, err := h.marketChatter.Chat(req.UserID, req.Question)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			log.Printf("⚠️ [CHAT-%s] No active session found for user %s. Suggest calling Preload().", reqID, req.UserID)
-			http.Error(w, fmt.Sprintf("No session found for user '%s'. Please start a session first.", req.UserID), http.StatusBadRequest)
-			return
-		}
 		log.Printf("❌ [CHAT-%s] Chat error: %v", reqID, err)
 		http.Error(w, "Failed to process chat request", http.StatusInternalServerError)
 		return
 	}
 
-	resp := map[string]string{
-		"reply": answer,
-	}
-
+	resp := map[string]string{"reply": answer}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Printf("❌ [CHAT-%s] Failed to send response: %v", reqID, err)
