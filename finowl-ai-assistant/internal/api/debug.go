@@ -38,3 +38,18 @@ func (h *DebugHandler) GetSessionState(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
 }
+
+// ClearSession wipes a user's session
+func (h *DebugHandler) ClearSession(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UserID string `json:"user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.UserID) == "" {
+		http.Error(w, "Invalid or missing user_id", http.StatusBadRequest)
+		return
+	}
+
+	h.SessionManager.Clear(req.UserID)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("session cleared"))
+}
