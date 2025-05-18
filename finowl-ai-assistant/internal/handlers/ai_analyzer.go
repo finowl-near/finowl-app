@@ -16,6 +16,11 @@ import (
 	"finowl-ai-assistant/pkg/feedstock"
 )
 
+// analysisTimeout defines the maximum time allowed for AI market analysis requests.
+// If exceeded, the request is canceled and returns a 504 Gateway Timeout.
+// Keeping this short ensures responsiveness under load.
+const analysisTimeout = 5 * time.Minute
+
 // Handler contains dependencies needed by the HTTP handlers
 type Handler struct {
 	marketAnalyzer *ai.MarketAnalyzer
@@ -50,7 +55,7 @@ func (h *Handler) AIAnalyzer(w http.ResponseWriter, r *http.Request) {
 	logRequest(reqID, "Question", question)
 	logRequest(reqID, "Using summaries", fmt.Sprintf("%d", len(h.summaries)))
 
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(r.Context(), analysisTimeout)
 	defer cancel()
 
 	answerCh := make(chan string, 1)
