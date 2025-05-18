@@ -114,3 +114,20 @@ func (m *ChatSessionManager) cleanupExpired() {
 		}
 	}
 }
+
+// Sessions returns a copy of all active sessions (read-only access)
+func (m *ChatSessionManager) Sessions() map[string]*ChatSession {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	copy := make(map[string]*ChatSession, len(m.sessions))
+	for k, v := range m.sessions {
+		copy[k] = v
+	}
+	return copy
+}
+
+// Mutex provides read access to the internal sync mutex (for special cases like debugging)
+func (m *ChatSessionManager) Mutex() *sync.RWMutex {
+	return &m.mutex
+}

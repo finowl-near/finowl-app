@@ -91,6 +91,7 @@ func setupServer(application *app.App) *http.Server {
 	debugHandler := api.NewDebugHandler(application.SessionManager)
 	mux.HandleFunc("/debug/session", debugHandler.GetSessionState)
 	mux.HandleFunc("/debug/clear-session", debugHandler.ClearSession)
+	mux.HandleFunc("/debug/sessions", debugHandler.ListActiveSessions)
 	// NEAR blockchain endpoints
 	if application.APIHandler != nil {
 		mux.HandleFunc("/api/register-storage", application.APIHandler.RegisterStorageHandler)

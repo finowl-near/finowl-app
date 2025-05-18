@@ -53,3 +53,17 @@ func (h *DebugHandler) ClearSession(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("session cleared"))
 }
+
+// ListActiveSessions returns all user IDs with active sessions
+func (h *DebugHandler) ListActiveSessions(w http.ResponseWriter, r *http.Request) {
+	h.SessionManager.Mutex().RLock()
+	defer h.SessionManager.Mutex().RUnlock()
+
+	ids := make([]string, 0, len(h.SessionManager.Sessions()))
+	for userID := range h.SessionManager.Sessions() {
+		ids = append(ids, userID)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(ids)
+}
