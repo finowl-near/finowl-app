@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -15,7 +16,7 @@ type AppConfig struct {
 	Server ServerConfig
 
 	// API clients configuration
-	AI        AIConfig
+	AI        AIConfigs
 	Feedstock FeedstockConfig
 	NEAR      NEARConfig
 
@@ -23,16 +24,26 @@ type AppConfig struct {
 	ResourcePaths ResourceConfig
 }
 
+// AIConfigs holds multiple AI provider configurations
+type AIConfigs struct {
+	Providers []AIConfig
+	Strategy  string // "round-robin", "priority", "fallback"
+}
+
 // ServerConfig holds HTTP server configuration
 type ServerConfig struct {
 	Port string
 }
 
-// AIConfig holds AI service configuration
+// AIConfig holds individual AI service configuration
 type AIConfig struct {
-	APIKey   string
-	Endpoint string
-	Model    string
+	Provider    string
+	APIKey      string
+	Endpoint    string
+	Model       string
+	Priority    int
+	MaxTokens   int
+	Temperature float32
 }
 
 // FeedstockConfig holds Feedstock API configuration
@@ -58,16 +69,126 @@ type NEARConfig struct {
 	RPCURL          string
 }
 
+// loadAIProviders loads all configured AI providers
+func loadAIProviders() []AIConfig {
+	providersStr := getEnvWithDefault("FINOWL_AI_PROVIDERS", "DEEPSEEK,CLAUDE,OPENAI")
+	providerList := strings.Split(providersStr, ",")
+
+	var providers []AIConfig
+	for _, provider := range providerList {
+		provider = strings.TrimSpace(provider)
+		if provider == "" {
+			continue
+		}
+
+		config := AIConfig{
+			Provider: provider,
+			APIKey: getFirstEnv(
+				fmt.Sprintf("FINOWL_%s_API_KEY", strings.ToUpper(provider)),
+				fmt.Sprintf("%s_API_KEY", strings.ToUpper(provider)),
+				"",
+			),
+			Endpoint: getFirstEnv(
+				fmt.Sprintf("FINOWL_%s_ENDPOINT", strings.ToUpper(provider)),
+				fmt.Sprintf("%s_API_ENDPOINT", strings.ToUpper(provider)),
+				getDefaultEndpoint(provider),
+			),
+			Model: getEnvWithDefault(
+				fmt.Sprintf("FINOWL_%s_MODEL", strings.ToUpper(provider)),
+				getDefaultModel(provider),
+			),
+			Priority: getEnvAsInt(
+				fmt.Sprintf("FINOWL_%s_PRIORITY", strings.ToUpper(provider)),
+				getDefaultPriority(provider),
+			),
+			MaxTokens: getEnvAsInt(
+				fmt.Sprintf("FINOWL_%s_MAX_TOKENS", strings.ToUpper(provider)),
+				getDefaultMaxTokens(provider),
+			),
+			Temperature: float32(getEnvAsFloat(
+				fmt.Sprintf("FINOWL_%s_TEMPERATURE", strings.ToUpper(provider)),
+				0.1,
+			)),
+		}
+		providers = append(providers, config)
+	}
+	return providers
+}
+
+// Helper functions for default values
+func getDefaultEndpoint(provider string) string {
+	switch provider {
+	case "deepseek":
+		return "https://api.deepseek.com/v1/chat/completions"
+	case "claude":
+		return "https://api.anthropic.com/v1/messages"
+	case "openai":
+		return "https://api.openai.com/v1/chat/completions"
+	default:
+		return ""
+	}
+}
+
+func getDefaultModel(provider string) string {
+	switch provider {
+	case "deepseek":
+		return "deepseek-chat"
+	case "claude":
+		return "claude-3-opus"
+	case "openai":
+		return "gpt-4"
+	default:
+		return ""
+	}
+}
+
+func getDefaultPriority(provider string) int {
+	switch provider {
+	case "deepseek":
+		return 1
+	case "claude":
+		return 2
+	case "openai":
+		return 3
+	default:
+		return 999
+	}
+}
+
+func getDefaultMaxTokens(provider string) int {
+	switch provider {
+	case "deepseek":
+		return 4000
+	case "claude":
+		return 100000
+	case "openai":
+		return 4000
+	default:
+		return 2000
+	}
+}
+
+func getEnvAsFloat(key string, defaultValue float64) float64 {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
+	}
+	value, err := strconv.ParseFloat(valueStr, 32)
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
 // LoadConfig loads configuration from environment variables
 func LoadConfig() *AppConfig {
 	config := &AppConfig{
 		Server: ServerConfig{
 			Port: getEnvWithDefault("PORT", "8080"),
 		},
-		AI: AIConfig{
-			APIKey:   getFirstEnv("FINOWL_AI_API_KEY", "AI_API_KEY", ""),
-			Endpoint: getFirstEnv("FINOWL_AI_ENDPOINT", "AI_API_ENDPOINT", "https://api.deepseek.com/v1/chat/completions"),
-			Model:    getEnvWithDefault("FINOWL_AI_MODEL", "deepseek-chat"),
+		AI: AIConfigs{
+			Strategy:  getEnvWithDefault("FINOWL_AI_STRATEGY", "priority"),
+			Providers: loadAIProviders(),
 		},
 		Feedstock: FeedstockConfig{
 			APIBaseURL:   getEnvWithDefault("FINOWL_API_BASE_URL", "http://localhost:8080"),
@@ -91,9 +212,9 @@ func LoadConfig() *AppConfig {
 	// Log configuration details for debug
 	log.Printf("🔧 Server configuration: Port=%s", config.Server.Port)
 	log.Printf("🔧 AI configuration: Endpoint=%s, Model=%s, API Key Set=%v",
-		config.AI.Endpoint,
-		config.AI.Model,
-		config.AI.APIKey != "")
+		config.AI.Providers[0].Endpoint,
+		config.AI.Providers[0].Model,
+		config.AI.Providers[0].APIKey != "")
 	log.Printf("🔧 Feedstock configuration: API=%s, Timeout=%v, Summary Count=%d",
 		config.Feedstock.APIBaseURL,
 		config.Feedstock.HTTPTimeout,
@@ -119,7 +240,7 @@ func (c *AppConfig) Validate() ValidationResult {
 	}
 
 	// Check AI configuration
-	if c.AI.APIKey == "" {
+	if c.AI.Providers[0].APIKey == "" {
 		result.Warnings = append(result.Warnings, "AI API key not set - will use mock client")
 	}
 

@@ -52,17 +52,17 @@ func NewApp(networkType string) (*App, error) {
 
 	// Create AI client
 	var aiClient ai.AIClient
-	if cfg.AI.APIKey == "" {
+	if cfg.AI.Providers[0].APIKey == "" {
 		log.Println("⚠️ Warning: AI API key not set, using mock client for development")
 		aiClient = ai.NewMockClient()
 	} else {
-		log.Printf("✅ Using AI API with endpoint: %s", cfg.AI.Endpoint)
-		aiClient = ai.NewClient(cfg.AI.APIKey, cfg.AI.Endpoint, cfg.AI.Model)
+		log.Printf("✅ Using AI API with endpoint: %s", cfg.AI.Providers[0].Endpoint)
+		aiClient = ai.NewClient(cfg.AI.Providers[0].APIKey, cfg.AI.Providers[0].Endpoint, cfg.AI.Providers[0].Model)
 	}
 
 	// Create market analyzer
 	marketAnalyzer := ai.NewMarketAnalyzer(aiClient)
-	marketAnalyzer.Configure(cfg.ResourcePaths.PromptsPath, cfg.AI.Model)
+	marketAnalyzer.Configure(cfg.ResourcePaths.PromptsPath, cfg.AI.Providers[0].Model)
 
 	// Create feedstock client
 	feedstockClient := feedstock.NewClient(
@@ -82,7 +82,7 @@ func NewApp(networkType string) (*App, error) {
 	sessionManager := session.NewChatSessionManager(sessionTTL)
 
 	// Create market chatter (chat logic)
-	marketChatter := ai.NewMarketChatter(sessionManager, aiClient, cfg.AI.Model)
+	marketChatter := ai.NewMarketChatter(sessionManager, aiClient, cfg.AI.Providers[0].Model)
 
 	// Create handler
 	handler := handlers.NewHandler(marketAnalyzer, summaries, marketChatter, sessionManager)
