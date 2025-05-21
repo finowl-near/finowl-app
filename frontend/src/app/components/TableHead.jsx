@@ -17,9 +17,6 @@ export default function TableHead() {
         <th className="text-white font-semibold text-center border-t border-b border-[#292929] text-nowrap p-4">
           Onchain Score
         </th>
-        {/* <th className="text-white font-semibold text-center border-t border-b border-[#292929] p-4">
-          Variation
-        </th> */}
         <th className="text-white font-semibold text-center border-t border-b border-[#292929] p-4">
           <div className="flex items-center gap-2 cursor-pointer">
             Time

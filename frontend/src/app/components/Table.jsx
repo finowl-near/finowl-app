@@ -11,6 +11,7 @@ import getTrendingMindshareScore from "../api/getTrendingMindshareScore";
 import getOnchainActivity from "../api/getOnchainActivity";
 import { useRouter, useSearchParams } from "next/navigation";
 import getSummary from "../api/getSummary";
+import Pagination from "./Pagination";
 
 function parseInfluencers(data) {
   const result = new Map();
@@ -37,45 +38,34 @@ function parseInfluencers(data) {
 export function extractCategories(markdown) {
   const sections = {};
 
-  // Regex to match section headers (both # and ##)
-  const headerRegex = /#+\s*(.*?)\n([\s\S]*?)(?=\n#|$)/g;
+  const categories = [
+    { key: "featuredTickersAndProjects", tag: "FEATURED TICKERS AND PROJECTS" },
+    { key: "keyInsightsFromInfluencers", tag: "KEY INSIGHTS FROM INFLUENCERS" },
+    { key: "marketSentimentAndDirections", tag: "MARKET SENTIMENT AND DIRECTIONS" }
+  ];
 
-  let match;
-  while ((match = headerRegex.exec(markdown)) !== null) {
-    const header = match[1].trim();
-    const content = match[2].trim();
+  for (const category of categories) {
+    const tagPattern = new RegExp(
+      `<!-- BEGIN ${category.tag} -->[\\s\\r\\n]*((?:.*\\n)*?)[\\s\\r\\n]*<!-- END ${category.tag} -->`,
+      'i'
+    );
 
-    // Map headers to standardized keys
-    if (header.toLowerCase().includes("featured tickers and projects")) {
-      sections.featuredTickersAndProjects = content;
-    } else if (header.toLowerCase().includes("key insights from influencers")) {
-      sections.keyInsightsFromInfluencers = content;
-    } else if (header.toLowerCase().includes("market sentiment and directions")) {
-      sections.marketSentimentAndDirections = content;
+    const match = markdown.match(tagPattern);
+    if (match && match[1]) {
+      let content = match[1].trim();
+
+      // Remove leading heading line if it matches the tag (e.g. "## FEATURED TICKERS AND PROJECTS")
+      const lines = content.split('\n');
+      if (lines[0].toUpperCase().includes(category.tag)) {
+        lines.shift();
+      }
+
+      sections[category.key] = lines.join('\n').trim();
     }
   }
 
   return sections;
 }
-
-// export function extractCategories(content) {
-//   const categories = [
-//       "Featured Tickers and Projects",
-//       "Key Insights from Influencers",
-//       "Market Sentiment and Directions"
-//   ];
-
-//   const regex = new RegExp(`(?<=# )(${categories.join("|")})\\n([\\s\\S]*?)(?=(\\n# |$))`, "g");
-  
-//   const result = {};
-  
-//   let match;
-//   while ((match = regex.exec(content)) !== null) {
-//       result[match[1]] = match[2].trim();
-//   }
-
-//   return result;
-// }
 
 
 export default function Table() {
@@ -98,12 +88,15 @@ export default function Table() {
   const query = useQuery({
     queryKey: ["tableData", page],
     queryFn: async () => {
-      console.log("before fetching", page, feedId)
+      console.log("before fetching", page, feedId);
       const data = await getTableData(page);
       const trendingData = await getTrendingMindshareScore();
       const onChainData = await getOnchainActivity();
-      const feedData = await getSummary(feedId);
+
+      const feedData = await getSummary();
       const section = extractCategories(feedData.summary.content);
+      setFeed(section, feedData, feedData.total);
+
       console.log("summary content", feedData);
       console.log("summary data", section);
       console.log("data", data);
@@ -114,7 +107,6 @@ export default function Table() {
       setTopInfluencers(topInfluencers);
       setOnchainActivity(onChainData);
       setAllInfluencers(allInfluencers);
-      setFeed(section, feedData);
       return data;
     },
   });
@@ -139,7 +131,7 @@ export default function Table() {
   return (
     <div>
       <div className="relative overflow-hidden">
-        <div className="absolute top-2 right-1/2 translate-x-1/2 w-1/2 h-10 bg-[#D8E864] -z-10 rounded-[50px_50px_100px_100px] blur-2xl opacity-50"></div>
+        <div className="absolute top-2 right-1/2 translate-x-1/2 w-1/2 h-10 bg-[var(--primary-color)] -z-10 rounded-[50px_50px_100px_100px] blur-2xl opacity-50"></div>
         <div className="w-full h-[700px] max-h-[700px] rounded-[20px] border border-[#292929] max-w-[1400px] overflow-auto">
           <table className={`w-full custom-table`}>
             <TableHead />
@@ -155,43 +147,18 @@ export default function Table() {
       </div>
       <div className="p-4 flex justify-center gap-10">
         <div className="flex cursor-pointer" onClick={handlePreviousPage}>
-          <ChevronLeftIcon className="w-4" color="#D8E864" />
+          <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
           <p className="text-[#D0D0D0]">Previous</p>
         </div>
-        <div className="flex gap-5">
-          {Array(tableData.total_page_cnt)
-            .fill(0)
-            .map((_, idx) => {
-              return (
-                <Fragment key={idx}>
-                  <p
-                    className={` ${
-                      page === idx
-                        ? "text-black bg-[#D8E864]"
-                        : "text-[#D0D0D0]"
-                    } font-semibold px-2 rounded-sm cursor-pointer`}
-                    onClick={() => {
-                      const newParams = new URLSearchParams(
-                        searchParams.toString()
-                      );
-                      newParams.set("page", idx.toString());
-                      router.push(`?${newParams.toString()}`, {
-                        scroll: false,
-                      });
-                    }}
-                  >
-                    {idx + 1}
-                  </p>
-                  {/* <p className="text-[#D0D0D0] font-semibold">2</p>
-                <p className="text-[#D0D0D0] font-semibold">3</p>
-                <p className="text-[#D0D0D0] font-semibold">4</p> */}
-                </Fragment>
-              );
-            })}
-        </div>
+        <Pagination
+          tableData={tableData}
+          page={page}
+          searchParams={searchParams}
+          router={router}
+        />
         <div className="flex cursor-pointer" onClick={handleNextPage}>
           <p className="text-[#D0D0D0]">Next</p>
-          <ChevronRightIcon className="w-4" color="#D8E864" />
+          <ChevronRightIcon className="w-4" color="var(--primary-color)" />
         </div>
       </div>
     </div>
