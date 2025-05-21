@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { FaPlus, FaBars } from "react-icons/fa";
-import LogoIcon from "./Icons/LogoIcon";
-import Image from "next/image";
-import coinOwl from "@/app/assets/svg/coinOwl.svg";
-import { urbanist } from "../fonts";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import React, { useEffect, useState } from "react";
+import { FaBars, FaPlus } from "react-icons/fa";
+import LogoIcon from "@/app/components/Icons/LogoIcon";
+import coinOwl from "@/app/assets/svg/coinOwl.svg";
+import { urbanist } from "@/app/fonts";
+import Image from "next/image";
 
-export default function Header() {
+
+export default function ChatHeader({ toggle, collapsed }) {
   const [action, setAction] = useState(() => {});
   const [label, setLabel] = useState("Loading...");
   const { signedAccountId, signIn, signOut } = useWalletSelector();
@@ -22,22 +23,29 @@ export default function Header() {
       setLabel("Connect Wallet");
     }
   }, [signedAccountId, signIn, signOut]);
-
-
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-1">
-          {/* Logo */}
-          <LogoIcon />
+    <>
+      {/* Header */}
+      <div className="p-4 h-14 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={toggle}
+            className={`rounded-lg hover:bg-[#BA98D5]/20 transition-colors text-white ${
+              !collapsed && "hidden"
+            }`}
+            aria-label="Toggle sidebar"
+          >
+            <FaBars className="w-6 h-6" />
+          </button>
+          <span className={`${!collapsed && "hidden"}`}>
+            <LogoIcon />
+          </span>
         </div>
-
-        {/* Right actions */}
         <div className="flex gap-3">
           <button
-            onClick={action}
+            // onClick={action}
             className="flex gap-2 items-center text-white bg-[#1F1923] border border-[#643989] truncate max-w-[150px] font-bold p-2 rounded-xl"
-            title={label}
+            // title={label}
           >
             <Image
               src={coinOwl}
@@ -64,6 +72,6 @@ export default function Header() {
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
