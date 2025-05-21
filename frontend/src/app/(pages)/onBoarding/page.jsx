@@ -5,7 +5,7 @@ import Modal from "@/app/components/Modal";
 import OnBoarding from "@/app/components/onboarding/OnBoarding";
 import React, { useState } from "react";
 
-export default function page() {
+export default function OnBoardingpage() {
   // const [isOnboarding, setIsOnboarding] = useState(true);
   return (
     <>
