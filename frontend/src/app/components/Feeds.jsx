@@ -1,39 +1,50 @@
 import Image from "next/image";
 import React, { useRef, useState } from "react";
-import feed1 from "@/app/assets/svg/Feed1.svg";
-import feed2 from "@/app/assets/svg/Feed2.svg";
-import feed3 from "@/app/assets/svg/Feed3.svg";
 import calenderIcon from "@/app/assets/svg/calenderIcon.svg";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
-import Modal from "./Modal";
-import useModal from "../hooks/useModal";
-import useTableData from "../hooks/useTableData";
-import ReactMarkdown from "react-markdown";
 import moment from "moment";
 import getSummary from "../api/getSummary";
+import useTableData from "../hooks/useTableData";
 import { useRouter, useSearchParams } from "next/navigation";
 import { extractCategories } from "./Table";
+import ReactMarkdown from "react-markdown";
+import CalendarIcon from "./Icons/CalendarIcon";
+import Collapse from "./Collapse";
 
 export default function Feeds() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const feedId = parseInt(searchParams.get("feedId"));
-  const setModalOpen = useModal((state) => state.setModalOpen);
   const feed = useTableData((state) => state.feed);
   const feedData = useTableData((state) => state.feedData);
   const setFeed = useTableData((state) => state.setFeed);
+  const feedId = useTableData((state) => state.feedId);
   console.log("inside feed", feed, feedData);
   const inputRef = useRef(null);
+
+  const feedList = [
+    {
+      title: "Featured Tickers & Projects",
+      feed: feed["featuredTickersAndProjects"],
+    },
+    {
+      title: "Key Insights from Influencers",
+      feed: feed["keyInsightsFromInfluencers"],
+    },
+    {
+      title: "Market Sentiment & Direction",
+      feed: feed["marketSentimentAndDirections"],
+    },
+  ];
+  const [choose, setChoose] = useState(0);
+
+  function handleShowFeed(idx) {
+    setChoose(idx);
+  }
 
   async function handleNextFeed() {
     if (feedId < feedData.total) {
       const newFeedId = feedId + 1;
       const newFeedData = await getSummary(newFeedId);
       const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, feedData);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("feedId", newFeedId.toString());
-      router.replace(`?${newParams.toString()}`, { scroll: false });
+      setFeed(section, newFeedData, newFeedId);
     }
     console.log("handle next", feedId);
   }
@@ -43,142 +54,99 @@ export default function Feeds() {
       const newFeedId = feedId - 1;
       const newFeedData = await getSummary(newFeedId);
       const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, feedData);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("feedId", newFeedId.toString());
-      router.replace(`?${newParams.toString()}`, { scroll: false });
+      setFeed(section, newFeedData, newFeedId);
     }
     console.log("handle prev", feedId);
   }
-
   return (
     <>
-      <div className="relative overflow-hidden rounded-[20px] p-[10px] border border-[#292929]">
-        <div className="flex justify-end">
-          <button
-            className="text-[#D0D0D0] py-2"
-            onClick={() => setModalOpen(true)}
+      <div className="text-white hidden md:block border border-[#292929] rounded-[15px]">
+        <div className="grid grid-cols-3">
+          <p
+            className={` text-center font-medium p-2 rounded-tl-[15px] cursor-pointer ${
+              choose === 0
+                ? "text-white bg-gradient-to-b from-[#BA98D5] to-[#643989]"
+                : "text-[#B0B0D4]/70 bg-[#BA98D5]/25"
+            } `}
+            onClick={() => handleShowFeed(0)}
           >
-            Expand <span className="text-[#D8E864]">{">"}</span>
-          </button>
+            {feedList[0].title}
+          </p>
+          <p
+            className={`text-center font-medium p-2 cursor-pointer ${
+              choose === 1
+                ? "text-white bg-gradient-to-b from-[#BA98D5] to-[#643989]"
+                : "text-[#B0B0D4]/70 bg-[#BA98D5]/25"
+            }`}
+            onClick={() => handleShowFeed(1)}
+          >
+            {feedList[1].title}
+          </p>
+          <p
+            className={`text-center font-medium p-2 cursor-pointer rounded-tr-[15px] ${
+              choose === 2
+                ? "text-white bg-gradient-to-b from-[#BA98D5] to-[#643989]"
+                : "text-[#B0B0D4]/70 bg-[#BA98D5]/25"
+            }`}
+            onClick={() => handleShowFeed(2)}
+          >
+            {feedList[2].title}
+          </p>
         </div>
-        <div className="rounded-[10px] relative mb-4">
-          <Image
-            className="rounded-[10px] absolute -z-10"
-            src={feed1}
-            width={undefined}
-            height={undefined}
-            alt="feed 1 icon"
-          />
-          <div className="flex items-start justify-between">
-            <h1 className="pt-3 ml-28 font-medium text-[16px] md:text-[20px] lg:text-[40px] text-[#D5D5D5]">
-              Featured Tickers &<br /> Projects
-            </h1>
-            <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
-              <div className="text-white text-sm md:text-base lg:text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
-                {/* { feed["Featured Tickers and Projects"] } */}
-                <ReactMarkdown
-
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
-                >
-                  {feed["featuredTickersAndProjects"]}
-                </ReactMarkdown>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-[10px] relative mb-4">
-          <Image
-            className="rounded-[10px] absolute -z-10"
-            src={feed2}
-            width={undefined}
-            height={undefined}
-            alt="feed 2 icon"
-          />
-          <div className="flex items-start justify-between">
-            <h1 className="pt-3 ml-28 text-[16px] md:text-[20px] lg:text-[40px] font-medium text-[#D5D5D5]">
-              Key Insights from
-              <br /> Influencers
-            </h1>
-            <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
-              <div className="text-white text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
-                <ReactMarkdown
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
-                >
-                  {feed["keyInsightsFromInfluencers"]}
-                </ReactMarkdown>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-[10px] relative">
-          <Image
-            className="rounded-[10px] absolute -z-10"
-            src={feed3}
-            width={undefined}
-            height={undefined}
-            alt="feed 3 icon"
-          />
-          <div className="flex items-start justify-between">
-            <h1 className=" pt-3 ml-28 text-[16px] md:text-[20px] lg:text-[40px] font-medium text-[#D5D5D5]">
-              Market Sentiment &<br /> Direction
-            </h1>
-            <div className="px-10 py-6 w-[63%] group bg-[#0F0F0F]/40 rounded-[10px] border border-[#384000]">
-              <div className="text-white text-xl overflow-hidden max-h-20  transition-all duration-500 ease-in-out group-hover:max-h-[1500px]">
-                <ReactMarkdown
-                // rehypePlugins={[rehypeRaw]}
-                // remarkPlugins={[remarkGfm]}
-                >
-                  {feed["marketSentimentAndDirections"]}
-                </ReactMarkdown>
-              </div>
-            </div>
-          </div>
+        <div className="text-white p-5">
+          <ReactMarkdown>{feedList[choose].feed}</ReactMarkdown>
         </div>
       </div>
-      <div className="p-4 flex justify-center gap-10">
-        <div
-          className="flex items-center cursor-pointer"
-          onClick={handlePreviousFeed}
-        >
-          <ChevronLeftIcon className="w-4" color="#D8E864" />
-          <p className="text-[#D0D0D0]">Previous</p>
+      <div className="block md:hidden">
+        <Collapse feedList={feedList} choose={choose} handleShowFeed={handleShowFeed}/>
+      </div>
+      <div className="p-4 flex justify-between gap-10">
+        <div className="text-[#D0D0D0]">
+          Updated Every <span className="text-[#BA98D5]">4 hours</span>
         </div>
-        <div className="flex items-center gap-5">
-          <p className="text-black font-semibold px-2 py-px rounded-md bg-[#D8E864]">
-            {moment(feedData.summary.timestamp).format("MMMM Do")}
-          </p>
-          <input
-            ref={inputRef}
-            className="invisible absolute w-0 h-0"
-            type="date"
-            id="feeddate"
-            onChange={(e) => {
-              /// TODO: need to capture date and display it
-              console.log(e.target.value);
-            }}
-          />
-          <button
-            className="border border-[#292929] p-1 rounded-md"
-            onClick={() => inputRef.current?.showPicker()}
+        <div className="flex justify-between gap-10">
+          <div
+            className="flex items-center cursor-pointer"
+            onClick={handlePreviousFeed}
           >
-            <Image
-              className=""
-              src={calenderIcon}
-              width={undefined}
-              height={undefined}
-              alt="calender icon"
+            <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
+            <p className="text-[#D0D0D0]">Previous</p>
+          </div>
+          <div className="flex items-center gap-5">
+            <p className="text-black font-semibold px-2 py-px rounded-md bg-[var(--primary-color)]">
+              {moment(feedData.summary.timestamp).format("MMMM Do, hA")}
+            </p>
+            <input
+              ref={inputRef}
+              className="invisible absolute w-0 h-0"
+              type="date"
+              id="feeddate"
+              onChange={(e) => {
+                /// TODO: need to capture date and display it
+                console.log(e.target.value);
+              }}
             />
-          </button>
-        </div>
-        <div
-          className="flex items-center cursor-pointer"
-          onClick={handleNextFeed}
-        >
-          <p className="text-[#D0D0D0]">Next</p>
-          <ChevronRightIcon className="w-4" color="#D8E864" />
+            <button
+              className="border border-[#292929] p-1 rounded-md"
+              onClick={() => inputRef.current?.showPicker()}
+            >
+              {/* <Image
+                className=""
+                src={calenderIcon}
+                width={undefined}
+                height={undefined}
+                alt="calender icon"
+              /> */}
+              <CalendarIcon />
+            </button>
+          </div>
+          <div
+            className="flex items-center cursor-pointer"
+            onClick={handleNextFeed}
+          >
+            <p className="text-[#D0D0D0]">Next</p>
+            <ChevronRightIcon className="w-4" color="var(--primary-color)" />
+          </div>
         </div>
       </div>
     </>
