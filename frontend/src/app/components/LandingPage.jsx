@@ -10,10 +10,10 @@ import NewPost from "./NewPost";
 import TableSearch from "./TableSearch";
 import Table from "./Table";
 import useSwitchTabs from "../hooks/useSwitchTabs";
-import Feeds0 from "./Feeds0";
+// import Feeds0 from "./Feeds0";
 import { useSearchParams } from "next/navigation";
 import Feeds from "./Feeds";
-import Chat from "./Chat";
+// import Chat from "./Chat";
 import OnBoarding from "./onboarding/OnBoarding";
 import Modal from "./Modal";
 

@@ -20,7 +20,7 @@ export default function NewPost() {
         target="_blank"
         rel="noopeneer norefer"
       >
-        <div className="absolute top-2 right-0 w-32 h-8 bg-[#D8E864] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
+        <div className="absolute top-2 right-0 w-32 h-8 bg-[var(--primary-color)] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
         <div>
           <div className="flex items-start justify-between">
             <div className="flex">
@@ -36,16 +36,19 @@ export default function NewPost() {
                   <p className="text-white font-bold text-base">
                     Illia (root.near) (🇺🇦, ⋈)
                   </p>
-                  <CheckBadgeIcon className="w-4" color="#D8E864" />
+                  <CheckBadgeIcon
+                    className="w-4"
+                    color="var(--primary-color)"
+                  />
                 </div>
                 <p className="text-[#D0D0D0] font-bold text-sm leading-none">
                   @ilblackdragon
                 </p>
               </div>
             </div>
-            <div className="flex items-center rounded-[4px] p-1 bg-[#D8E8644D] w-[fit-content]">
+            <div className="flex items-center rounded-[4px] p-1 bg-[var(--primary-color)4D] w-[fit-content]">
               <NewIcon />
-              <p className="text-[#D8E864] ml-1 text-[12px] font-bold">
+              <p className="text-[var(--primary-color)] ml-1 text-[12px] font-bold">
                 New Post
               </p>
             </div>
@@ -62,11 +65,14 @@ export default function NewPost() {
               <p className="text-white text-[12px] ml-1">326</p>
             </div>
             <div className="flex items-center">
-              <ArrowPathRoundedSquareIcon className="w-4" color="#D8E864" />
+              <ArrowPathRoundedSquareIcon
+                className="w-4"
+                color="var(--primary-color)"
+              />
               <p className="text-white text-[12px] ml-1">312</p>
             </div>
             <div className="flex items-center">
-              <HeartIcon className="w-4" color="#D8E864" />
+              <HeartIcon className="w-4" color="var(--primary-color)" />
               <p className="text-white text-[12px] ml-1">1.4k</p>
             </div>
           </div>
