@@ -46,7 +46,7 @@ export default function Feeds() {
       const section = extractCategories(newFeedData.summary.content);
       setFeed(section, newFeedData, newFeedId);
     }
-    console.log("handle next", feedId);
+    console.log("handle next", feedId, feedData);
   }
 
   async function handlePreviousFeed() {

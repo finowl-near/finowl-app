@@ -33,13 +33,6 @@ export default function Header() {
       <div className="flex items-center justify-between">
         {/* Hamburger button */}
         <div className="flex items-center space-x-1">
-          <button
-            onClick={handleHamburger}
-            className="p-2 rounded-lg hover:bg-[#BA98D5]/20 transition-colors text-white"
-            aria-label="Toggle sidebar"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
 
           {/* Logo */}
           <LogoIcon />
