@@ -7,7 +7,9 @@ export default function TradersVolume() {
   return (
     <div>
       <p className="text-[#D0D0D0]">Total Volume Traded:</p>
-      <span className="text-5xl text-[#D8E864] font-bold">150,976$</span>
+      <span className="text-5xl text-[var(--primary-color)] font-bold">
+        150,976$
+      </span>
       <div className="flex gap-3 mt-2">
         <div className="border flex items-center gap-2 p-2 border-[#A1CAE0] bg-[#203039] rounded-lg">
           <Image

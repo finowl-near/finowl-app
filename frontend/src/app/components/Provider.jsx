@@ -14,15 +14,15 @@ import { setupNearMobileWallet } from "@near-wallet-selector/near-mobile-wallet"
 import { WalletSelectorProvider } from "@near-wallet-selector/react-hook";
 import { HelloNearContract, NetworkId } from "@/app/config";
 // ethereum wallets
-import { wagmiConfig, web3Modal } from "@/app/Wallets/web3modal";
+// import { wagmiConfig, web3Modal } from "@/app/Wallets/web3modal";
 
 const walletSelectorConfig = {
   network: NetworkId,
   // createAccessKeyFor: HelloNearContract,
   modules: [
     setupEthereumWallets({
-      wagmiConfig,
-      web3Modal,
+    //   wagmiConfig,
+    //   web3Modal,
       alwaysOnboardDuringSignIn: true,
     }),
     setupMeteorWallet(),
