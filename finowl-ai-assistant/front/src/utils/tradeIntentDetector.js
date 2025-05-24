@@ -9,6 +9,8 @@
  * @version 1.0.0
  */
 
+import { getQuoteForTradeIntent, formatQuoteForDisplay } from './oneClickQuoteService';
+
 /**
  * Supported Trade Intent Templates:
  * 
@@ -281,4 +283,104 @@ export function mightBeTradeIntent(message) {
   const tradeKeywords = ['buy', 'swap', 'trade', 'invest', 'exchange', 'convert'];
   
   return tradeKeywords.some(keyword => cleanMessage.includes(keyword));
+}
+
+/**
+ * Generates a comprehensive response with 1Click quote for detected trade intent
+ * 
+ * This function combines the structured template response with a real quote
+ * from the 1Click API, providing both structured data and executable swap details.
+ * 
+ * @param {TradeData} tradeData - Validated trade data
+ * @param {Object} quoteOptions - Options for the quote request
+ * @returns {Promise<string>} - Formatted markdown response with JSON and quote
+ */
+export async function generateTradeIntentResponseWithQuote(tradeData, quoteOptions = {}) {
+  if (!tradeData || !validateTradeData(tradeData)) {
+    throw new Error('Invalid trade data provided');
+  }
+
+  // Generate base structured response
+  const baseResponse = generateTradeIntentResponse(tradeData);
+  
+  try {
+    // Get quote from 1Click API
+    console.log('Requesting quote for trade intent:', tradeData);
+    const quoteResponse = await getQuoteForTradeIntent(tradeData, quoteOptions);
+    
+    if (quoteResponse.success) {
+      const formattedQuote = formatQuoteForDisplay(quoteResponse);
+      
+      return `${baseResponse}
+
+## 🚀 Live Quote Retrieved!
+
+### 💰 Quote Summary
+- **You Send:** ${formattedQuote.amountIn} ${tradeData.originAsset} (~$${formattedQuote.amountInUsd})
+- **You Receive:** ${formattedQuote.amountOut} ${tradeData.destinationAsset} (~$${formattedQuote.amountOutUsd})
+- **Minimum Output:** ${formattedQuote.minAmountOut} ${tradeData.destinationAsset}
+
+### 🎯 Execution Details
+**🏦 Deposit Address:** 
+\`${formattedQuote.depositAddress}\`
+
+**⏰ Quote Valid Until:** 
+${formattedQuote.deadline}
+
+**⚡ Estimated Time:** ${formattedQuote.timeEstimate}
+**📊 Slippage:** ${formattedQuote.slippageTolerance}
+**🔄 Type:** ${formattedQuote.swapType}
+
+### 📋 How to Execute
+1. **Send exactly** ${formattedQuote.amountIn} ${tradeData.originAsset} to the deposit address above
+2. **Within** ${formattedQuote.timeEstimate} the swap will execute automatically  
+3. **You'll receive** ${formattedQuote.amountOut} ${tradeData.destinationAsset} at your address
+4. **Quote expires** ${formattedQuote.deadline}
+
+⚠️ **Important:** Only send the exact token amount to the deposit address. Any other amount or token will be lost.
+
+### 🔍 Technical Details
+**Correlation ID:** \`${formattedQuote.correlationId}\`
+
+**Full Quote Data:**
+\`\`\`json
+${JSON.stringify({
+  quote: quoteResponse.quote,
+  request: quoteResponse.request,
+  timestamp: new Date().toISOString()
+}, null, 2)}
+\`\`\``;
+
+    } else {
+      // Quote failed, return base response with error info
+      return `${baseResponse}
+
+## ⚠️ Quote Request Failed
+
+**Error:** ${quoteResponse.error}
+**Code:** ${quoteResponse.code}
+
+**What you can do:**
+- Check if the tokens are supported on the 1Click network
+- Verify your JWT token is valid (if required)
+- Try again in a few moments
+- Use a different amount or token pair
+
+**Supported Tokens:** ETH, BTC, USDT, USDC, SOL, NEAR, and more
+**Note:** This template was detected correctly, but the live quote could not be retrieved.`;
+    }
+    
+  } catch (error) {
+    console.error('Error generating quote for trade intent:', error);
+    
+    // Return base response with error info
+    return `${baseResponse}
+
+## ❌ Quote Service Error
+
+**Error:** Failed to connect to quote service
+**Details:** ${error.message}
+
+**Note:** The trade intent was detected correctly, but we couldn't fetch a live quote. You can still use the structured data above for manual execution or try again later.`;
+  }
 } 
