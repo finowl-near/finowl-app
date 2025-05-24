@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 import ReactMarkdown from 'react-markdown';
 import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
-import { detectTradeIntent, generateTradeIntentResponse } from '../utils/tradeIntentDetector';
+import { detectTradeIntent, generateTradeIntentResponse, generateTradeIntentResponseWithQuote } from '../utils/tradeIntentDetector';
+import { initializeOneClickService } from '../utils/oneClickQuoteService';
 
 export const ConversationManagement = ({ refreshTokenBalance }) => {
   const { signedAccountId, viewFunction, callFunction, modal, signIn } = useWalletSelector();
@@ -32,6 +33,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   const [inMemoryMessages, setInMemoryMessages] = useState([]);
   const [showSaveButton, setShowSaveButton] = useState(false);
   const [calculatedTokens, setCalculatedTokens] = useState(0);
+
+  // 1Click service state
+  const [oneClickEnabled, setOneClickEnabled] = useState(false);
+  const [oneClickJwt, setOneClickJwt] = useState('');
 
   // Function to calculate tokens based on text length
   const calculateTokens = (text) => {
@@ -145,6 +150,18 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       historyContainerRef.current.scrollTop = historyContainerRef.current.scrollHeight;
     }
   }, [conversationHistory]);
+
+  // Initialize 1Click service when enabled
+  useEffect(() => {
+    if (oneClickEnabled && oneClickJwt) {
+      try {
+        initializeOneClickService(oneClickJwt);
+        console.log('1Click service initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize 1Click service:', error);
+      }
+    }
+  }, [oneClickEnabled, oneClickJwt]);
 
   // Function to analyze the market using the AI analyzer service
   const analyzeMarket = async (question) => {
@@ -453,9 +470,29 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             // WORKFLOW 1: Template matched - handle front-side only with JSON response
             console.log('Trade intent detected:', tradeIntentResult.data);
             
-            const tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
+            let tradeResponse;
             
-            // Calculate tokens for trade response (minimal since it's just JSON formatting)
+            // Use quote-enabled response if 1Click service is available
+            if (oneClickEnabled && oneClickJwt) {
+              console.log('Using 1Click service for enhanced trade response');
+              try {
+                tradeResponse = await generateTradeIntentResponseWithQuote(
+                  tradeIntentResult.data, 
+                  { 
+                    slippageTolerance: 100, // 1% default slippage
+                    connectedWallet: signedAccountId // Pass connected wallet
+                  }
+                );
+              } catch (quoteError) {
+                console.error('Quote generation failed, falling back to basic response:', quoteError);
+                tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
+              }
+            } else {
+              console.log('Using basic trade intent response (1Click not enabled)');
+              tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
+            }
+            
+            // Calculate tokens for trade response
             const tradeResponseTokens = calculateTokens(tradeResponse);
             console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
             
@@ -1351,6 +1388,81 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           margin-right: 2px;
           font-size: 0.8rem;
         }
+
+        .service-status {
+          margin-bottom: 15px;
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
+        .status-indicator {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.85rem;
+          font-weight: 500;
+        }
+
+        .status-indicator.enabled {
+          background-color: #d4edda;
+          color: #155724;
+        }
+
+        .status-indicator.disabled {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+
+        .jwt-status {
+          padding: 4px 8px;
+          background-color: #e7f3ff;
+          color: #0c5460;
+          border-radius: 4px;
+          font-size: 0.8rem;
+        }
+
+        .service-description {
+          font-size: 0.85rem;
+          color: #666;
+          margin-top: 5px;
+          font-style: italic;
+        }
+
+        .jwt-hint {
+          font-size: 0.8rem;
+          color: #666;
+          margin-top: 5px;
+        }
+
+        .service-info {
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #f8f9fa;
+          border-radius: 6px;
+        }
+
+        .service-info h4 {
+          margin: 0 0 10px 0;
+          font-size: 0.9rem;
+          color: #333;
+        }
+
+        .service-info ul {
+          margin: 0 0 15px 0;
+          padding-left: 20px;
+        }
+
+        .service-info li {
+          font-size: 0.85rem;
+          margin: 5px 0;
+          color: #555;
+        }
+
+        .supported-tokens {
+          font-size: 0.85rem;
+          color: #666;
+          font-style: italic;
+        }
       `}</style>
       
       <section className="section">
@@ -1537,6 +1649,64 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                 >
                   {loading ? 'Adding...' : '💰 Add Tokens'}
                 </button>
+              </div>
+
+              {/* 1Click Quote Service Configuration Panel */}
+              <div className="panel">
+                <h2 className="panel-title">🔄 1Click Quote Service</h2>
+                <div className="service-status">
+                  <span className={`status-indicator ${oneClickEnabled ? 'enabled' : 'disabled'}`}>
+                    {oneClickEnabled ? '✅ Enabled' : '❌ Disabled'}
+                  </span>
+                  {oneClickEnabled && oneClickJwt && (
+                    <span className="jwt-status">🔑 JWT Configured</span>
+                  )}
+                </div>
+
+                <div className="input-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={oneClickEnabled}
+                      onChange={(e) => setOneClickEnabled(e.target.checked)}
+                    />
+                    Enable 1Click Live Quotes
+                  </label>
+                  <div className="service-description">
+                    When enabled, trade intent templates will include live quotes from 1Click API
+                  </div>
+                </div>
+
+                {oneClickEnabled && (
+                  <div className="input-group">
+                    <label>JWT Token (Optional)</label>
+                    <input
+                      type="password"
+                      value={oneClickJwt}
+                      onChange={(e) => setOneClickJwt(e.target.value)}
+                      placeholder="Enter your 1Click JWT token..."
+                    />
+                    <div className="jwt-hint">
+                      JWT token is required for authenticated endpoints. Leave empty for basic functionality.
+                    </div>
+                  </div>
+                )}
+
+                <div className="service-info">
+                  <h4>🚀 Features when enabled:</h4>
+                  <ul>
+                    <li>✅ Live cross-chain swap quotes</li>
+                    <li>✅ Real deposit addresses</li>
+                    <li>✅ Estimated gas and fees</li>
+                    <li>✅ Route information</li>
+                    <li>✅ Time estimates</li>
+                  </ul>
+                  
+                  <h4>🔧 Supported tokens:</h4>
+                  <div className="supported-tokens">
+                    ETH, BTC, USDT, USDC, SOL, NEAR, and more
+                  </div>
+                </div>
               </div>
             </div>
           </div>
