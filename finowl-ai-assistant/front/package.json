@@ -7,14 +7,17 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "react-scripts build",
+    "start": "react-scripts start",
     "lint": "next lint",
     "test": "jest",
     "test:trade-intent": "jest src/utils/__tests__/tradeIntentDetector.test.js",
+    "test:oneclick": "jest src/utils/__tests__/oneClickQuoteService.test.js",
+    "test:all-utils": "jest src/utils/__tests__/",
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "@defuse-protocol/one-click-sdk-typescript": "^0.1.5",
     "@near-js/providers": "^1.0.1",
     "@near-wallet-selector/bitte-wallet": "9.0.0-beta.3",
     "@near-wallet-selector/core": "^9.0.0-beta.3",
@@ -60,13 +63,20 @@
   "jest": {
     "testEnvironment": "node",
     "transform": {
-      "^.+\\.(js|jsx)$": ["babel-jest", {
-        "presets": ["@babel/preset-env"]
-      }]
+      "^.+\\.(js|jsx)$": [
+        "babel-jest",
+        {
+          "presets": [
+            "@babel/preset-env"
+          ]
+        }
+      ]
     },
     "moduleNameMapper": {
       "^../tradeIntentDetector$": "<rootDir>/src/utils/tradeIntentDetector.js"
     },
-    "testMatch": ["**/__tests__/**/*.test.js"]
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
   }
 }
