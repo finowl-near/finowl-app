@@ -1,18 +1,27 @@
 "use client";
 
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FaBars, FaPlus } from "react-icons/fa";
 import LogoIcon from "@/app/components/Icons/LogoIcon";
 import coinOwl from "@/app/assets/svg/coinOwl.svg";
 import { urbanist } from "@/app/fonts";
 import Image from "next/image";
+import { Tooltip } from "antd";
+import PurchaseTokens from "./PurchaseTokens";
 
-
-export default function ChatHeader({ toggle, collapsed }) {
+export default function ChatHeader({
+  toggle,
+  collapsed,
+  balance,
+  loadingBalence,
+  refreshBalance
+}) {
   const [action, setAction] = useState(() => {});
   const [label, setLabel] = useState("Loading...");
-  const { signedAccountId, signIn, signOut } = useWalletSelector();
+  const [isModalOpen, setModalOpen] = useState(false);
+  const { signedAccountId, viewFunction, signIn, signOut } =
+    useWalletSelector();
 
   useEffect(() => {
     if (signedAccountId) {
@@ -28,24 +37,26 @@ export default function ChatHeader({ toggle, collapsed }) {
       {/* Header */}
       <div className="p-4 h-14 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <button
-            onClick={toggle}
-            className={`rounded-lg hover:bg-[#BA98D5]/20 transition-colors text-white ${
-              !collapsed && "hidden"
-            }`}
-            aria-label="Toggle sidebar"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
+          <Tooltip title="open sidebar" color="#1C1A22">
+            <button
+              onClick={toggle}
+              className={`rounded-lg hover:bg-[#BA98D5]/20 transition-colors text-white ${
+                !collapsed && "hidden"
+              }`}
+              aria-label="Toggle sidebar"
+            >
+              <FaBars className="w-6 h-6" />
+            </button>
+          </Tooltip>
           <span className={`${!collapsed && "hidden"}`}>
             <LogoIcon />
           </span>
         </div>
         <div className="flex gap-3">
           <button
-            // onClick={action}
+            onClick={() => setModalOpen(true)}
             className="flex gap-2 items-center text-white bg-[#1F1923] border border-[#643989] truncate max-w-[150px] font-bold p-2 rounded-xl"
-            // title={label}
+            title={balance}
           >
             <Image
               src={coinOwl}
@@ -55,14 +66,19 @@ export default function ChatHeader({ toggle, collapsed }) {
               className="w-6 h-6"
             />
             <span
-              className={`text-md truncate max-w-10 font-semibold ${urbanist.className}`}
+              className={`text-md truncate max-w-40 font-semibold ${urbanist.className}`}
             >
-              100
+              {loadingBalence ? "..." : balance}
             </span>
             <div className="flex justify-center items-center p-2 rounded-lg bg-[radial-gradient(closest-side_at_50%_50%,#BA98D5_0%,#643989_100%)]">
               <FaPlus className="w-4 h-4" color="#3D2C4B" />
             </div>
           </button>
+          <PurchaseTokens
+            isModalOpen={isModalOpen}
+            setModalOpen={setModalOpen}
+            refreshBalance={refreshBalance}
+          />
           <button
             onClick={action}
             className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[150px] font-bold p-2 rounded-xl"

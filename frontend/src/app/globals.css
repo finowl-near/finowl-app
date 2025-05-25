@@ -76,6 +76,27 @@
   backdrop-filter: blur(12px);
 }
 
+
+.ant-dropdown ul {
+  background-color: #1F1923 !important;
+  border: 1px solid #BA98D5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #FFFFFF;
+}
+
+.ant-dropdown ul li {
+  padding: 0 !important;
+  cursor:none !important; 
+}
+
+.ant-dropdown ul li:hover {
+  background-color: transparent !important;
+}
+
+.ant-dropdown ul li span {
+  color: #FFFFFF !important;
+}
+
 @media (min-width: 1350px) {
   .br-col-span-1 {
     grid-column: span 1 / span 1;

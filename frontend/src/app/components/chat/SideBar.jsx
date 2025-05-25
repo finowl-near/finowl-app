@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import LogoIcon from "@/app/components/Icons/LogoIcon";
 import { FaBars } from "react-icons/fa";
@@ -8,27 +8,82 @@ import { urbanist } from "@/app/fonts";
 import { IoIosArrowBack } from "react-icons/io";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import { useWalletSelector } from "@near-wallet-selector/react-hook";
+// import Dropdown from "./DropDown";
+import useConversationId from "@/app/hooks/useConversationId";
+import { useUserConversations } from "@/app/hooks/useUserConversations";
+import { Dropdown } from "antd";
+import MyDropdown from "./MyDropdown";
+import { Tooltip } from "antd";
 
+export default function SideBar({
+  collapsed,
+  toggle,
+  setConversationHistory,
+  handleStartConversation,
+  conversations,
+  loading,
+  refresh,
+  refreshBalance,
+  balance
+}) {
+  const { convId, setConvId } = useConversationId();
+  const { signedAccountId, viewFunction, callFunction, modal, signIn } =
+    useWalletSelector();
 
+  const router = useRouter();
 
-export default function SideBar({ collapsed, toggle, loading = false }) {
-    const router = useRouter();
+  const handleGetConversationHistory = async (conversationId) => {
+    try {
+      //   setLoading(true);
+      try {
+        const result = await viewFunction({
+          contractId: "finowl.testnet",
+          method: "view_js_func",
+          args: {
+            function_name: "get_conversation_history",
+            conversation_id: conversationId,
+          },
+        });
+        console.log("Conversation history (view method):", result);
+        setConversationHistory(result);
+      } catch (viewError) {
+        console.log("View method failed, trying call method:", viewError);
+
+        const result = await callFunction({
+          contractId: "finowl.testnet",
+          method: "view_js_func",
+          args: {
+            function_name: "get_conversation_history",
+            conversation_id: conversationId,
+          },
+        });
+        console.log("Conversation history (call method):", result);
+        setConversationHistory(result);
+      }
+    } catch (error) {
+      console.error("Error fetching conversation history:", error);
+    }
+  };
+
   return (
     <motion.aside
       initial={false}
       animate={{ width: collapsed ? 0 : 260 }}
       transition={{ type: "tween", duration: 0.3 }}
-      className="h-full bg-[#2D2633] flex-shrink-0 overflow-hidden fixed lg:static"
+      className="h-full bg-[#2D2633] flex-shrink-0  fixed lg:static"
     >
       {/* header */}
       <div className="p-4 h-14 flex items-center space-x-2">
-        <button
-          onClick={toggle}
-          className="rounded-lg hover:bg-[#BA98D5]/20 transition-colors text-white"
-          aria-label="Toggle sidebar"
-        >
-          <FaBars className="w-6 h-6" />
-        </button>
+        <Tooltip title="close sidebar" color="#1C1A22">
+          <button
+            onClick={toggle}
+            className="rounded-lg hover:bg-[#BA98D5]/20 transition-colors text-white"
+            aria-label="Toggle sidebar"
+          >
+            <FaBars className="w-6 h-6" />
+          </button>
+        </Tooltip>
         <LogoIcon />
       </div>
 
@@ -48,11 +103,14 @@ export default function SideBar({ collapsed, toggle, loading = false }) {
             <IoIosArrowBack className="w-5 h-5" />
             <span className="text-sm">Back</span>
           </button>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleStartConversation}
             className={`${urbanist.className} font-semibold px-4 py-2 rounded-lg text-white bg-[radial-gradient(closest-side_at_50%_50%,#BA98D5_0%,#643989_100%)] hover:opacity-90 transition-all`}
           >
             + New
-          </button>
+          </motion.button>
         </div>
 
         {/* body */}
@@ -66,24 +124,37 @@ export default function SideBar({ collapsed, toggle, loading = false }) {
             </div>
           ) : (
             <div className="mr-2">
-              {Array(18)
-                .fill(0)
-                .map((_, i) => (
-                  <div
-                    key={i}
-                    className="hover:bg-[#BA98D5]/10 p-1 transition-colors rounded-lg flex items-center justify-between"
+              <p
+                className={`${urbanist.className} text-white my-1 font-semibold`}
+              >
+                Conversations
+              </p>
+              {conversations.map((conv, i) => (
+                <div
+                  key={conv.id}
+                  className={`hover:bg-[#BA98D5]/10 p-1 my-1 transition-colors rounded-lg flex items-center justify-between ${
+                    convId === conv.id && "bg-[#BA98D5]/10"
+                  }`}
+                >
+                  <button
+                    title={conv.id}
+                    className="w-full text-left text-white truncate max-w-[220px] py-2 rounded-lg"
+                    onClick={() => {
+                      handleGetConversationHistory(conv.id);
+                      setConvId(conv.id);
+                    }}
                   >
-                    <button className="w-full text-left text-white truncate max-w-[220px] py-2 rounded-lg">
-                      dkfnsdkfnsdklfdljdlkvnkdlnvlskndvkldnvzz
-                    </button>
-                    <button
-                      className="p-1 rounded-full hover:bg-[#BA98D5]/20 transition-colors"
-                      aria-label="More options"
-                    >
-                      <FiMoreHorizontal className="w-5 h-5 text-white" />
-                    </button>
-                  </div>
-                ))}
+                    {conv.id}
+                  </button>
+                  <MyDropdown
+                    tokensLeft={conv.tokensRemaining.toFixed(2)}
+                    convId={conv.id}
+                    refresh={refresh}
+                    refreshBalance={refreshBalance}
+                    balance={balance}
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
