@@ -38,6 +38,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   const [oneClickEnabled, setOneClickEnabled] = useState(false);
   const [oneClickJwt, setOneClickJwt] = useState('');
 
+  // Trade confirmation modal state
+  const [showTradeModal, setShowTradeModal] = useState(false);
+  const [tradeModalData, setTradeModalData] = useState(null);
+
   // Function to calculate tokens based on text length
   const calculateTokens = (text) => {
     return Math.max(1, Math.ceil(text.length / 4));
@@ -476,13 +480,59 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             if (oneClickEnabled && oneClickJwt) {
               console.log('Using 1Click service for enhanced trade response');
               try {
-                tradeResponse = await generateTradeIntentResponseWithQuote(
+                const quoteResponse = await generateTradeIntentResponseWithQuote(
                   tradeIntentResult.data, 
                   { 
                     slippageTolerance: 100, // 1% default slippage
                     connectedWallet: signedAccountId // Pass connected wallet
                   }
                 );
+                
+                // Check if the response contains a successful quote with deposit address
+                if (quoteResponse.includes('Live Quote Retrieved!') && 
+                    quoteResponse.includes('Deposit Address:')) {
+                  
+                  // Extract formatted quote data for the modal
+                  const formattedQuote = await (async () => {
+                    try {
+                      // Re-get the quote to access structured data
+                      const { generateTradeIntentResponseWithQuote, formatQuoteForDisplay } = await import('../utils/tradeIntentDetector');
+                      const { getQuoteForTradeIntent } = await import('../utils/oneClickQuoteService');
+                      
+                      const quoteData = await getQuoteForTradeIntent(
+                        tradeIntentResult.data, 
+                        { 
+                          slippageTolerance: 100,
+                          connectedWallet: signedAccountId 
+                        }
+                      );
+                      
+                      if (quoteData.success) {
+                        const { formatQuoteForDisplay } = await import('../utils/oneClickQuoteService');
+                        return formatQuoteForDisplay(quoteData);
+                      }
+                      return null;
+                    } catch (error) {
+                      console.error('Error extracting quote data for modal:', error);
+                      return null;
+                    }
+                  })();
+                  
+                  // Show confirmation modal if we have valid quote data
+                  if (formattedQuote && formattedQuote.success && formattedQuote.depositAddress !== 'N/A') {
+                    setTradeModalData({
+                      tradeIntent: tradeIntentResult.data,
+                      quote: formattedQuote,
+                      fullResponse: quoteResponse
+                    });
+                    setShowTradeModal(true);
+                    return; // Don't show the response immediately, wait for user confirmation
+                  }
+                }
+                
+                // If no valid quote or deposit address, show response normally
+                tradeResponse = quoteResponse;
+                
               } catch (quoteError) {
                 console.error('Quote generation failed, falling back to basic response:', quoteError);
                 tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
@@ -1165,6 +1215,64 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     return conversationHistory.slice(-DEFAULT_VISIBLE_MESSAGES);
   };
 
+  // Handle trade confirmation
+  const handleTradeConfirmation = async (confirm) => {
+    if (!tradeModalData) return;
+    
+    try {
+      if (confirm) {
+        console.log('✅ User confirmed trade:', tradeModalData.tradeIntent);
+        console.log('📋 Quote details:', tradeModalData.quote);
+        console.log('🚀 User wants to proceed with the token purchase');
+        
+        // Show the full response with quote details
+        const tradeResponseTokens = calculateTokens(tradeModalData.fullResponse);
+        console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
+        
+        // Create system message for the trade intent response
+        const tradeSystemMessage = {
+          role: "system",
+          content: tradeModalData.fullResponse,
+          timestamp: Math.floor(Date.now() / 1000)
+        };
+        
+        // Add to in-memory messages (no token deduction needed for template responses)
+        setInMemoryMessages(prev => [...prev, tradeSystemMessage]);
+        console.log('✅ Trade intent response with quote added to in-memory messages');
+        
+      } else {
+        console.log('❌ User cancelled trade:', tradeModalData.tradeIntent);
+        console.log('⏭️ Skipping trade execution, waiting for new user input');
+        
+        // Create a cancellation message
+        const cancellationMessage = {
+          role: "system",
+          content: `# Trade Cancelled 🚫
+
+**Trade Details:**
+- **Amount:** ${tradeModalData.tradeIntent.amount} ${tradeModalData.tradeIntent.originAsset}
+- **From:** ${tradeModalData.tradeIntent.originAsset}
+- **To:** ${tradeModalData.tradeIntent.destinationAsset}
+
+**Status:** Cancelled by user
+
+You can send a new message if you'd like to try a different trade or ask another question.`,
+          timestamp: Math.floor(Date.now() / 1000)
+        };
+        
+        // Add cancellation message to in-memory messages
+        setInMemoryMessages(prev => [...prev, cancellationMessage]);
+        console.log('❌ Trade cancellation message added to in-memory messages');
+      }
+    } catch (error) {
+      console.error('Error handling trade confirmation:', error);
+    } finally {
+      // Close modal and reset data
+      setShowTradeModal(false);
+      setTradeModalData(null);
+    }
+  };
+
   // Add a new function for refunding tokens
   const handleRefundTokens = async (conversationId) => {
     if (!signedAccountId) {
@@ -1462,6 +1570,208 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           font-size: 0.85rem;
           color: #666;
           font-style: italic;
+        }
+
+        /* Trade Confirmation Modal Styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+          padding: 20px;
+        }
+
+        .trade-modal {
+          background: white;
+          border-radius: 12px;
+          max-width: 600px;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+          animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 25px;
+          border-bottom: 1px solid #e9ecef;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h2 {
+          margin: 0;
+          font-size: 1.4rem;
+          font-weight: 600;
+        }
+
+        .modal-close {
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          color: white;
+          font-size: 1.2rem;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s;
+        }
+
+        .modal-close:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-body {
+          padding: 25px;
+        }
+
+        .trade-summary, .execution-details, .ai-explanation {
+          margin-bottom: 25px;
+        }
+
+        .trade-summary h3, .execution-details h3, .ai-explanation h3 {
+          margin: 0 0 15px 0;
+          font-size: 1.1rem;
+          color: #495057;
+          border-bottom: 2px solid #e9ecef;
+          padding-bottom: 8px;
+        }
+
+        .trade-details {
+          background: #f8f9fa;
+          border-radius: 8px;
+          padding: 15px;
+        }
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          padding: 8px 0;
+        }
+
+        .detail-row:last-child {
+          margin-bottom: 0;
+        }
+
+        .detail-row .label {
+          font-weight: 500;
+          color: #6c757d;
+          font-size: 0.9rem;
+        }
+
+        .detail-row .value {
+          font-weight: 600;
+          color: #212529;
+          text-align: right;
+          flex: 1;
+          margin-left: 15px;
+        }
+
+        .deposit-address {
+          font-family: 'Courier New', monospace;
+          font-size: 0.8rem;
+          background: #e9ecef;
+          padding: 4px 8px;
+          border-radius: 4px;
+          word-break: break-all;
+        }
+
+        .ai-explanation p {
+          margin: 10px 0;
+          line-height: 1.6;
+          color: #495057;
+        }
+
+        .warning-notice {
+          display: flex;
+          align-items: flex-start;
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 25px;
+        }
+
+        .warning-icon {
+          font-size: 1.2rem;
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+
+        .warning-text {
+          color: #856404;
+          line-height: 1.5;
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 15px;
+          padding: 20px 25px;
+          border-top: 1px solid #e9ecef;
+          background: #f8f9fa;
+          border-radius: 0 0 12px 12px;
+        }
+
+        .cancel-button, .confirm-button {
+          flex: 1;
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .cancel-button {
+          background: #6c757d;
+          color: white;
+        }
+
+        .cancel-button:hover {
+          background: #5a6268;
+          transform: translateY(-1px);
+        }
+
+        .confirm-button {
+          background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+          color: white;
+        }
+
+        .confirm-button:hover {
+          background: linear-gradient(135deg, #218838 0%, #1ea97c 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
       `}</style>
       
@@ -1878,6 +2188,101 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           </div>
         </div>
       </section>
+      
+      {/* Trade Confirmation Modal */}
+      {showTradeModal && tradeModalData && (
+        <div className="modal-overlay">
+          <div className="trade-modal">
+            <div className="modal-header">
+              <h2>🔄 Confirm Token Purchase</h2>
+              <button 
+                className="modal-close" 
+                onClick={() => handleTradeConfirmation(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="trade-summary">
+                <h3>📋 Trade Summary</h3>
+                <div className="trade-details">
+                  <div className="detail-row">
+                    <span className="label">Token to Buy:</span>
+                    <span className="value">{tradeModalData.tradeIntent.destinationAsset}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="label">Amount to Send:</span>
+                    <span className="value">{tradeModalData.quote.amountIn} {tradeModalData.tradeIntent.originAsset}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="label">Estimated Receive:</span>
+                    <span className="value">{tradeModalData.quote.amountOut} {tradeModalData.tradeIntent.destinationAsset}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="label">USD Value:</span>
+                    <span className="value">~${tradeModalData.quote.amountOutUsd}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="execution-details">
+                <h3>🏦 Execution Details</h3>
+                <div className="detail-row">
+                  <span className="label">Deposit Address:</span>
+                  <span className="value deposit-address">{tradeModalData.quote.depositAddress}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Quote Valid Until:</span>
+                  <span className="value">{tradeModalData.quote.deadline}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Estimated Time:</span>
+                  <span className="value">{tradeModalData.quote.timeEstimate}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Slippage:</span>
+                  <span className="value">{tradeModalData.quote.slippageTolerance}</span>
+                </div>
+              </div>
+              
+              <div className="ai-explanation">
+                <h3>🤖 AI Analysis</h3>
+                <p>
+                  This trade was detected from your message: <strong>"{messageContent}"</strong>
+                </p>
+                <p>
+                  The system has generated a live quote with real deposit addresses and amounts. 
+                  If you confirm, you'll receive detailed instructions on how to execute this trade.
+                </p>
+              </div>
+              
+              <div className="warning-notice">
+                <div className="warning-icon">⚠️</div>
+                <div className="warning-text">
+                  <strong>Important:</strong> Only send the exact amount ({tradeModalData.quote.amountIn} {tradeModalData.tradeIntent.originAsset}) 
+                  to the deposit address. Any other amount or token will be lost.
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="cancel-button"
+                onClick={() => handleTradeConfirmation(false)}
+              >
+                ❌ Cancel Trade
+              </button>
+              <button 
+                className="confirm-button"
+                onClick={() => handleTradeConfirmation(true)}
+              >
+                ✅ Confirm & Get Instructions
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
