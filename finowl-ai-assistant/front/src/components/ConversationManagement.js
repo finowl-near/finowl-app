@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
 import { detectTradeIntent, generateTradeIntentResponse, generateTradeIntentResponseWithQuote } from '../utils/tradeIntentDetector';
 import { initializeOneClickService } from '../utils/oneClickQuoteService';
+import TradeConfirmationModal from './TradeConfirmationModal';
 
 export const ConversationManagement = ({ refreshTokenBalance }) => {
   const { signedAccountId, viewFunction, callFunction, modal, signIn } = useWalletSelector();
@@ -37,6 +38,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   // 1Click service state
   const [oneClickEnabled, setOneClickEnabled] = useState(false);
   const [oneClickJwt, setOneClickJwt] = useState('');
+
+  // Trade confirmation modal state
+  const [showTradeModal, setShowTradeModal] = useState(false);
+  const [tradeModalData, setTradeModalData] = useState(null);
 
   // Function to calculate tokens based on text length
   const calculateTokens = (text) => {
@@ -476,13 +481,59 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             if (oneClickEnabled && oneClickJwt) {
               console.log('Using 1Click service for enhanced trade response');
               try {
-                tradeResponse = await generateTradeIntentResponseWithQuote(
+                const quoteResponse = await generateTradeIntentResponseWithQuote(
                   tradeIntentResult.data, 
                   { 
                     slippageTolerance: 100, // 1% default slippage
                     connectedWallet: signedAccountId // Pass connected wallet
                   }
                 );
+                
+                // Check if the response contains a successful quote with deposit address
+                if (quoteResponse.includes('Live Quote Retrieved!') && 
+                    quoteResponse.includes('Deposit Address:')) {
+                  
+                  // Extract formatted quote data for the modal
+                  const formattedQuote = await (async () => {
+                    try {
+                      // Re-get the quote to access structured data
+                      const { generateTradeIntentResponseWithQuote, formatQuoteForDisplay } = await import('../utils/tradeIntentDetector');
+                      const { getQuoteForTradeIntent } = await import('../utils/oneClickQuoteService');
+                      
+                      const quoteData = await getQuoteForTradeIntent(
+                        tradeIntentResult.data, 
+                        { 
+                          slippageTolerance: 100,
+                          connectedWallet: signedAccountId 
+                        }
+                      );
+                      
+                      if (quoteData.success) {
+                        const { formatQuoteForDisplay } = await import('../utils/oneClickQuoteService');
+                        return formatQuoteForDisplay(quoteData);
+                      }
+                      return null;
+                    } catch (error) {
+                      console.error('Error extracting quote data for modal:', error);
+                      return null;
+                    }
+                  })();
+                  
+                  // Show confirmation modal if we have valid quote data
+                  if (formattedQuote && formattedQuote.success && formattedQuote.depositAddress !== 'N/A') {
+                    setTradeModalData({
+                      tradeIntent: tradeIntentResult.data,
+                      quote: formattedQuote,
+                      fullResponse: quoteResponse
+                    });
+                    setShowTradeModal(true);
+                    return; // Don't show the response immediately, wait for user confirmation
+                  }
+                }
+                
+                // If no valid quote or deposit address, show response normally
+                tradeResponse = quoteResponse;
+                
               } catch (quoteError) {
                 console.error('Quote generation failed, falling back to basic response:', quoteError);
                 tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
@@ -1163,6 +1214,64 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     }
     
     return conversationHistory.slice(-DEFAULT_VISIBLE_MESSAGES);
+  };
+
+  // Handle trade confirmation
+  const handleTradeConfirmation = async (confirm) => {
+    if (!tradeModalData) return;
+    
+    try {
+      if (confirm) {
+        console.log('✅ User confirmed trade:', tradeModalData.tradeIntent);
+        console.log('📋 Quote details:', tradeModalData.quote);
+        console.log('🚀 User wants to proceed with the token purchase');
+        
+        // Show the full response with quote details
+        const tradeResponseTokens = calculateTokens(tradeModalData.fullResponse);
+        console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
+        
+        // Create system message for the trade intent response
+        const tradeSystemMessage = {
+          role: "system",
+          content: tradeModalData.fullResponse,
+          timestamp: Math.floor(Date.now() / 1000)
+        };
+        
+        // Add to in-memory messages (no token deduction needed for template responses)
+        setInMemoryMessages(prev => [...prev, tradeSystemMessage]);
+        console.log('✅ Trade intent response with quote added to in-memory messages');
+        
+      } else {
+        console.log('❌ User cancelled trade:', tradeModalData.tradeIntent);
+        console.log('⏭️ Skipping trade execution, waiting for new user input');
+        
+        // Create a cancellation message
+        const cancellationMessage = {
+          role: "system",
+          content: `# Trade Cancelled 🚫
+
+**Trade Details:**
+- **Amount:** ${tradeModalData.tradeIntent.amount} ${tradeModalData.tradeIntent.originAsset}
+- **From:** ${tradeModalData.tradeIntent.originAsset}
+- **To:** ${tradeModalData.tradeIntent.destinationAsset}
+
+**Status:** Cancelled by user
+
+You can send a new message if you'd like to try a different trade or ask another question.`,
+          timestamp: Math.floor(Date.now() / 1000)
+        };
+        
+        // Add cancellation message to in-memory messages
+        setInMemoryMessages(prev => [...prev, cancellationMessage]);
+        console.log('❌ Trade cancellation message added to in-memory messages');
+      }
+    } catch (error) {
+      console.error('Error handling trade confirmation:', error);
+    } finally {
+      // Close modal and reset data
+      setShowTradeModal(false);
+      setTradeModalData(null);
+    }
   };
 
   // Add a new function for refunding tokens
@@ -1878,6 +1987,15 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           </div>
         </div>
       </section>
+      
+      {/* Trade Confirmation Modal */}
+      <TradeConfirmationModal
+        isVisible={showTradeModal}
+        tradeData={tradeModalData}
+        messageContent={messageContent}
+        onConfirm={() => handleTradeConfirmation(true)}
+        onCancel={() => handleTradeConfirmation(false)}
+      />
     </>
   );
 };
