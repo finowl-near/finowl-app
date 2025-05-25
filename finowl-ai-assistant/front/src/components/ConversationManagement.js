@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 import ReactMarkdown from 'react-markdown';
 import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
+import { detectTradeIntent, generateTradeIntentResponse, generateTradeIntentResponseWithQuote } from '../utils/tradeIntentDetector';
+import { initializeOneClickService } from '../utils/oneClickQuoteService';
 
 export const ConversationManagement = ({ refreshTokenBalance }) => {
   const { signedAccountId, viewFunction, callFunction, modal, signIn } = useWalletSelector();
@@ -31,6 +33,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   const [inMemoryMessages, setInMemoryMessages] = useState([]);
   const [showSaveButton, setShowSaveButton] = useState(false);
   const [calculatedTokens, setCalculatedTokens] = useState(0);
+
+  // 1Click service state
+  const [oneClickEnabled, setOneClickEnabled] = useState(false);
+  const [oneClickJwt, setOneClickJwt] = useState('');
 
   // Function to calculate tokens based on text length
   const calculateTokens = (text) => {
@@ -144,6 +150,18 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       historyContainerRef.current.scrollTop = historyContainerRef.current.scrollHeight;
     }
   }, [conversationHistory]);
+
+  // Initialize 1Click service when enabled
+  useEffect(() => {
+    if (oneClickEnabled && oneClickJwt) {
+      try {
+        initializeOneClickService(oneClickJwt);
+        console.log('1Click service initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize 1Click service:', error);
+      }
+    }
+  }, [oneClickEnabled, oneClickJwt]);
 
   // Function to analyze the market using the AI analyzer service
   const analyzeMarket = async (question) => {
@@ -445,99 +463,148 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       // call the AI analyzer without storing its response on blockchain
       if (messageRole === 'user') {
         try {
-          const aiResponse = await analyzeMarket(messageContent);
+          // FIRST: Check if the message matches a trade intent template
+          const tradeIntentResult = detectTradeIntent(messageContent);
           
-          if (aiResponse) {
-            // Format the AI response for display with better structure
-            const formattedResponse = aiResponse; // Use the Markdown response directly
+          if (tradeIntentResult.isTradeIntent) {
+            // WORKFLOW 1: Template matched - handle front-side only with JSON response
+            console.log('Trade intent detected:', tradeIntentResult.data);
             
-            // Calculate tokens for AI response
-            const aiMessageTokens = calculateTokens(formattedResponse);
-            console.log(`AI response uses ${aiMessageTokens} tokens`);
+            let tradeResponse;
             
-            // Call the backend to deduct tokens before showing AI response
-            try {
-              // Calculate the total tokens needed for this AI response
-              const tokensToDeduct = (aiMessageTokens * 1_000_000).toFixed(0);
-              
-              console.log(`Deducting ${tokensToDeduct} tokens for AI response`);
-              
-              // Call the backend API to deduct tokens
-              const deductResponse = await fetch('http://localhost:8080/api/deduct-tokens', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  conversation_id: storeMessageConvId,
-                  amount: tokensToDeduct,
-                  timestamp: Math.floor(Date.now() / 1000)
-                }),
-              });
-              
-              if (!deductResponse.ok) {
-                throw new Error(`Failed to deduct tokens: ${deductResponse.status}`);
+            // Use quote-enabled response if 1Click service is available
+            if (oneClickEnabled && oneClickJwt) {
+              console.log('Using 1Click service for enhanced trade response');
+              try {
+                tradeResponse = await generateTradeIntentResponseWithQuote(
+                  tradeIntentResult.data, 
+                  { 
+                    slippageTolerance: 100, // 1% default slippage
+                    connectedWallet: signedAccountId // Pass connected wallet
+                  }
+                );
+              } catch (quoteError) {
+                console.error('Quote generation failed, falling back to basic response:', quoteError);
+                tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
               }
-              
-              const deductResult = await deductResponse.json();
-              console.log('Token deduction result:', deductResult);
-              
-              if (!deductResult.success) {
-                throw new Error('Token deduction failed');
-              }
-              
-              // If we're here, token deduction succeeded, so show the AI response
-              console.log(`Successfully deducted tokens. Remaining: ${deductResult.remaining}`);
-              
-              // Create system message for the AI response
-              const systemMessage = {
-                role: "system",
-                content: formattedResponse,
-                timestamp: Math.floor(Date.now() / 1000)
-              };
-              
-              // Add to in-memory messages
-              setInMemoryMessages(prev => [...prev, systemMessage]);
-              console.log('AI response added to in-memory messages');
-              
-              // Refresh conversations list to update token balances
-              handleListConversations(false);
-              
-            } catch (deductError) {
-              console.error('Token deduction failed:', deductError);
-              
-              // Create an error message for insufficient tokens
-              const tokenErrorMessage = {
-                role: "system",
-                content: `# Insufficient Tokens\n\n` +
-                  `I cannot provide a response because there are insufficient tokens in this conversation.\n\n` +
-                  `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`,
-                timestamp: Math.floor(Date.now() / 1000)
-              };
-              
-              // Add the error message to in-memory messages
-              setInMemoryMessages(prev => [...prev, tokenErrorMessage]);
-              console.log('Token error message added to in-memory messages');
+            } else {
+              console.log('Using basic trade intent response (1Click not enabled)');
+              tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
             }
             
-          } else {
-            // If AI analysis failed, create an error message
-            const errorMessage = {
+            // Calculate tokens for trade response
+            const tradeResponseTokens = calculateTokens(tradeResponse);
+            console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
+            
+            // Create system message for the trade intent response
+            const tradeSystemMessage = {
               role: "system",
-              content: `# Analysis Request Failed\n\n` +
-                `I wasn't able to analyze your request due to a server connection issue.\n\n` +
-                `**Please try again in a few minutes.** The market analysis server might be busy or temporarily unavailable.`,
+              content: tradeResponse,
               timestamp: Math.floor(Date.now() / 1000)
             };
             
-            // Calculate tokens for error message
-            const errorMessageTokens = calculateTokens(errorMessage.content);
-            console.log(`Error message uses ${errorMessageTokens} tokens`);
+            // Add to in-memory messages (no token deduction needed for template responses)
+            setInMemoryMessages(prev => [...prev, tradeSystemMessage]);
+            console.log('Trade intent response added to in-memory messages');
             
-            // Add to in-memory messages
-            setInMemoryMessages(prev => [...prev, errorMessage]);
+          } else {
+            // WORKFLOW 2: Template not matched - use existing AI analyzer process
+            console.log('No trade intent detected, proceeding with AI analysis');
             
-            console.log('AI error message added to in-memory messages');
+            const aiResponse = await analyzeMarket(messageContent);
+            
+            if (aiResponse) {
+              // Format the AI response for display with better structure
+              const formattedResponse = aiResponse; // Use the Markdown response directly
+              
+              // Calculate tokens for AI response
+              const aiMessageTokens = calculateTokens(formattedResponse);
+              console.log(`AI response uses ${aiMessageTokens} tokens`);
+              
+              // Call the backend to deduct tokens before showing AI response
+              try {
+                // Calculate the total tokens needed for this AI response
+                const tokensToDeduct = (aiMessageTokens * 1_000_000).toFixed(0);
+                
+                console.log(`Deducting ${tokensToDeduct} tokens for AI response`);
+                
+                // Call the backend API to deduct tokens
+                const deductResponse = await fetch('http://localhost:8080/api/deduct-tokens', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    conversation_id: storeMessageConvId,
+                    amount: tokensToDeduct,
+                    timestamp: Math.floor(Date.now() / 1000)
+                  }),
+                });
+                
+                if (!deductResponse.ok) {
+                  throw new Error(`Failed to deduct tokens: ${deductResponse.status}`);
+                }
+                
+                const deductResult = await deductResponse.json();
+                console.log('Token deduction result:', deductResult);
+                
+                if (!deductResult.success) {
+                  throw new Error('Token deduction failed');
+                }
+                
+                // If we're here, token deduction succeeded, so show the AI response
+                console.log(`Successfully deducted tokens. Remaining: ${deductResult.remaining}`);
+                
+                // Create system message for the AI response
+                const systemMessage = {
+                  role: "system",
+                  content: formattedResponse,
+                  timestamp: Math.floor(Date.now() / 1000)
+                };
+                
+                // Add to in-memory messages
+                setInMemoryMessages(prev => [...prev, systemMessage]);
+                console.log('AI response added to in-memory messages');
+                
+                // Refresh conversations list to update token balances
+                handleListConversations(false);
+                
+              } catch (deductError) {
+                console.error('Token deduction failed:', deductError);
+                
+                // Create an error message for insufficient tokens
+                const tokenErrorMessage = {
+                  role: "system",
+                  content: `# Insufficient Tokens\n\n` +
+                    `I cannot provide a response because there are insufficient tokens in this conversation.\n\n` +
+                    `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`,
+                  timestamp: Math.floor(Date.now() / 1000)
+                };
+                
+                // Add the error message to in-memory messages
+                setInMemoryMessages(prev => [...prev, tokenErrorMessage]);
+                console.log('Token error message added to in-memory messages');
+              }
+              
+            } else {
+              // If AI analysis failed, create an error message
+              const errorMessage = {
+                role: "system",
+                content: `# Analysis Request Failed\n\n` +
+                  `I wasn't able to analyze your request due to a server connection issue.\n\n` +
+                  `**Please try again in a few minutes.** The market analysis server might be busy or temporarily unavailable.`,
+                timestamp: Math.floor(Date.now() / 1000)
+              };
+              
+              // Calculate tokens for error message
+              const errorMessageTokens = calculateTokens(errorMessage.content);
+              console.log(`Error message uses ${errorMessageTokens} tokens`);
+              
+              // Add to in-memory messages
+              setInMemoryMessages(prev => [...prev, errorMessage]);
+              
+              console.log('AI error message added to in-memory messages');
+            }
           }
         } catch (aiError) {
           console.error('Error processing AI response:', aiError);
@@ -700,13 +767,16 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       // call the AI analyzer and store its response
       if (messageRole === 'user') {
         try {
-          const aiResponse = await analyzeMarket(messageContent);
+          // FIRST: Check if the message matches a trade intent template
+          const tradeIntentResult = detectTradeIntent(messageContent);
           
-          if (aiResponse) {
-            // Format the AI response for display with better structure
-            const formattedResponse = aiResponse; // Use the Markdown response directly
+          if (tradeIntentResult.isTradeIntent) {
+            // WORKFLOW 1: Template matched - handle front-side only with JSON response and store
+            console.log('Trade intent detected for storage:', tradeIntentResult.data);
             
-            // Store the AI response as a system message
+            const tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
+            
+            // Store the trade intent response as a system message
             await callFunction({
               contractId: CONTRACT_NAME,
               method: "call_js_func",
@@ -714,33 +784,59 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                 function_name: "store_message",
                 conversation_id: storeMessageConvId,
                 role: "system",
-                content: formattedResponse,
+                content: tradeResponse,
                 timestamp: Math.floor(Date.now() / 1000)
               }
             });
             
-            console.log('AI response stored successfully');
+            console.log('Trade intent response stored successfully');
+            
           } else {
-            // If AI analysis failed, store an error message as system message with retry button
-            const errorResponse = 
-              `# Analysis Request Failed\n\n` +
-              `I wasn't able to analyze your request due to a server connection issue.\n\n` +
-              `**Please try again in a few minutes.** The market analysis server might be busy or temporarily unavailable.\n\n` +
-              `Click the "Retry Analysis" button in the conversation when you want to try again.`;
+            // WORKFLOW 2: Template not matched - use existing AI analyzer process
+            console.log('No trade intent detected, proceeding with AI analysis for storage');
             
-            await callFunction({
-              contractId: CONTRACT_NAME,
-              method: "call_js_func",
-              args: {
-                function_name: "store_message",
-                conversation_id: storeMessageConvId,
-                role: "system",
-                content: errorResponse,
-                timestamp: Math.floor(Date.now() / 1000)
-              }
-            });
+            const aiResponse = await analyzeMarket(messageContent);
             
-            console.log('AI error message stored');
+            if (aiResponse) {
+              // Format the AI response for display with better structure
+              const formattedResponse = aiResponse; // Use the Markdown response directly
+              
+              // Store the AI response as a system message
+              await callFunction({
+                contractId: CONTRACT_NAME,
+                method: "call_js_func",
+                args: {
+                  function_name: "store_message",
+                  conversation_id: storeMessageConvId,
+                  role: "system",
+                  content: formattedResponse,
+                  timestamp: Math.floor(Date.now() / 1000)
+                }
+              });
+              
+              console.log('AI response stored successfully');
+            } else {
+              // If AI analysis failed, store an error message as system message with retry button
+              const errorResponse = 
+                `# Analysis Request Failed\n\n` +
+                `I wasn't able to analyze your request due to a server connection issue.\n\n` +
+                `**Please try again in a few minutes.** The market analysis server might be busy or temporarily unavailable.\n\n` +
+                `Click the "Retry Analysis" button in the conversation when you want to try again.`;
+              
+              await callFunction({
+                contractId: CONTRACT_NAME,
+                method: "call_js_func",
+                args: {
+                  function_name: "store_message",
+                  conversation_id: storeMessageConvId,
+                  role: "system",
+                  content: errorResponse,
+                  timestamp: Math.floor(Date.now() / 1000)
+                }
+              });
+              
+              console.log('AI error message stored');
+            }
           }
         } catch (aiError) {
           console.error('Error processing AI response:', aiError);
@@ -1292,6 +1388,81 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           margin-right: 2px;
           font-size: 0.8rem;
         }
+
+        .service-status {
+          margin-bottom: 15px;
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
+        .status-indicator {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.85rem;
+          font-weight: 500;
+        }
+
+        .status-indicator.enabled {
+          background-color: #d4edda;
+          color: #155724;
+        }
+
+        .status-indicator.disabled {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+
+        .jwt-status {
+          padding: 4px 8px;
+          background-color: #e7f3ff;
+          color: #0c5460;
+          border-radius: 4px;
+          font-size: 0.8rem;
+        }
+
+        .service-description {
+          font-size: 0.85rem;
+          color: #666;
+          margin-top: 5px;
+          font-style: italic;
+        }
+
+        .jwt-hint {
+          font-size: 0.8rem;
+          color: #666;
+          margin-top: 5px;
+        }
+
+        .service-info {
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #f8f9fa;
+          border-radius: 6px;
+        }
+
+        .service-info h4 {
+          margin: 0 0 10px 0;
+          font-size: 0.9rem;
+          color: #333;
+        }
+
+        .service-info ul {
+          margin: 0 0 15px 0;
+          padding-left: 20px;
+        }
+
+        .service-info li {
+          font-size: 0.85rem;
+          margin: 5px 0;
+          color: #555;
+        }
+
+        .supported-tokens {
+          font-size: 0.85rem;
+          color: #666;
+          font-style: italic;
+        }
       `}</style>
       
       <section className="section">
@@ -1478,6 +1649,64 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                 >
                   {loading ? 'Adding...' : '💰 Add Tokens'}
                 </button>
+              </div>
+
+              {/* 1Click Quote Service Configuration Panel */}
+              <div className="panel">
+                <h2 className="panel-title">🔄 1Click Quote Service</h2>
+                <div className="service-status">
+                  <span className={`status-indicator ${oneClickEnabled ? 'enabled' : 'disabled'}`}>
+                    {oneClickEnabled ? '✅ Enabled' : '❌ Disabled'}
+                  </span>
+                  {oneClickEnabled && oneClickJwt && (
+                    <span className="jwt-status">🔑 JWT Configured</span>
+                  )}
+                </div>
+
+                <div className="input-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={oneClickEnabled}
+                      onChange={(e) => setOneClickEnabled(e.target.checked)}
+                    />
+                    Enable 1Click Live Quotes
+                  </label>
+                  <div className="service-description">
+                    When enabled, trade intent templates will include live quotes from 1Click API
+                  </div>
+                </div>
+
+                {oneClickEnabled && (
+                  <div className="input-group">
+                    <label>JWT Token (Optional)</label>
+                    <input
+                      type="password"
+                      value={oneClickJwt}
+                      onChange={(e) => setOneClickJwt(e.target.value)}
+                      placeholder="Enter your 1Click JWT token..."
+                    />
+                    <div className="jwt-hint">
+                      JWT token is required for authenticated endpoints. Leave empty for basic functionality.
+                    </div>
+                  </div>
+                )}
+
+                <div className="service-info">
+                  <h4>🚀 Features when enabled:</h4>
+                  <ul>
+                    <li>✅ Live cross-chain swap quotes</li>
+                    <li>✅ Real deposit addresses</li>
+                    <li>✅ Estimated gas and fees</li>
+                    <li>✅ Route information</li>
+                    <li>✅ Time estimates</li>
+                  </ul>
+                  
+                  <h4>🔧 Supported tokens:</h4>
+                  <div className="supported-tokens">
+                    ETH, BTC, USDT, USDC, SOL, NEAR, and more
+                  </div>
+                </div>
               </div>
             </div>
           </div>
