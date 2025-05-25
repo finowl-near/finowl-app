@@ -33,8 +33,8 @@ export default function Header() {
         </div>
 
         {/* Right actions */}
-        <div className="flex gap-3">
-          <button
+        <div className="gap-3">
+          {/* <button
             onClick={action}
             className="flex gap-2 items-center text-white bg-[#1F1923] border border-[#643989] truncate max-w-[150px] font-bold p-2 rounded-xl"
             title={label}
@@ -54,10 +54,10 @@ export default function Header() {
             <div className="flex justify-center items-center p-2 rounded-lg bg-[radial-gradient(closest-side_at_50%_50%,#BA98D5_0%,#643989_100%)]">
               <FaPlus className="w-4 h-4" color="#3D2C4B" />
             </div>
-          </button>
+          </button> */}
           <button
             onClick={action}
-            className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[150px] font-bold p-2 rounded-xl"
+            className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[200px] font-bold p-2 rounded-xl"
             title={label}
           >
             {label}
