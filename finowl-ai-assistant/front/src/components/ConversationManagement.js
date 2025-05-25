@@ -1,13 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWalletSelector } from '@near-wallet-selector/react-hook';
 import ReactMarkdown from 'react-markdown';
+import { utils } from 'near-api-js';
 import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
 import { detectTradeIntent, generateTradeIntentResponse, generateTradeIntentResponseWithQuote } from '../utils/tradeIntentDetector';
 import { initializeOneClickService } from '../utils/oneClickQuoteService';
 import TradeConfirmationModal from './TradeConfirmationModal';
+import NearTransferService from '../services/nearTransferService';
+import React from 'react';
+import { WalletSelectorContext } from '@near-wallet-selector/react-hook';
+import { setupWalletSelector } from '@near-wallet-selector/core';
 
 export const ConversationManagement = ({ refreshTokenBalance }) => {
-  const { signedAccountId, viewFunction, callFunction, modal, signIn } = useWalletSelector();
+  const walletSelector = useWalletSelector();
+  const { signedAccountId, viewFunction, callFunction, modal, signIn, selector } = walletSelector;
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState('');
   const [conversations, setConversations] = useState([]);
@@ -1222,11 +1228,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     
     try {
       if (confirm) {
-        console.log('✅ User confirmed trade:', tradeModalData.tradeIntent);
-        console.log('📋 Quote details:', tradeModalData.quote);
-        console.log('🚀 User wants to proceed with the token purchase');
-        
-        // Show the full response with quote details
+        // Show the full response with quote details first
         const tradeResponseTokens = calculateTokens(tradeModalData.fullResponse);
         console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
         
@@ -1241,29 +1243,23 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         setInMemoryMessages(prev => [...prev, tradeSystemMessage]);
         console.log('✅ Trade intent response with quote added to in-memory messages');
         
+        // Use the transfer service to handle the actual transfer
+        await NearTransferService.handleTradeConfirmation({
+          confirmed: confirm,
+          tradeModalData,
+          walletSelector,
+          setLoading,
+          setInMemoryMessages
+        });
       } else {
-        console.log('❌ User cancelled trade:', tradeModalData.tradeIntent);
-        console.log('⏭️ Skipping trade execution, waiting for new user input');
-        
-        // Create a cancellation message
-        const cancellationMessage = {
-          role: "system",
-          content: `# Trade Cancelled 🚫
-
-**Trade Details:**
-- **Amount:** ${tradeModalData.tradeIntent.amount} ${tradeModalData.tradeIntent.originAsset}
-- **From:** ${tradeModalData.tradeIntent.originAsset}
-- **To:** ${tradeModalData.tradeIntent.destinationAsset}
-
-**Status:** Cancelled by user
-
-You can send a new message if you'd like to try a different trade or ask another question.`,
-          timestamp: Math.floor(Date.now() / 1000)
-        };
-        
-        // Add cancellation message to in-memory messages
-        setInMemoryMessages(prev => [...prev, cancellationMessage]);
-        console.log('❌ Trade cancellation message added to in-memory messages');
+        // Handle cancellation using the service
+        await NearTransferService.handleTradeConfirmation({
+          confirmed: confirm,
+          tradeModalData,
+          walletSelector,
+          setLoading,
+          setInMemoryMessages
+        });
       }
     } catch (error) {
       console.error('Error handling trade confirmation:', error);
