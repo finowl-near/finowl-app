@@ -6,6 +6,7 @@ import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
 import { detectTradeIntent, generateTradeIntentResponse, generateTradeIntentResponseWithQuote } from '../utils/tradeIntentDetector';
 import { initializeOneClickService } from '../utils/oneClickQuoteService';
 import TradeConfirmationModal from './TradeConfirmationModal';
+import NearTransferService from '../services/nearTransferService';
 import React from 'react';
 import { WalletSelectorContext } from '@near-wallet-selector/react-hook';
 import { setupWalletSelector } from '@near-wallet-selector/core';
@@ -1227,11 +1228,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     
     try {
       if (confirm) {
-        console.log('✅ User confirmed trade:', tradeModalData.tradeIntent);
-        console.log('📋 Quote details:', tradeModalData.quote);
-        console.log('🚀 User wants to proceed with the token purchase');
-        
-        // Show the full response with quote details
+        // Show the full response with quote details first
         const tradeResponseTokens = calculateTokens(tradeModalData.fullResponse);
         console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
         
@@ -1246,168 +1243,23 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         setInMemoryMessages(prev => [...prev, tradeSystemMessage]);
         console.log('✅ Trade intent response with quote added to in-memory messages');
         
-        // Initiate NEAR transfer to deposit address
-        const { depositAddress, amountIn } = tradeModalData.quote;
-        const { originAsset } = tradeModalData.tradeIntent;
-        
-        if (depositAddress && depositAddress !== 'N/A' && originAsset === 'NEAR') {
-          try {
-            setLoading(true);
-            console.log(`🏦 Initiating NEAR transfer:`, {
-              to: depositAddress,
-              amount: amountIn,
-              asset: originAsset
-            });
-            
-            // Extract numeric amount from the amountIn string (e.g., "1.2 NEAR" -> "1.2")
-            const numericAmount = amountIn.split(' ')[0];
-            console.log(`💰 Parsed amount: ${numericAmount} NEAR`);
-            
-            // Convert NEAR amount to yoctoNEAR for the transfer
-            const amountInYocto = utils.format.parseNearAmount(numericAmount);
-            console.log(`💱 Amount in yoctoNEAR: ${amountInYocto}`);
-            
-            if (!amountInYocto) {
-              throw new Error(`Invalid amount format: ${amountIn}`);
-            }
-            
-            console.log('🔐 Initiating NEAR transfer using signAndSendTransactions...');
-            
-            // Use the signAndSendTransactions method that's available in the hook
-            const result = await walletSelector.signAndSendTransactions({
-              transactions: [{
-                receiverId: depositAddress,
-                actions: [
-                  {
-                    type: 'Transfer',
-                    params: {
-                      deposit: amountInYocto
-                    }
-                  }
-                ]
-              }]
-            });
-            
-            console.log('✅ Transfer transaction result:', result);
-            
-            // Create success message
-            const successMessage = {
-              role: "system",
-              content: `# Transfer Initiated Successfully! 🎉
-
-**Transaction Details:**
-- **Amount Sent:** ${amountIn}
-- **To Address:** \`${depositAddress}\`
-- **Transaction Hash:** \`${result.transaction?.hash || result.transactionHashes?.[0] || result[0]?.transaction?.hash || 'Processing...'}\`
-
-**Status:** ✅ Transfer completed successfully
-
-**What happens next:**
-1. Your NEAR transfer has been sent to the 1Click deposit address
-2. The cross-chain swap will execute automatically within ${tradeModalData.quote.timeEstimate}
-3. You'll receive ${tradeModalData.quote.amountOut} ${tradeModalData.tradeIntent.destinationAsset} at your destination address
-
-**Important:** You can track the swap progress using the transaction hash above. The swap will complete automatically - no further action needed!`,
-              timestamp: Math.floor(Date.now() / 1000)
-            };
-            
-            // Add success message to in-memory messages
-            setInMemoryMessages(prev => [...prev, successMessage]);
-            console.log('✅ Transfer success message added to in-memory messages');
-            
-            // Show user notification
-            alert(`🎉 Transfer successful!\n\nSent: ${amountIn}\nTo: ${depositAddress}\n\nThe cross-chain swap will complete automatically within ${tradeModalData.quote.timeEstimate}.`);
-            
-          } catch (transferError) {
-            console.error('❌ Transfer failed:', transferError);
-            
-            // Create error message
-            const errorMessage = {
-              role: "system",
-              content: `# Transfer Failed ❌
-
-**Error Details:**
-- **Amount:** ${amountIn}
-- **To Address:** \`${depositAddress}\`
-- **Error:** ${transferError.message}
-
-**What went wrong:**
-The NEAR transfer to the deposit address could not be completed. This might be due to:
-- Insufficient NEAR balance in your wallet
-- Network connectivity issues
-- Transaction was rejected or cancelled
-- Invalid deposit address
-
-**Next Steps:**
-1. Check your NEAR wallet balance
-2. Ensure you have enough NEAR for the transfer plus gas fees
-3. Try the trade again if you want to proceed
-4. Contact support if the problem persists
-
-**Note:** No funds have been transferred. Your wallet balance is unchanged.`,
-              timestamp: Math.floor(Date.now() / 1000)
-            };
-            
-            // Add error message to in-memory messages
-            setInMemoryMessages(prev => [...prev, errorMessage]);
-            console.log('❌ Transfer error message added to in-memory messages');
-            
-            // Show user notification
-            alert(`❌ Transfer failed: ${transferError.message}\n\nNo funds have been transferred. Please check your wallet balance and try again.`);
-          } finally {
-            setLoading(false);
-          }
-        } else if (originAsset !== 'NEAR') {
-          // Handle non-NEAR tokens
-          const nonNearMessage = {
-            role: "system",
-            content: `# Manual Transfer Required 📝
-
-**Token:** ${originAsset}
-**Amount:** ${amountIn}
-**Deposit Address:** \`${depositAddress}\`
-
-**Important:** This trade requires ${originAsset} tokens, which cannot be automatically transferred through this interface.
-
-**Manual Steps:**
-1. Open your ${originAsset} wallet or exchange
-2. Send exactly **${amountIn}** to the deposit address: \`${depositAddress}\`
-3. The cross-chain swap will execute automatically within ${tradeModalData.quote.timeEstimate}
-4. You'll receive ${tradeModalData.quote.amountOut} ${tradeModalData.tradeIntent.destinationAsset}
-
-**⚠️ Warning:** Only send the exact amount specified. Any other amount will be lost.`,
-            timestamp: Math.floor(Date.now() / 1000)
-          };
-          
-          setInMemoryMessages(prev => [...prev, nonNearMessage]);
-          console.log(`ℹ️ Manual transfer message added for ${originAsset}`);
-        } else {
-          console.log('❌ No valid deposit address found in quote');
-        }
-        
+        // Use the transfer service to handle the actual transfer
+        await NearTransferService.handleTradeConfirmation({
+          confirmed: confirm,
+          tradeModalData,
+          walletSelector,
+          setLoading,
+          setInMemoryMessages
+        });
       } else {
-        console.log('❌ User cancelled trade:', tradeModalData.tradeIntent);
-        console.log('⏭️ Skipping trade execution, waiting for new user input');
-        
-        // Create a cancellation message
-        const cancellationMessage = {
-          role: "system",
-          content: `# Trade Cancelled 🚫
-
-**Trade Details:**
-- **Amount:** ${tradeModalData.tradeIntent.amount} ${tradeModalData.tradeIntent.originAsset}
-- **From:** ${tradeModalData.tradeIntent.originAsset}
-- **To:** ${tradeModalData.tradeIntent.destinationAsset}
-
-**Status:** Cancelled by user
-
-You can send a new message if you'd like to try a different trade or ask another question.`,
-          timestamp: Math.floor(Date.now() / 1000)
-        };
-        
-        // Add cancellation message to in-memory messages
-        setInMemoryMessages(prev => [...prev, cancellationMessage]);
-        console.log('❌ Trade cancellation message added to in-memory messages');
+        // Handle cancellation using the service
+        await NearTransferService.handleTradeConfirmation({
+          confirmed: confirm,
+          tradeModalData,
+          walletSelector,
+          setLoading,
+          setInMemoryMessages
+        });
       }
     } catch (error) {
       console.error('Error handling trade confirmation:', error);
