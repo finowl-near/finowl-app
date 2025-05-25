@@ -6,7 +6,9 @@ import { CONTRACT_NAME, validateNetworkConfig } from '../config/network';
 import { detectTradeIntent, generateTradeIntentResponse, generateTradeIntentResponseWithQuote } from '../utils/tradeIntentDetector';
 import { initializeOneClickService } from '../utils/oneClickQuoteService';
 import TradeConfirmationModal from './TradeConfirmationModal';
+import SwapProgressTracker from './SwapProgressTracker';
 import NearTransferService from '../services/nearTransferService';
+import { SwapTrackingService } from '../services/swapTrackingService';
 import React from 'react';
 import { WalletSelectorContext } from '@near-wallet-selector/react-hook';
 import { setupWalletSelector } from '@near-wallet-selector/core';
@@ -48,6 +50,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   // Trade confirmation modal state
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeModalData, setTradeModalData] = useState(null);
+
+  // State for swap progress tracking
+  const [showProgressTracker, setShowProgressTracker] = useState(false);
+  const [progressTrackingData, setProgressTrackingData] = useState(null);
 
   // Function to calculate tokens based on text length
   const calculateTokens = (text) => {
@@ -1228,46 +1234,143 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     
     try {
       if (confirm) {
-        // Show the full response with quote details first
+        console.log('✅ User confirmed trade:', tradeModalData.tradeIntent);
+        console.log('📋 Quote details:', tradeModalData.quote);
+        console.log('🚀 User wants to proceed with the token purchase');
+        
+        // Show the full response with quote details
         const tradeResponseTokens = calculateTokens(tradeModalData.fullResponse);
         console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
         
-        // Create system message for the trade intent response
-        const tradeSystemMessage = {
-          role: "system",
-          content: tradeModalData.fullResponse,
-          timestamp: Math.floor(Date.now() / 1000)
-        };
+        // Debug: Log the complete quote structure
+        console.log('🔍 Complete tradeModalData.quote:', JSON.stringify(tradeModalData.quote, null, 2));
+        console.log('🔍 tradeModalData.tradeIntent:', JSON.stringify(tradeModalData.tradeIntent, null, 2));
         
-        // Add to in-memory messages (no token deduction needed for template responses)
-        setInMemoryMessages(prev => [...prev, tradeSystemMessage]);
-        console.log('✅ Trade intent response with quote added to in-memory messages');
+        const { depositAddress, amountIn } = tradeModalData.quote;
+        const { originAsset } = tradeModalData.tradeIntent;
         
-        // Use the transfer service to handle the actual transfer
-        await NearTransferService.handleTradeConfirmation({
-          confirmed: confirm,
-          tradeModalData,
-          walletSelector,
-          setLoading,
-          setInMemoryMessages
-        });
+        console.log('📋 Extracted values:', { depositAddress, amountIn, originAsset });
+        
+        // Close the confirmation modal
+        setShowTradeModal(false);
+        setTradeModalData(null);
+        
+        if (depositAddress && depositAddress !== 'N/A' && originAsset === 'NEAR') {
+          // Handle NEAR transfer with progress tracking
+          setLoading(true);
+          
+          try {
+            const transferResult = await NearTransferService.executeTransfer({
+              amountIn,
+              depositAddress,
+              walletSelector
+            });
+            
+            if (transferResult.success) {
+              console.log('✅ Transfer successful, starting progress tracking');
+              
+              // Add transfer success message to chat
+              setInMemoryMessages(prev => [...prev, transferResult.chatMessage]);
+              
+              // Set up progress tracking data
+              setProgressTrackingData({
+                depositAddress: transferResult.depositAddress,
+                transactionHash: transferResult.transactionHash,
+                tradeData: {
+                  tokenFrom: originAsset,
+                  amountFrom: transferResult.amountTransferred,
+                  tokenTo: tradeModalData.tradeIntent.destinationAsset,
+                  amountTo: tradeModalData.quote.amountOut
+                }
+              });
+              
+              // Show progress tracker modal
+              setShowProgressTracker(true);
+              
+            } else {
+              console.error('❌ Transfer failed:', transferResult.error);
+              
+              // Add transfer error message to chat
+              setInMemoryMessages(prev => [...prev, transferResult.chatMessage]);
+            }
+            
+          } catch (error) {
+            console.error('❌ Transfer error:', error);
+            
+            const errorMessage = {
+              role: 'assistant',
+              content: `## ❌ Transfer Error\\n\\nAn unexpected error occurred: ${error.message}\\n\\n*Please try again or contact support if the problem persists.*`,
+              timestamp: new Date().toISOString()
+            };
+            
+            setInMemoryMessages(prev => [...prev, errorMessage]);
+          } finally {
+            setLoading(false);
+          }
+          
+        } else if (originAsset !== 'NEAR') {
+          // Handle non-NEAR tokens with manual transfer instructions
+          const manualTransferMessage = {
+            role: 'assistant',
+            content: `## 📝 Manual Transfer Required
+
+**Token:** ${originAsset}
+**Amount:** ${amountIn}
+**Deposit Address:** \`${depositAddress}\`
+
+**Important:** This trade requires ${originAsset} tokens, which cannot be automatically transferred through this interface.
+
+**Manual Steps:**
+1. Open your ${originAsset} wallet or exchange
+2. Send exactly **${amountIn}** to the deposit address: \`${depositAddress}\`
+3. The cross-chain swap will execute automatically
+4. You'll receive ${tradeModalData.quote.amountOut} ${tradeModalData.tradeIntent.destinationAsset}
+
+**⚠️ Warning:** Only send the exact amount specified. Any other amount may be lost.`,
+            timestamp: new Date().toISOString()
+          };
+          setInMemoryMessages(prev => [...prev, manualTransferMessage]);
+          console.log(`ℹ️ Manual transfer message added for ${originAsset}`);
+          
+        } else {
+          console.log('❌ No valid deposit address found in quote');
+        }
+        
       } else {
-        // Handle cancellation using the service
-        await NearTransferService.handleTradeConfirmation({
-          confirmed: confirm,
-          tradeModalData,
-          walletSelector,
-          setLoading,
-          setInMemoryMessages
-        });
+        // Handle trade cancellation
+        console.log('❌ User cancelled trade:', tradeModalData.tradeIntent);
+        setShowTradeModal(false);
+        setTradeModalData(null);
+        
+        const cancellationMessage = {
+          role: 'assistant',
+          content: `## 🚫 Trade Cancelled\\n\\n**Trade Details:**\\n- **Amount:** ${tradeModalData.tradeIntent.amount} ${tradeModalData.tradeIntent.originAsset}\\n- **From:** ${tradeModalData.tradeIntent.originAsset}\\n- **To:** ${tradeModalData.tradeIntent.destinationAsset}\\n\\n**Status:** Cancelled by user\\n\\nYou can send a new message if you'd like to try a different trade or ask another question.`,
+          timestamp: new Date().toISOString()
+        };
+        setInMemoryMessages(prev => [...prev, cancellationMessage]);
+        console.log('❌ Trade cancellation message added to in-memory messages');
       }
     } catch (error) {
-      console.error('Error handling trade confirmation:', error);
-    } finally {
-      // Close modal and reset data
-      setShowTradeModal(false);
-      setTradeModalData(null);
+      console.error('Error in trade confirmation handler:', error);
+      setLoading(false);
     }
+  };
+
+  // Handle progress tracking updates
+  const handleProgressUpdate = (update) => {
+    console.log('📡 Progress update received:', update);
+    
+    // Add progress update to chat if significant
+    if (update.status === 'complete' || update.status === 'failed') {
+      const chatMessage = SwapTrackingService.createChatMessage(update);
+      setInMemoryMessages(prev => [...prev, chatMessage]);
+    }
+  };
+
+  // Handle progress tracker close
+  const handleProgressTrackerClose = () => {
+    setShowProgressTracker(false);
+    setProgressTrackingData(null);
   };
 
   // Add a new function for refunding tokens
@@ -1991,6 +2094,15 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         messageContent={messageContent}
         onConfirm={() => handleTradeConfirmation(true)}
         onCancel={() => handleTradeConfirmation(false)}
+      />
+      
+      {/* Swap Progress Tracker */}
+      <SwapProgressTracker
+        isVisible={showProgressTracker}
+        depositAddress={progressTrackingData?.depositAddress}
+        tradeData={progressTrackingData?.tradeData}
+        onStatusUpdate={handleProgressUpdate}
+        onClose={handleProgressTrackerClose}
       />
     </>
   );
