@@ -67,6 +67,17 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
     }, 0);
   };
 
+  // Function to calculate tokens only for chargeable messages (AI responses)
+  const calculateChargeableTokens = (messages) => {
+    return messages.reduce((total, msg) => {
+      // Only count tokens for messages that should be charged
+      if (msg.metadata?.isChargeable === true) {
+        return total + (msg.metadata?.tokensUsed || calculateTokens(msg.content));
+      }
+      return total;
+    }, 0);
+  };
+
   // Listen for registration, storage and token status events to determine full registration
   useEffect(() => {
     let claimStatus = false;
@@ -426,6 +437,10 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       const totalTokens = calculateTotalTokens(inMemoryMessages);
       setCalculatedTokens(totalTokens);
       
+      // Also calculate chargeable tokens for accurate cost display
+      const chargeableTokens = calculateChargeableTokens(inMemoryMessages);
+      setCalculatedTokens(chargeableTokens);
+      
       // Scroll to bottom after a short delay to allow rendering
       setTimeout(() => {
         if (historyContainerRef.current) {
@@ -466,7 +481,11 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       const userMessage = {
         role: messageRole,
         content: messageContent,
-        timestamp: timestamp
+        timestamp: timestamp,
+        metadata: {
+          type: 'user_message',
+          isChargeable: false
+        }
       };
       
       // Add to in-memory messages
@@ -563,12 +582,17 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             const tradeSystemMessage = {
               role: "system",
               content: tradeResponse,
-              timestamp: Math.floor(Date.now() / 1000)
+              timestamp: Math.floor(Date.now() / 1000),
+              metadata: {
+                type: 'template_response',
+                isChargeable: false,
+                tradeIntent: true
+              }
             };
             
             // Add to in-memory messages (no token deduction needed for template responses)
             setInMemoryMessages(prev => [...prev, tradeSystemMessage]);
-            console.log('Trade intent response added to in-memory messages');
+            console.log('Trade intent response added to in-memory messages (FREE - no tokens charged)');
             
           } else {
             // WORKFLOW 2: Template not matched - use existing AI analyzer process
@@ -622,12 +646,17 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                 const systemMessage = {
                   role: "system",
                   content: formattedResponse,
-                  timestamp: Math.floor(Date.now() / 1000)
+                  timestamp: Math.floor(Date.now() / 1000),
+                  metadata: {
+                    type: 'ai_response',
+                    isChargeable: true,
+                    tokensUsed: aiMessageTokens
+                  }
                 };
                 
                 // Add to in-memory messages
                 setInMemoryMessages(prev => [...prev, systemMessage]);
-                console.log('AI response added to in-memory messages');
+                console.log('AI response added to in-memory messages (PAID - tokens charged)');
                 
                 // Refresh conversations list to update token balances
                 handleListConversations(false);
@@ -641,7 +670,11 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                   content: `# Insufficient Tokens\n\n` +
                     `I cannot provide a response because there are insufficient tokens in this conversation.\n\n` +
                     `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`,
-                  timestamp: Math.floor(Date.now() / 1000)
+                  timestamp: Math.floor(Date.now() / 1000),
+                  metadata: {
+                    type: 'error_message',
+                    isChargeable: false
+                  }
                 };
                 
                 // Add the error message to in-memory messages
@@ -656,7 +689,11 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                 content: `# Analysis Request Failed\n\n` +
                   `I wasn't able to analyze your request due to a server connection issue.\n\n` +
                   `**Please try again in a few minutes.** The market analysis server might be busy or temporarily unavailable.`,
-                timestamp: Math.floor(Date.now() / 1000)
+                timestamp: Math.floor(Date.now() / 1000),
+                metadata: {
+                  type: 'error_message',
+                  isChargeable: false
+                }
               };
               
               // Calculate tokens for error message
@@ -678,7 +715,11 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
             content: `# Analysis Error\n\n` +
               `There was an error processing your market analysis request.\n\n` +
               `**Please try again later.** If the problem persists, contact support.`,
-            timestamp: Math.floor(Date.now() / 1000)
+            timestamp: Math.floor(Date.now() / 1000),
+            metadata: {
+              type: 'error_message',
+              isChargeable: false
+            }
           };
           
           setInMemoryMessages(prev => [...prev, criticalErrorMessage]);
@@ -726,12 +767,15 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       // Get current timestamp
       const timestamp = Math.floor(Date.now() / 1000);
       
-      // Calculate total tokens for all messages
-      const totalTokens = calculateTotalTokens(inMemoryMessages);
-      console.log(`Total tokens used for conversation: ${totalTokens}`);
+      // Calculate total tokens for chargeable messages only (exclude template responses)
+      const chargeableTokens = calculateChargeableTokens(inMemoryMessages);
+      const totalTokens = calculateTotalTokens(inMemoryMessages); // For display/debugging
+      console.log(`Total messages: ${inMemoryMessages.length}`);
+      console.log(`Total tokens (all messages): ${totalTokens}`);
+      console.log(`Chargeable tokens (AI responses only): ${chargeableTokens}`);
       
       // Convert to internal token format (multiply by 1,000,000)
-      const internalTokens = (totalTokens * 1_000_000).toFixed(0);
+      const internalTokens = (chargeableTokens * 1_000_000).toFixed(0);
       
       // Prepare metadata
       const metadata = {
@@ -739,7 +783,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
         tokens_used: internalTokens
       };
       
-      console.log(`Saving conversation with ${inMemoryMessages.length} messages using ${internalTokens} tokens`);
+      console.log(`Saving conversation with ${inMemoryMessages.length} messages using ${internalTokens} chargeable tokens (${chargeableTokens} display tokens)`);
       
       // Call the contract method to save full conversation
       const result = await callFunction({
