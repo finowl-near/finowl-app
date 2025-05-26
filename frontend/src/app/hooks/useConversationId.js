@@ -2,8 +2,9 @@ const { create } = require("zustand");
 
 const useConversationId = create((set) => ({
     convId: "",
-    setConvId: (id) => {
-        set({ convId: id })
+    tokensLeft: null,
+    setConvId: (id, tk) => {
+        set({ convId: id, tokensLeft: tk })
     }
 }));
 
