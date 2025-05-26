@@ -129,7 +129,6 @@ export default function MyDropdown({
   ];
   return (
     <>
-      <Toaster richColors theme="dark" position="top-right" />
       <Dropdown menu={{ items }} trigger={["click"]}>
         <button
           className="p-1 rounded-full hover:bg-[#BA98D5]/20 transition-colors"
