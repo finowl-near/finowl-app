@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import LogoIcon from "@/app/components/Icons/LogoIcon";
 import { FaBars } from "react-icons/fa";
@@ -25,46 +25,57 @@ export default function SideBar({
   loading,
   refresh,
   refreshBalance,
-  balance
+  balance,
 }) {
   const { convId, setConvId } = useConversationId();
   const { signedAccountId, viewFunction, callFunction, modal, signIn } =
     useWalletSelector();
-
+  const buttonRefs = useRef({});
+  const historyCache = useRef({});
   const router = useRouter();
 
   const handleGetConversationHistory = async (conversationId) => {
+    //   setLoading(true);
+    if (historyCache.current[conversationId]) {
+      console.log("cached");
+      setConversationHistory(historyCache.current[conversationId]);
+      return;
+    }
     try {
-      //   setLoading(true);
-      try {
-        const result = await viewFunction({
-          contractId: "finowl.testnet",
-          method: "view_js_func",
-          args: {
-            function_name: "get_conversation_history",
-            conversation_id: conversationId,
-          },
-        });
-        console.log("Conversation history (view method):", result);
-        setConversationHistory(result);
-      } catch (viewError) {
-        console.log("View method failed, trying call method:", viewError);
+      const result = await viewFunction({
+        contractId: "finowl.testnet",
+        method: "view_js_func",
+        args: {
+          function_name: "get_conversation_history",
+          conversation_id: conversationId,
+        },
+      });
+      console.log("Conversation history (view method):", result);
+      historyCache.current[conversationId] = result;
+      setConversationHistory(result);
+    } catch (viewError) {
+      console.log("View method failed, trying call method:", viewError);
 
-        const result = await callFunction({
-          contractId: "finowl.testnet",
-          method: "view_js_func",
-          args: {
-            function_name: "get_conversation_history",
-            conversation_id: conversationId,
-          },
-        });
-        console.log("Conversation history (call method):", result);
-        setConversationHistory(result);
-      }
-    } catch (error) {
-      console.error("Error fetching conversation history:", error);
+      const result = await callFunction({
+        contractId: "finowl.testnet",
+        method: "view_js_func",
+        args: {
+          function_name: "get_conversation_history",
+          conversation_id: conversationId,
+        },
+      });
+      console.log("Conversation history (call method):", result);
+      historyCache.current[conversationId] = result;
+      setConversationHistory(result);
     }
   };
+
+  useEffect(() => {
+    if (!loading && convId && conversations.find((c) => c.id === convId)) {
+      const btn = buttonRefs.current[convId];
+      if (btn) btn.click();
+    }
+  }, [loading, conversations, convId]);
 
   return (
     <motion.aside
@@ -106,7 +117,9 @@ export default function SideBar({
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={handleStartConversation}
+            onClick={() => {
+              handleStartConversation();
+            }}
             className={`${urbanist.className} font-semibold px-4 py-2 rounded-lg text-white bg-[radial-gradient(closest-side_at_50%_50%,#BA98D5_0%,#643989_100%)] hover:opacity-90 transition-all`}
           >
             + New
@@ -137,11 +150,12 @@ export default function SideBar({
                   }`}
                 >
                   <button
+                    ref={(el) => (buttonRefs.current[conv.id] = el)}
                     title={conv.id}
                     className="w-full text-left text-white truncate max-w-[220px] py-2 rounded-lg"
-                    onClick={() => {
+                    onClick={async () => {
                       handleGetConversationHistory(conv.id);
-                      setConvId(conv.id);
+                      setConvId(conv.id, conv.tokensRemaining);
                     }}
                   >
                     {conv.id}
