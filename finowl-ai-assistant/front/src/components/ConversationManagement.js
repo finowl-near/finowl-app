@@ -54,6 +54,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   // State for swap progress tracking
   const [showProgressTracker, setShowProgressTracker] = useState(false);
   const [progressTrackingData, setProgressTrackingData] = useState(null);
+  const [swapCompletionMessageSent, setSwapCompletionMessageSent] = useState(false);
 
   // Function to calculate tokens based on text length
   const calculateTokens = (text) => {
@@ -1331,6 +1332,9 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
               // Show progress tracker modal
               setShowProgressTracker(true);
               
+              // Reset completion message flag for new swap
+              setSwapCompletionMessageSent(false);
+              
             } else {
               console.error('❌ Transfer failed:', transferResult.error);
               
@@ -1404,10 +1408,22 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   const handleProgressUpdate = (update) => {
     console.log('📡 Progress update received:', update);
     
-    // Add progress update to chat if significant
-    if (update.status === 'complete' || update.status === 'failed') {
+    // Only add completion message once to prevent spam
+    if ((update.status === 'complete' || update.status === 'failed') && !swapCompletionMessageSent) {
+      console.log('🎯 Adding completion message to chat (ONCE)');
+      setSwapCompletionMessageSent(true);
+      
       const chatMessage = SwapTrackingService.createChatMessage(update);
       setInMemoryMessages(prev => [...prev, chatMessage]);
+      
+      // Close the progress tracker after a short delay
+      setTimeout(() => {
+        setShowProgressTracker(false);
+        setProgressTrackingData(null);
+      }, 2000); // 2 second delay to show completion
+      
+    } else if (update.status === 'complete' || update.status === 'failed') {
+      console.log('⚠️ Completion message already sent, skipping duplicate');
     }
   };
 
@@ -1415,6 +1431,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
   const handleProgressTrackerClose = () => {
     setShowProgressTracker(false);
     setProgressTrackingData(null);
+    setSwapCompletionMessageSent(false); // Reset for next swap
   };
 
   // Add a new function for refunding tokens
