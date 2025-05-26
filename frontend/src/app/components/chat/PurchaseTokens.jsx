@@ -45,7 +45,6 @@ export default function PurchaseTokens({
   }
   return (
     <>
-      <Toaster theme="dark" richColors position="top-right"/>
       <Modal
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
