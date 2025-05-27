@@ -7,22 +7,25 @@ import Image from "next/image";
 import coinOwl from "@/app/assets/svg/coinOwl.svg";
 import { urbanist } from "../fonts";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import { useRouter } from "next/navigation";
+import { Tooltip } from "antd";
 
 export default function Header() {
   const [action, setAction] = useState(() => {});
   const [label, setLabel] = useState("Loading...");
   const { signedAccountId, signIn, signOut } = useWalletSelector();
+  const router = useRouter();
 
   useEffect(() => {
     if (signedAccountId) {
       setAction(() => signOut);
-      setLabel(`Logout ${signedAccountId}`);
+      setLabel(`${signedAccountId}`);
+      document.cookie = `nearAccount=${signedAccountId}; Path=/; Secure; SameSite=Lax;`;
     } else {
       setAction(() => signIn);
       setLabel("Connect Wallet");
     }
   }, [signedAccountId, signIn, signOut]);
-
 
   return (
     <div className="p-4">
@@ -55,13 +58,24 @@ export default function Header() {
               <FaPlus className="w-4 h-4" color="#3D2C4B" />
             </div>
           </button> */}
-          <button
-            onClick={action}
-            className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[200px] font-bold p-2 rounded-xl"
-            title={label}
-          >
-            {label}
-          </button>
+          <Tooltip title={"Logout " + label} color="#1C1A22">
+            <button
+              onClick={async () => {
+                await action();
+                document.cookie = [
+                  `nearAccount=`,
+                  `Path=/`,
+                  `Max-Age=0`,
+                  `Secure`,
+                  `SameSite=Lax`,
+                ].join("; ");
+                router.push("/");
+              }}
+              className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[200px] font-bold p-2 rounded-xl"
+            >
+              {label}
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

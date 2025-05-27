@@ -33,6 +33,7 @@ export default function OnBoarding() {
     }
     (async function checkUserStatus() {
       setLoadingStatus(true);
+      document.cookie = `nearAccount=${signedAccountId}; Path=/; Secure; SameSite=Lax;`;
       try {
         /// register storage
         const result = await viewFunction({
