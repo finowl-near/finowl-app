@@ -101,6 +101,15 @@ export class SwapTrackingService {
           color: '#6b7280'
         };
 
+        // Check if swap is complete or failed BEFORE calling onStatusUpdate
+        const isCompleted = [this.STATUS.COMPLETE, this.STATUS.FAILED, this.STATUS.REFUNDED].includes(response.status);
+        
+        // Stop tracking immediately if completed to prevent duplicate calls
+        if (isCompleted) {
+          console.log(`✅ Swap completed with status: ${response.status} - stopping tracking immediately`);
+          stopTracking();
+        }
+
         onStatusUpdate({
           status: response.status,
           statusInfo,
@@ -108,12 +117,6 @@ export class SwapTrackingService {
           attempts,
           timestamp: new Date().toISOString()
         });
-
-        // Stop tracking if swap is complete or failed
-        if ([this.STATUS.COMPLETE, this.STATUS.FAILED, this.STATUS.REFUNDED].includes(response.status)) {
-          console.log(`✅ Tracking complete with status: ${response.status}`);
-          stopTracking();
-        }
 
       } catch (error) {
         console.error('❌ Error checking swap status:', error);
@@ -168,37 +171,45 @@ export class SwapTrackingService {
     // import { OneClickService } from '@defuse-protocol/one-click-sdk-typescript';
     // return await OneClickService.oneClickControllerGetExecutionStatus(depositAddress);
     
-    // Simulate different stages for demo
-    const simulationStages = [
-      { status: this.STATUS.PENDING, duration: 2 },
-      { status: this.STATUS.PROCESSING, duration: 8 },
-      { status: this.STATUS.COMPLETE, duration: 1 }
-    ];
-    
     // This is demo simulation - replace with actual API call
-    const now = Date.now();
-    const elapsed = Math.floor((now % 60000) / 5000); // Cycle every minute
+    // Create a more realistic progression based on when tracking started
+    const trackingStartKey = `swap_tracking_${depositAddress}`;
+    let trackingStartTime = localStorage.getItem(trackingStartKey);
     
-    if (elapsed < 2) {
+    if (!trackingStartTime) {
+      trackingStartTime = Date.now();
+      localStorage.setItem(trackingStartKey, trackingStartTime.toString());
+    } else {
+      trackingStartTime = parseInt(trackingStartTime);
+    }
+    
+    const elapsedSeconds = Math.floor((Date.now() - trackingStartTime) / 1000);
+    console.log(`🕐 Swap tracking elapsed time: ${elapsedSeconds} seconds`);
+    
+    // Realistic progression: pending (0-10s) → processing (10-25s) → complete (25s+)
+    if (elapsedSeconds < 10) {
       return {
         status: this.STATUS.PENDING,
         executionDetails: {
           depositReceived: true,
           swapInitiated: false,
-          estimatedCompletion: new Date(Date.now() + 30000).toISOString()
+          estimatedCompletion: new Date(trackingStartTime + 25000).toISOString()
         }
       };
-    } else if (elapsed < 10) {
+    } else if (elapsedSeconds < 25) {
       return {
         status: this.STATUS.PROCESSING,
         executionDetails: {
           depositReceived: true,
           swapInitiated: true,
           crossChainTransfer: true,
-          estimatedCompletion: new Date(Date.now() + 15000).toISOString()
+          estimatedCompletion: new Date(trackingStartTime + 25000).toISOString()
         }
       };
     } else {
+      // Clean up tracking data when complete
+      localStorage.removeItem(trackingStartKey);
+      
       return {
         status: this.STATUS.COMPLETE,
         executionDetails: {
@@ -207,7 +218,7 @@ export class SwapTrackingService {
           crossChainTransfer: true,
           tokensDelivered: true,
           completedAt: new Date().toISOString(),
-          transactionHash: '0x' + Math.random().toString(16).substr(2, 64)
+          transactionHash: '0x' + Math.random().toString(16).substr(2, 40)
         }
       };
     }
