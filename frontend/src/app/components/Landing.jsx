@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import LogoIcon from "./Icons/LogoIcon";
 import Image from "next/image";
@@ -6,8 +8,10 @@ import screenLand from "@/app/assets/svg/screen-land.svg";
 import { urbanist } from "../fonts";
 import feedland from "@/app/assets/svg/feedland.svg";
 import handphone from "@/app/assets/svg/handphone.svg";
+import { useRouter } from "next/navigation";
 
 export default function Landing() {
+  const router = useRouter();
   return (
     <>
       <div className="m-2 pl-10 rounded-[15px] relative  landing-bg">
@@ -37,6 +41,9 @@ export default function Landing() {
           <div className="[box-shadow:0.5px_0px_8px_#ffffff4b;] w-[fit-content] rounded-[15px]">
             <button
               className={`px-4 py-3 button-syle text-white text-[20px] ${urbanist.className} font-semibold border border-[#442162] rounded-[15px]`}
+              onClick={() => {
+                router.push('/onboarding') 
+              }}
             >
               Launch App
             </button>
@@ -107,6 +114,9 @@ export default function Landing() {
           <div className="[box-shadow:0.5px_0px_8px_#ffffff4b;] w-[fit-content] rounded-[15px]">
             <button
               className={`px-4 py-3 button-syle text-white text-[20px] ${urbanist.className} font-semibold border border-[#442162] rounded-[15px]`}
+              onClick={() => {
+                router.push('/onboarding') 
+              }}
             >
               Launch App
             </button>
