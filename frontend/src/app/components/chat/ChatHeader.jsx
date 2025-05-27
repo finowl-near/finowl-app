@@ -9,14 +9,16 @@ import { urbanist } from "@/app/fonts";
 import Image from "next/image";
 import { Tooltip } from "antd";
 import PurchaseTokens from "./PurchaseTokens";
+import { useRouter } from "next/navigation";
 
 export default function ChatHeader({
   toggle,
   collapsed,
   balance,
   loadingBalence,
-  refreshBalance
+  refreshBalance,
 }) {
+  const router = useRouter();
   const [action, setAction] = useState(() => {});
   const [label, setLabel] = useState("Loading...");
   const [isModalOpen, setModalOpen] = useState(false);
@@ -26,7 +28,7 @@ export default function ChatHeader({
   useEffect(() => {
     if (signedAccountId) {
       setAction(() => signOut);
-      setLabel(`Logout ${signedAccountId}`);
+      setLabel(`${signedAccountId}`);
     } else {
       setAction(() => signIn);
       setLabel("Connect Wallet");
@@ -79,13 +81,25 @@ export default function ChatHeader({
             setModalOpen={setModalOpen}
             refreshBalance={refreshBalance}
           />
-          <button
-            onClick={action}
-            className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[150px] font-bold p-2 rounded-xl"
-            title={label}
-          >
-            {label}
-          </button>
+          <Tooltip title={"Logout " + label} color="#1C1A22">
+            <button
+              onClick={async () => {
+                await action();
+                document.cookie = [
+                  `nearAccount=`,
+                  `Path=/`,
+                  `Max-Age=0`,
+                  `Secure`,
+                  `SameSite=Lax`,
+                ].join("; ");
+                router.push("/");
+              }}
+              className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[150px] font-bold p-2 rounded-xl"
+              // title={label}
+            >
+              {label}
+            </button>
+          </Tooltip>
         </div>
       </div>
     </>
