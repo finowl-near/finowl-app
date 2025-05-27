@@ -5,7 +5,7 @@ import React, { useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 
-export default function FinalStep({ redirectTo = "/", delayMs = 1500 }) {
+export default function FinalStep({ redirectTo = "/dashboard", delayMs = 1500 }) {
   const router = useRouter();
 
   useEffect(() => {

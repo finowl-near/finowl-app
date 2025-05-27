@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
 
 export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
   const { signedAccountId, callFunction, viewFunction, signIn, signOut } =
     useWalletSelector();
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleClaimTokens() {
     try {
@@ -113,7 +115,9 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="bg-[#BA98D5] text-[#231C28] font-semibold py-2 px-6 rounded-lg shadow-md"
-          // onClick={onNext}
+          onClick={() => {
+            router.push('/dashbaord');
+          }}
         >
           Launch App
         </motion.button>
