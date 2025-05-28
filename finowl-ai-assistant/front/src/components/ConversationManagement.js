@@ -202,7 +202,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 480000); // 8 minutes
       
-      const response = await fetch('http://localhost:8080/analyze', {
+      const response = await fetch('http://localhost:3001/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -617,7 +617,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
                 console.log(`Deducting ${tokensToDeduct} tokens for AI response`);
                 
                 // Call the backend API to deduct tokens
-                const deductResponse = await fetch('http://localhost:8080/api/deduct-tokens', {
+                const deductResponse = await fetch('http://localhost:3001/api/deduct-tokens', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -1149,7 +1149,7 @@ export const ConversationManagement = ({ refreshTokenBalance }) => {
           console.log(`Deducting ${tokensToDeduct} tokens for retry AI response`);
           
           // Call the backend API to deduct tokens
-          const deductResponse = await fetch('http://localhost:8080/api/deduct-tokens', {
+          const deductResponse = await fetch('http://localhost:3001/api/deduct-tokens', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

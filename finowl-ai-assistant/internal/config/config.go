@@ -184,7 +184,7 @@ func getEnvAsFloat(key string, defaultValue float64) float64 {
 func LoadConfig() *AppConfig {
 	config := &AppConfig{
 		Server: ServerConfig{
-			Port: getEnvWithDefault("PORT", "8080"),
+			Port: getEnvWithDefault("PORT", "3001"),
 		},
 		AI: AIConfigs{
 			Strategy:  getEnvWithDefault("FINOWL_AI_STRATEGY", "priority"),
