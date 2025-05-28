@@ -24,6 +24,18 @@ services:
     networks:
       - finowl-network
 
+  # New AI Assistant service
+  finowl-ai-assistant:
+    build: ./finowl-ai-assistant
+    container_name: finowl-ai-assistant
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./finowl-ai-assistant/.env
+    restart: unless-stopped
+    networks:
+      - finowl-network
+
   db:
     image: postgres:15-alpine
     container_name: finowl-db
