@@ -182,6 +182,9 @@ func getEnvAsFloat(key string, defaultValue float64) float64 {
 
 // LoadConfig loads configuration from environment variables
 func LoadConfig() *AppConfig {
+	// Simple AI provider selector - can be "DEEPSEEK" or "CLAUDE"
+	selectedProvider := getEnvWithDefault("AI_PROVIDER", "DEEPSEEK")
+
 	config := &AppConfig{
 		Server: ServerConfig{
 			Port: getEnvWithDefault("PORT", "3001"),
@@ -209,8 +212,17 @@ func LoadConfig() *AppConfig {
 		},
 	}
 
+	// Override the first provider based on AI_PROVIDER selection
+	if len(config.AI.Providers) > 0 {
+		selectedProviderConfig := getProviderConfig(selectedProvider)
+		if selectedProviderConfig != nil {
+			config.AI.Providers[0] = *selectedProviderConfig
+		}
+	}
+
 	// Log configuration details for debug
 	log.Printf("🔧 Server configuration: Port=%s", config.Server.Port)
+	log.Printf("🔧 Selected AI Provider: %s", selectedProvider)
 	log.Printf("🔧 AI configuration: Endpoint=%s, Model=%s, API Key Set=%v",
 		config.AI.Providers[0].Endpoint,
 		config.AI.Providers[0].Model,
@@ -311,4 +323,43 @@ func getEnvAsInt(key string, defaultValue int) int {
 	}
 
 	return valueInt
+}
+
+// getProviderConfig returns a configured AIConfig for the specified provider
+func getProviderConfig(provider string) *AIConfig {
+	provider = strings.ToUpper(strings.TrimSpace(provider))
+
+	switch provider {
+	case "DEEPSEEK":
+		return &AIConfig{
+			Provider: "DEEPSEEK",
+			APIKey: getFirstEnv(
+				"FINOWL_DEEPSEEK_API_KEY",
+				"DEEPSEEK_API_KEY",
+				"",
+			),
+			Endpoint:    getEnvWithDefault("FINOWL_DEEPSEEK_ENDPOINT", "https://api.deepseek.com/v1/chat/completions"),
+			Model:       getEnvWithDefault("FINOWL_DEEPSEEK_MODEL", "deepseek-chat"),
+			Priority:    1,
+			MaxTokens:   getEnvAsInt("FINOWL_DEEPSEEK_MAX_TOKENS", 4000),
+			Temperature: float32(getEnvAsFloat("FINOWL_DEEPSEEK_TEMPERATURE", 0.1)),
+		}
+	case "CLAUDE":
+		return &AIConfig{
+			Provider: "CLAUDE",
+			APIKey: getFirstEnv(
+				"FINOWL_CLAUDE_API_KEY",
+				"CLAUDE_API_KEY",
+				"",
+			),
+			Endpoint:    getEnvWithDefault("FINOWL_CLAUDE_ENDPOINT", "https://api.anthropic.com/v1/messages"),
+			Model:       getEnvWithDefault("FINOWL_CLAUDE_MODEL", "claude-3-5-sonnet-20241022"),
+			Priority:    1,
+			MaxTokens:   getEnvAsInt("FINOWL_CLAUDE_MAX_TOKENS", 100000),
+			Temperature: float32(getEnvAsFloat("FINOWL_CLAUDE_TEMPERATURE", 0.1)),
+		}
+	default:
+		log.Printf("⚠️ Warning: Unknown AI provider '%s', falling back to default configuration", provider)
+		return nil
+	}
 }

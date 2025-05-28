@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -56,8 +57,18 @@ func NewApp(networkType string) (*App, error) {
 		log.Println("⚠️ Warning: AI API key not set, using mock client for development")
 		aiClient = ai.NewMockClient()
 	} else {
-		log.Printf("✅ Using AI API with endpoint: %s", cfg.AI.Providers[0].Endpoint)
-		aiClient = ai.NewClient(cfg.AI.Providers[0].APIKey, cfg.AI.Providers[0].Endpoint, cfg.AI.Providers[0].Model)
+		provider := cfg.AI.Providers[0].Provider
+		switch strings.ToUpper(provider) {
+		case "CLAUDE":
+			log.Printf("✅ Using Claude AI with endpoint: %s", cfg.AI.Providers[0].Endpoint)
+			aiClient = ai.NewClaudeClient(cfg.AI.Providers[0].APIKey, cfg.AI.Providers[0].Endpoint, cfg.AI.Providers[0].Model)
+		case "DEEPSEEK":
+			log.Printf("✅ Using DeepSeek AI with endpoint: %s", cfg.AI.Providers[0].Endpoint)
+			aiClient = ai.NewClient(cfg.AI.Providers[0].APIKey, cfg.AI.Providers[0].Endpoint, cfg.AI.Providers[0].Model)
+		default:
+			log.Printf("✅ Using default AI client with endpoint: %s", cfg.AI.Providers[0].Endpoint)
+			aiClient = ai.NewClient(cfg.AI.Providers[0].APIKey, cfg.AI.Providers[0].Endpoint, cfg.AI.Providers[0].Model)
+		}
 	}
 
 	// Create market analyzer
