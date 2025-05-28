@@ -74,6 +74,19 @@ type getSummaryHandlerResponse struct {
 	Total   int                `json:"total"`
 }
 
+// New response structs for mention-based endpoints
+type mention struct {
+	Token          string    `json:"token"`
+	FirstMentioned time.Time `json:"first_mentioned"`
+	LastMentioned  time.Time `json:"last_mentioned"`
+	MentionCount   *int      `json:"mention_count,omitempty"`
+}
+
+type getMentionsHandlerResponse struct {
+	Mentions []mention `json:"mentions"`
+	Total    int       `json:"total"`
+}
+
 const maxPageSize = 1024
 
 var (
@@ -82,6 +95,7 @@ var (
 	errGetTickersCount   = errors.New("failed to retrieve tickers count")
 	errGetSummary        = errors.New("failed to retrieve summary")
 	errGetSummariesCount = errors.New("failed to retrieve summaries count")
+	errGetMentions       = errors.New("failed to retrieve mentions")
 )
 
 func newServer(cfg serverConfig) (*server, error) {
@@ -197,6 +211,117 @@ func (s *server) getSummaryCount() (int, error) {
 	return count, nil
 }
 
+// Fresh mentions - tokens discovered in last 6 hours
+func (s *server) getFreshMentions() ([]mention, error) {
+	query := `SELECT token, first_mentioned, last_mentioned
+FROM mentions
+WHERE first_mentioned >= NOW() - INTERVAL '6 hours'
+ORDER BY first_mentioned DESC
+LIMIT 20`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+	}
+	defer rows.Close()
+
+	var mentions []mention
+	for rows.Next() {
+		var m mention
+		if err := rows.Scan(&m.Token, &m.FirstMentioned, &m.LastMentioned); err != nil {
+			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+		}
+		mentions = append(mentions, m)
+	}
+
+	return mentions, nil
+}
+
+// Recent momentum - tokens mentioned most frequently in last 24h
+func (s *server) getRecentMomentum() ([]mention, error) {
+	query := `SELECT token, COUNT(*) as mention_count
+FROM mentions
+WHERE last_mentioned >= NOW() - INTERVAL '24 hours'
+GROUP BY token
+ORDER BY mention_count DESC
+LIMIT 20`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+	}
+	defer rows.Close()
+
+	var mentions []mention
+	for rows.Next() {
+		var m mention
+		var count int
+		if err := rows.Scan(&m.Token, &count); err != nil {
+			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+		}
+		m.MentionCount = &count
+		mentions = append(mentions, m)
+	}
+
+	return mentions, nil
+}
+
+// Revived interest - old tokens with recent attention
+func (s *server) getRevivedInterest() ([]mention, error) {
+	query := `SELECT token, first_mentioned, last_mentioned
+FROM mentions
+WHERE first_mentioned <= NOW() - INTERVAL '7 days'
+  AND last_mentioned >= NOW() - INTERVAL '12 hours'
+ORDER BY last_mentioned DESC
+LIMIT 20`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+	}
+	defer rows.Close()
+
+	var mentions []mention
+	for rows.Next() {
+		var m mention
+		if err := rows.Scan(&m.Token, &m.FirstMentioned, &m.LastMentioned); err != nil {
+			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+		}
+		mentions = append(mentions, m)
+	}
+
+	return mentions, nil
+}
+
+// Generic discovery - smart mix of recent action and high mentions
+func (s *server) getGenericDiscovery() ([]mention, error) {
+	query := `SELECT token, first_mentioned, last_mentioned, COUNT(*) as mention_count
+FROM mentions
+WHERE last_mentioned >= NOW() - INTERVAL '3 days'
+GROUP BY token, first_mentioned, last_mentioned
+ORDER BY mention_count DESC, last_mentioned DESC
+LIMIT 20`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+	}
+	defer rows.Close()
+
+	var mentions []mention
+	for rows.Next() {
+		var m mention
+		var count int
+		if err := rows.Scan(&m.Token, &m.FirstMentioned, &m.LastMentioned, &count); err != nil {
+			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+		}
+		m.MentionCount = &count
+		mentions = append(mentions, m)
+	}
+
+	return mentions, nil
+}
+
 func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	page := 0
@@ -280,6 +405,7 @@ func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
 func (s *server) getSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	summaryIDParam := r.URL.Query().Get("id")
 	summaryID, err := func() (int, error) {
@@ -327,6 +453,126 @@ func (s *server) getSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write(body); err != nil {
 		slog.Error(err.Error())
 
+		return
+	}
+}
+
+// Handler for fresh mentions endpoint
+func (s *server) getFreshMentionsHandler(w http.ResponseWriter, r *http.Request) {
+	mentions, err := s.getFreshMentions()
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp := getMentionsHandlerResponse{
+		Mentions: mentions,
+		Total:    len(mentions),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	body, err := json.Marshal(&resp)
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := w.Write(body); err != nil {
+		slog.Error(err.Error())
+		return
+	}
+}
+
+// Handler for recent momentum endpoint
+func (s *server) getRecentMomentumHandler(w http.ResponseWriter, r *http.Request) {
+	mentions, err := s.getRecentMomentum()
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp := getMentionsHandlerResponse{
+		Mentions: mentions,
+		Total:    len(mentions),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	body, err := json.Marshal(&resp)
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := w.Write(body); err != nil {
+		slog.Error(err.Error())
+		return
+	}
+}
+
+// Handler for revived interest endpoint
+func (s *server) getRevivedInterestHandler(w http.ResponseWriter, r *http.Request) {
+	mentions, err := s.getRevivedInterest()
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp := getMentionsHandlerResponse{
+		Mentions: mentions,
+		Total:    len(mentions),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	body, err := json.Marshal(&resp)
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := w.Write(body); err != nil {
+		slog.Error(err.Error())
+		return
+	}
+}
+
+// Handler for generic discovery endpoint
+func (s *server) getGenericDiscoveryHandler(w http.ResponseWriter, r *http.Request) {
+	mentions, err := s.getGenericDiscovery()
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp := getMentionsHandlerResponse{
+		Mentions: mentions,
+		Total:    len(mentions),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	body, err := json.Marshal(&resp)
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := w.Write(body); err != nil {
+		slog.Error(err.Error())
 		return
 	}
 }
@@ -396,6 +642,10 @@ func RunAPIServer(cfg serverConfig) {
 
 	http.Handle("GET /api/v0/tickers", corsMiddleware(logMiddleware(http.HandlerFunc(server.getTickersHandler))))
 	http.Handle("GET /api/v0/summary", corsMiddleware(logMiddleware(http.HandlerFunc(server.getSummaryHandler))))
+	http.Handle("GET /api/v0/fresh-mentions", corsMiddleware(logMiddleware(http.HandlerFunc(server.getFreshMentionsHandler))))
+	http.Handle("GET /api/v0/recent-momentum", corsMiddleware(logMiddleware(http.HandlerFunc(server.getRecentMomentumHandler))))
+	http.Handle("GET /api/v0/revived-interest", corsMiddleware(logMiddleware(http.HandlerFunc(server.getRevivedInterestHandler))))
+	http.Handle("GET /api/v0/generic-discovery", corsMiddleware(logMiddleware(http.HandlerFunc(server.getGenericDiscoveryHandler))))
 
 	go func() {
 		ticker := time.NewTicker(cfg.aiGenSummaryInterval)

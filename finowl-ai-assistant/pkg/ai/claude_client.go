@@ -31,7 +31,7 @@ func NewClaudeClient(apiKey, endpoint, model string) *ClaudeClient {
 // GetCompletion sends a request to Claude API
 func (c *ClaudeClient) GetCompletion(prompt string, model string, temperature float32, maxTokens int) (string, error) {
 	if c.APIKey == "" {
-		return "", fmt.Errorf("Claude API key not set")
+		return "", fmt.Errorf("claude API key not set")
 	}
 
 	if model == "" {
@@ -71,7 +71,7 @@ func (c *ClaudeClient) GetCompletion(prompt string, model string, temperature fl
 	client := &http.Client{Timeout: 300 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("Claude API request failed: %w", err)
+		return "", fmt.Errorf("claude API request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -81,7 +81,7 @@ func (c *ClaudeClient) GetCompletion(prompt string, model string, temperature fl
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Claude API returned status %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("claude API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Claude response format
@@ -105,7 +105,7 @@ func (c *ClaudeClient) GetCompletion(prompt string, model string, temperature fl
 // GetChatCompletion handles chat with Claude
 func (c *ClaudeClient) GetChatCompletion(messages []chat.Message, model string, temperature float32, maxTokens int) (string, error) {
 	if c.APIKey == "" {
-		return "", fmt.Errorf("Claude API key not set")
+		return "", fmt.Errorf("claude API key not set")
 	}
 
 	if model == "" {
@@ -145,7 +145,7 @@ func (c *ClaudeClient) GetChatCompletion(messages []chat.Message, model string, 
 	client := &http.Client{Timeout: 300 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("Claude chat request failed: %w", err)
+		return "", fmt.Errorf("claude chat request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -155,7 +155,7 @@ func (c *ClaudeClient) GetChatCompletion(messages []chat.Message, model string, 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Claude chat API returned status %d: %s", resp.StatusCode, string(respBody))
+		return "", fmt.Errorf("claude chat API returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	var parsed struct {
