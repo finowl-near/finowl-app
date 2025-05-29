@@ -10,8 +10,39 @@ import (
 	"finowl-backend/pkg/ticker"
 )
 
-func (s *server) getGenericDiscovery(page int, pageSize int) ([]ticker.Ticker, error) {
-	rows, err := s.db.Query(queryGenericDiscovery, pageSize, pageSize*page)
+func (s *server) getGenericDiscovery(page int, pageSize int, sort string, sortDir string) ([]ticker.Ticker, error) {
+	orderBy, err := func(sort string) (string, error) {
+		switch sort {
+		case "mindshare":
+			return "mindshare_score", nil
+		case "first_mentioned":
+			return "first_mentioned_at", nil
+		case "last_mentioned":
+			return "last_mentioned_at", nil
+		}
+
+		return "", fmt.Errorf(`%w: unknown sort key "%s"`, errGetMentions, sort)
+	}(sort)
+	if err != nil {
+		return nil, err
+	}
+
+	orderByDir, err := func(sortDir string) (string, error) {
+		switch sortDir {
+		case "asc":
+			return "ASC", nil
+		case "desc":
+			return "DESC", nil
+		}
+
+		return "", fmt.Errorf(`%w: unknown sort order "%s"`, errGetMentions, sortDir)
+	}(sortDir)
+	if err != nil {
+		return nil, err
+	}
+
+	query := fmt.Sprintf(queryGenericDiscovery, orderBy, orderByDir)
+	rows, err := s.db.Query(query, pageSize, pageSize*page)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errGetMentions, err)
 	}
@@ -31,6 +62,8 @@ func (s *server) getGenericDiscoveryHandler(w http.ResponseWriter, r *http.Reque
 	var err error
 	page := 0
 	pageSize := 10
+	sort := "mindshare"
+	sortDir := "desc"
 
 	if queryPage := r.URL.Query().Get("page"); queryPage != "" {
 		page, err = strconv.Atoi(queryPage)
@@ -48,7 +81,15 @@ func (s *server) getGenericDiscoveryHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	tickers, err := s.getGenericDiscovery(page, pageSize)
+	if querySort := r.URL.Query().Get("sort"); querySort != "" {
+		sort = querySort
+	}
+
+	if querySortDir := r.URL.Query().Get("sortDir"); querySortDir != "" {
+		sortDir = querySortDir
+	}
+
+	tickers, err := s.getGenericDiscovery(page, pageSize, sort, sortDir)
 	if err != nil {
 		slog.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

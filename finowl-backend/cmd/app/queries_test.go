@@ -130,9 +130,9 @@ func TestOrderByLogic(t *testing.T) {
 		expectedOrder string
 	}{
 		{"queryFreshMentions", queryFreshMentions, "ORDER BY first_mentioned_at DESC"},
-		{"queryRecentMomentum", queryRecentMomentum, "ORDER BY mindshare_score DESC, last_mentioned_at DESC"},
+		{"queryRecentMomentum", queryRecentMomentum, "ORDER BY last_mentioned_at DESC"},
 		{"queryRevivedInterest", queryRevivedInterest, "ORDER BY last_mentioned_at DESC"},
-		{"queryGenericDiscovery", queryGenericDiscovery, "ORDER BY mindshare_score DESC, last_mentioned_at DESC"},
+		{"queryGenericDiscovery", queryGenericDiscovery, "ORDER BY %s %s"},
 	}
 
 	for _, tt := range tests {
