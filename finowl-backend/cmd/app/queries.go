@@ -43,7 +43,7 @@ const (
 		SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details 
 		FROM tickers_1_0 
 		WHERE last_mentioned_at >= NOW() - INTERVAL '24 hours'
-		ORDER BY mindshare_score DESC, last_mentioned_at DESC
+		ORDER BY last_mentioned_at DESC
 		LIMIT 20`
 
 	// Revived interest - old tokens with recent attention
@@ -60,7 +60,7 @@ const (
 		SELECT ticker_symbol, category, mindshare_score, last_mentioned_at, first_mentioned_at, mention_details 
 		FROM tickers_1_0 
 		WHERE last_mentioned_at >= NOW() - INTERVAL '3 days'
-		ORDER BY mindshare_score DESC, last_mentioned_at DESC
+		ORDER BY %s %s
 		LIMIT $1 OFFSET $2`
 
 	queryGenericDiscoveryCount = `
