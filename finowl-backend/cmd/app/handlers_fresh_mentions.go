@@ -14,25 +14,8 @@ func (s *server) getFreshMentions() ([]ticker.Ticker, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errGetMentions, err)
 	}
-	defer rows.Close()
 
-	tickers := []ticker.Ticker{}
-	for rows.Next() {
-		var t ticker.Ticker
-		var mentionDetailsJSON string
-
-		if err := rows.Scan(&t.TickerSymbol, &t.Category, &t.MindshareScore, &t.LastMentionedAt, &t.FirstMentionedAt, &mentionDetailsJSON); err != nil {
-			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
-		}
-
-		if err := json.Unmarshal([]byte(mentionDetailsJSON), &t.MentionDetails); err != nil {
-			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
-		}
-
-		tickers = append(tickers, t)
-	}
-
-	return tickers, nil
+	return processTickers(rows)
 }
 
 func (s *server) getFreshMentionsHandler(w http.ResponseWriter, r *http.Request) {

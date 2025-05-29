@@ -47,23 +47,7 @@ func (s *server) getTickers(page int, pageSize int, sort string, sortDir string)
 		return nil, fmt.Errorf("%w: %w", errGetTickers, err)
 	}
 
-	tickers := []ticker.Ticker{}
-	for rows.Next() {
-		var t ticker.Ticker
-		var mentionDetailsJSON string
-
-		if err := rows.Scan(&t.TickerSymbol, &t.Category, &t.MindshareScore, &t.LastMentionedAt, &t.FirstMentionedAt, &mentionDetailsJSON); err != nil {
-			return nil, fmt.Errorf("%w: %w", errGetTickers, err)
-		}
-
-		if err := json.Unmarshal([]byte(mentionDetailsJSON), &t.MentionDetails); err != nil {
-			return nil, fmt.Errorf("%w: %w", errGetTickers, err)
-		}
-
-		tickers = append(tickers, t)
-	}
-
-	return tickers, nil
+	return processTickers(rows)
 }
 
 func (s *server) getTickersCount() (int, error) {
@@ -141,7 +125,7 @@ func (s *server) getTickersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write(body); err != nil {
 		slog.Error(err.Error())

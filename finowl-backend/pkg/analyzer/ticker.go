@@ -21,7 +21,7 @@ func ExtractTickers(content string) []string {
 			}
 
 			// Check if the ticker is a monetary value
-			if isMonetaryValue(ticker) {
+			if IsMonetaryValue(ticker) {
 				continue // Skip this ticker if it's a monetary value
 			}
 
@@ -50,7 +50,7 @@ func isValidTicker(ticker string) bool {
 	return true // All characters are valid
 }
 
-func isMonetaryValue(ticker string) bool {
+func IsMonetaryValue(ticker string) bool {
 	if len(ticker) < 2 {
 		return false // Too short to be a valid monetary value
 	}
@@ -64,6 +64,17 @@ func isMonetaryValue(ticker string) bool {
 	// Remove commas in numbers (e.g., $10,000 becomes 10000)
 	tickerWithoutDollar = strings.ReplaceAll(tickerWithoutDollar, ",", "")
 
+	// Check for 3-character suffixes first (mil)
+	if len(tickerWithoutDollar) > 3 {
+		lastThreeChars := strings.ToLower(tickerWithoutDollar[len(tickerWithoutDollar)-3:])
+		if lastThreeChars == "mil" {
+			// Ensure the rest of the string is a valid number
+			numberPart := tickerWithoutDollar[:len(tickerWithoutDollar)-3]
+			return isValidNumber(numberPart)
+		}
+	}
+
+	// Check for 2-character suffixes (mn, bn)
 	if len(tickerWithoutDollar) > 2 {
 		lastTwoChars := strings.ToLower(tickerWithoutDollar[len(tickerWithoutDollar)-2:])
 		if lastTwoChars == "mn" || lastTwoChars == "bn" {
