@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"finowl-backend/ai"
+	"finowl-backend/pkg/analyzer"
 	"finowl-backend/pkg/mindshare"
 	"finowl-backend/pkg/ticker"
 	"fmt"
@@ -82,6 +84,40 @@ var (
 	errGetSummariesCount = errors.New("failed to retrieve summaries count")
 	errGetMentions       = errors.New("failed to retrieve mentions")
 )
+
+// Common helper function to process ticker rows and reduce code duplication
+func processTickers(rows *sql.Rows) ([]ticker.Ticker, error) {
+	defer rows.Close()
+
+	tickers := []ticker.Ticker{}
+	for rows.Next() {
+		var t ticker.Ticker
+		var mentionDetailsJSON string
+
+		if err := rows.Scan(&t.TickerSymbol, &t.Category, &t.MindshareScore, &t.LastMentionedAt, &t.FirstMentionedAt, &mentionDetailsJSON); err != nil {
+			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+		}
+
+		if err := json.Unmarshal([]byte(mentionDetailsJSON), &t.MentionDetails); err != nil {
+			return nil, fmt.Errorf("%w: %w", errGetMentions, err)
+		}
+
+		// Filter out any tickers that look like monetary values (e.g., "50mil", "100k", etc.)
+		// This prevents old bad data from being returned by the API
+		if isValidTickerSymbol(t.TickerSymbol) {
+			tickers = append(tickers, t)
+		}
+	}
+
+	return tickers, nil
+}
+
+// isValidTickerSymbol checks if a ticker symbol is valid (not a monetary value)
+func isValidTickerSymbol(symbol string) bool {
+	// Add dollar sign prefix to reuse existing monetary detection logic
+	withDollarSign := "$" + symbol
+	return !analyzer.IsMonetaryValue(withDollarSign)
+}
 
 func newServer(cfg serverConfig) (*server, error) {
 	db, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
