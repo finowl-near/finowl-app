@@ -7,7 +7,7 @@ export async function analyzeMarket(question) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 480000); // 8 minutes
   
-      const response = await fetch("http://localhost:3001/analyze", {
+      const response = await fetch("https://finowl.finance/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -6,7 +6,7 @@ export async function deductAiTokens(aiMessageTokens, convId) {
         console.log(`Deducting ${tokensToDeduct} tokens for AI response and conv ${convId}`);
         
         // Call the backend API to deduct tokens
-        const deductResponse = await fetch('http://localhost:3001/api/deduct-tokens', {
+        const deductResponse = await fetch('https://finowl.finance/api/deduct-tokens', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
