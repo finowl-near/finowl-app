@@ -29,6 +29,9 @@ func TestExtractTickers(t *testing.T) {
 		{"$BTC123 $ETH456", []string{"$BTC123", "$ETH456"}},
 		{"$10 $1k $10k $100k $1m $100B+", []string{}},
 		{"$ $$$ $NODE) $5k/mo $2-3B", []string{}},
+		{"The same people that thought I'm \"too late\" when I posted $ZEUS at 20m are now seeing huge projects like $POPCAT interacting with it at $50mil", []string{"$ZEUS", "$POPCAT"}},
+		{"$1mil $2.5mil $100mil should all be filtered out", []string{}},
+		{"$TICKER with $5mil value", []string{"$TICKER"}},
 	}
 
 	for _, test := range tests {
