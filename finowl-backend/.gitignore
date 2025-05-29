@@ -1,0 +1,28 @@
+# Log files
+*.log
+app*.log
+finowl*.log
+
+# Environment files
+.env
+.env.local
+
+# Binary files
+finowl-backend
+cmd/app/app
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Test coverage files
+coverage.out
+coverage.html 
