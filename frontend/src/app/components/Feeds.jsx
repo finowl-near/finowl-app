@@ -98,22 +98,32 @@ export default function Feeds() {
         </div>
       </div>
       <div className="block md:hidden">
-        <Collapse feedList={feedList} choose={choose} handleShowFeed={handleShowFeed}/>
+        <Collapse
+          feedList={feedList}
+          choose={choose}
+          handleShowFeed={handleShowFeed}
+        />
       </div>
-      <div className="p-4 flex justify-between gap-10">
-        <div className="text-[#D0D0D0]">
+      <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-10">
+        {/* Update Text */}
+        <div className="text-[#D0D0D0] text-sm sm:text-base">
           Updated Every <span className="text-[#BA98D5]">4 hours</span>
         </div>
-        <div className="flex justify-between gap-10">
+
+        {/* Controls Section */}
+        <div className="flex flex-wrap md:flex-nowrap justify-start md:justify-between items-center gap-4 md:gap-6 w-full md:w-auto">
+          {/* Previous Button */}
           <div
-            className="flex items-center cursor-pointer"
+            className="flex items-center gap-1 cursor-pointer"
             onClick={handlePreviousFeed}
           >
             <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
-            <p className="text-[#D0D0D0]">Previous</p>
+            <p className="text-[#D0D0D0] text-sm sm:text-base">Previous</p>
           </div>
-          <div className="flex items-center gap-5">
-            <p className="text-black font-semibold px-2 py-px rounded-md bg-[var(--primary-color)]">
+
+          {/* Date Display & Picker */}
+          <div className="flex items-center gap-3">
+            <p className="text-black font-semibold text-xs sm:text-sm px-2 py-px rounded-md bg-[var(--primary-color)]">
               {moment(feedData.summary.timestamp).format("MMMM Do, hA")}
             </p>
             <input
@@ -122,7 +132,6 @@ export default function Feeds() {
               type="date"
               id="feeddate"
               onChange={(e) => {
-                /// TODO: need to capture date and display it
                 console.log(e.target.value);
               }}
             />
@@ -130,21 +139,16 @@ export default function Feeds() {
               className="border border-[#292929] p-1 rounded-md"
               onClick={() => inputRef.current?.showPicker()}
             >
-              {/* <Image
-                className=""
-                src={calenderIcon}
-                width={undefined}
-                height={undefined}
-                alt="calender icon"
-              /> */}
               <CalendarIcon />
             </button>
           </div>
+
+          {/* Next Button */}
           <div
-            className="flex items-center cursor-pointer"
+            className="flex items-center gap-1 cursor-pointer"
             onClick={handleNextFeed}
           >
-            <p className="text-[#D0D0D0]">Next</p>
+            <p className="text-[#D0D0D0] text-sm sm:text-base">Next</p>
             <ChevronRightIcon className="w-4" color="var(--primary-color)" />
           </div>
         </div>

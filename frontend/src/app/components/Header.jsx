@@ -9,6 +9,7 @@ import { urbanist } from "../fonts";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "antd";
+import Link from "next/link";
 
 export default function Header() {
   const [action, setAction] = useState(() => {});
@@ -30,10 +31,12 @@ export default function Header() {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-1">
-          {/* Logo */}
-          <LogoIcon />
-        </div>
+        <Link href={"/home"}>
+          <div className="flex items-center space-x-1">
+            {/* Logo */}
+            <LogoIcon />
+          </div>
+        </Link>
 
         {/* Right actions */}
         <div className="gap-3">
@@ -58,7 +61,7 @@ export default function Header() {
               <FaPlus className="w-4 h-4" color="#3D2C4B" />
             </div>
           </button> */}
-          <Tooltip title={"Logout " + label} color="#1C1A22">
+          {/* <Tooltip title={"Logout " + label} color="#1C1A22">
             <button
               onClick={async () => {
                 await action();
@@ -75,7 +78,7 @@ export default function Header() {
             >
               {label}
             </button>
-          </Tooltip>
+          </Tooltip> */}
         </div>
       </div>
     </div>
