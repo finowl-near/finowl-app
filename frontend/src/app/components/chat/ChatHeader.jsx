@@ -11,6 +11,7 @@ import { Tooltip } from "antd";
 import PurchaseTokens from "./PurchaseTokens";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HiBars3CenterLeft } from "react-icons/hi2";
 
 export default function ChatHeader({
   toggle,
@@ -48,7 +49,7 @@ export default function ChatHeader({
               }`}
               aria-label="Toggle sidebar"
             >
-              <FaBars className="w-6 h-6" />
+              <HiBars3CenterLeft className="w-6 h-6" />
             </button>
           </Tooltip>
           <Link href={"/home"}>

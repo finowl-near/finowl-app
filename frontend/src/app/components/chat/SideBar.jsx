@@ -17,6 +17,7 @@ import MyDropdown from "./MyDropdown";
 import { Tooltip } from "antd";
 import { CONTRACT_ID } from "@/app/Wallets/near";
 import Link from "next/link";
+import { HiBars3CenterLeft } from "react-icons/hi2";
 
 export default function SideBar({
   collapsed,
@@ -94,7 +95,7 @@ export default function SideBar({
             className="rounded-lg hover:bg-[#BA98D5]/20 transition-colors text-white"
             aria-label="Toggle sidebar"
           >
-            <FaBars className="w-6 h-6" />
+            <HiBars3CenterLeft className="w-6 h-6" />
           </button>
         </Tooltip>
         <Link href={"/home"}>
@@ -113,7 +114,7 @@ export default function SideBar({
           <button
             className={`flex items-center gap-2 px-2 py-2 font-semibold text-white rounded-lg hover:bg-[#BA98D5]/20 transition-colors ${urbanist.className}`}
             aria-label="Go back"
-            onClick={() => router.back()}
+            onClick={() => router.push("/mindshare")}
           >
             <IoIosArrowBack className="w-5 h-5" />
             <span className="text-sm">Back</span>
