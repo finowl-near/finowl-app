@@ -136,7 +136,7 @@ export default function TableBody() {
             <td align="center" className="py-4 px-3">
               <TopInfluencers
                 tickerSymbol={info.ticker_symbol}
-                influencers={allInfluencers}
+                influencersData={tableData}
               />
             </td>
             <td className="py-4 px-3">
