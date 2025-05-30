@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { utils } from "near-api-js";
 import { Toaster, toast } from "sonner";
+import { CONTRACT_ID } from "@/app/Wallets/near";
 
 export default function PurchaseTokens({
   isModalOpen,
@@ -21,7 +22,7 @@ export default function PurchaseTokens({
         `Purchasing tokens with ${purchaseAmount} NEAR (${depositInYocto} yoctoNEAR)`
       );
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "call_js_func", // Call the dispatcher function
         args: {
           function_name: "buy_tokens_for_near",
@@ -40,7 +41,8 @@ export default function PurchaseTokens({
       setModalOpen(false);
       toast.success("Succesfully purchased 10,000 tokens")
     } catch (error) {
-      alert(`${error} in purchase tokens`);
+      toast.error(`Error: ${error}`);
+      // alert(`${error} in purchase tokens`);
     }
   }
   return (

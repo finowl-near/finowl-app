@@ -15,6 +15,8 @@ import { useUserConversations } from "@/app/hooks/useUserConversations";
 import { Dropdown } from "antd";
 import MyDropdown from "./MyDropdown";
 import { Tooltip } from "antd";
+import { CONTRACT_ID } from "@/app/Wallets/near";
+import Link from "next/link";
 
 export default function SideBar({
   collapsed,
@@ -43,7 +45,7 @@ export default function SideBar({
     }
     try {
       const result = await viewFunction({
-        contractId: "finowl.testnet",
+        contractId: CONTRACT_ID,
         method: "view_js_func",
         args: {
           function_name: "get_conversation_history",
@@ -57,7 +59,7 @@ export default function SideBar({
       console.log("View method failed, trying call method:", viewError);
 
       const result = await callFunction({
-        contractId: "finowl.testnet",
+        contractId: CONTRACT_ID,
         method: "view_js_func",
         args: {
           function_name: "get_conversation_history",
@@ -95,7 +97,9 @@ export default function SideBar({
             <FaBars className="w-6 h-6" />
           </button>
         </Tooltip>
+        <Link href={"/home"}>
         <LogoIcon />
+        </Link>
       </div>
 
       <motion.div
