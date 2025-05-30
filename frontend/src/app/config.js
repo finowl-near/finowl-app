@@ -2,6 +2,8 @@
 // 	testnet: "trustybite.testnet",
 // };
 
+import { NETWORK_ID } from "./Wallets/near";
+
 // export const NetworkId = "testnet";
 // export const CounterContract = contractPerNetwork[NetworkId];
 
@@ -26,6 +28,6 @@ const contractPerNetwork = {
 	},
   };
   
-  export const NetworkId = 'testnet';
+  export const NetworkId = NETWORK_ID;
   export const HelloNearContract = contractPerNetwork[NetworkId];
   export const EVMWalletChain = evmWalletChains[NetworkId];
