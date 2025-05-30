@@ -12,6 +12,7 @@ import useConversationId from "@/app/hooks/useConversationId";
 import { useUserConversations } from "@/app/hooks/useUserConversations";
 import { useUserBlance } from "@/app/hooks/useUserBalance";
 import { toast, Toaster } from "sonner";
+import { CONTRACT_ID } from "@/app/Wallets/near";
 
 export default function Chat() {
   const { signedAccountId, callFunction, viewFunction } = useWalletSelector();
@@ -32,7 +33,7 @@ export default function Chat() {
       const reserveAmount = "1000000000";
 
       const result = await callFunction({
-        contractId: "finowl.testnet",
+        contractId: CONTRACT_ID,
         method: "call_js_func",
         args: {
           function_name: "start_ai_conversation",
@@ -52,7 +53,8 @@ export default function Chat() {
       // setConversationHistory((prev) => [...prev, ])
       toast.success("New converstaion created you can start chating");
     } catch (error) {
-      alert(`${error} in handleStart conversation`);
+      toast.error(`Error: ${error}`);
+      // alert(`${error} in handleStart conversation`);
     }
   }
 
