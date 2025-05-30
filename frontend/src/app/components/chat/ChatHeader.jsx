@@ -10,6 +10,7 @@ import Image from "next/image";
 import { Tooltip } from "antd";
 import PurchaseTokens from "./PurchaseTokens";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function ChatHeader({
   toggle,
@@ -50,9 +51,11 @@ export default function ChatHeader({
               <FaBars className="w-6 h-6" />
             </button>
           </Tooltip>
-          <span className={`${!collapsed && "hidden"}`}>
-            <LogoIcon />
-          </span>
+          <Link href={"/home"}>
+            <span className={`${!collapsed && "hidden"}`}>
+              <LogoIcon />
+            </span>
+          </Link>
         </div>
         <div className="flex gap-3">
           <button

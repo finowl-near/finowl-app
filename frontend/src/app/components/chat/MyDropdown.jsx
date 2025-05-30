@@ -7,6 +7,7 @@ import Modal from "../Modal";
 import { motion } from "motion/react";
 import { toast, Toaster } from "sonner";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import { CONTRACT_ID } from "@/app/Wallets/near";
 
 export default function MyDropdown({
   tokensLeft,
@@ -41,7 +42,7 @@ export default function MyDropdown({
       }
       const internalAmount = (tokenAmount * 1_000_000).toFixed(0);
       const result = await callFunction({
-        contractId: "finowl.testnet",
+        contractId: CONTRACT_ID,
         method: "call_js_func",
         args: {
           function_name: "add_tokens_to_conversation",
@@ -59,7 +60,8 @@ export default function MyDropdown({
       setModalOpen("");
       toast.success("Succesfully added tokens");
     } catch (error) {
-      alert(`${error} in handle Add Token To Conversation`);
+      toast.error(`Error: ${error}`);
+      // alert(`${error} in handle Add Token To Conversation`);
       setLoading(false);
     }
   }
@@ -73,7 +75,7 @@ export default function MyDropdown({
         return;
       }
       const result = await callFunction({
-        contractId: "finowl.testnet",
+        contractId: CONTRACT_ID,
         method: "call_js_func",
         args: {
           function_name: "refund_reserved_tokens",
@@ -90,7 +92,8 @@ export default function MyDropdown({
       setModalOpen("");
       toast.success("Succesfully refunded tokens");
     } catch (error) {
-      alert(`${error} in handle refund Token`);
+      toast.error(`Error: ${error}`);
+      // alert(`${error} in handle refund Token`);
       setLoading(false);
     }
   }
