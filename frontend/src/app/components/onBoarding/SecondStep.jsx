@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { motion } from "motion/react";
+import { toast } from "sonner";
+import { CONTRACT_ID } from "@/app/Wallets/near";
 
 export default function SecondStep({
   onNext,
@@ -23,7 +25,7 @@ export default function SecondStep({
       const gas = "100000000000000"; // 100 Tgas
 
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "storage_deposit",
         args: {
           account_id: signedAccountId,
@@ -34,9 +36,10 @@ export default function SecondStep({
 
       console.log("Storage registration result:", result);
       setRegisterStorage(true);
-      alert(
-        "Storage registration successful! Now please register your account to complete setup."
-      );
+      toast.success("Storage registration successful!")
+      // alert(
+      //   "Storage registration successful! Now please register your account to complete setup."
+      // );
       localStorage.setItem(
         `finow_user_status_${signedAccountId}`,
         JSON.stringify({
@@ -46,7 +49,8 @@ export default function SecondStep({
       );
     } catch (error) {
       console.error("Error registering storage:", error);
-      alert(`Storage registration failed: ${error.message}`);
+      toast.error(`Error: ${error}`);
+      // alert(`Storage registration failed: ${error.message}`);
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { CONTRACT_ID } from "@/app/Wallets/near";
 
 export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
   const { signedAccountId, callFunction, viewFunction, signIn, signOut } =
@@ -20,7 +22,7 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
       const timestamp = Math.floor(Date.now() / 1000);
 
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "call_js_func",
         args: {
           function_name: "grant_free_tokens",
@@ -39,12 +41,13 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
       //   setShowWelcomeTokenPopup(false);
 
       // Cache the token claimed status
-
-      alert(
-        "Free tokens successfully claimed! You can now start using Finowl services.",
-        balance
-      );
+      toast.success(`Free Tokens successfully claimed!`);
+      // alert(
+      //   "Free tokens successfully claimed! You can now start using Finowl services.",
+      //   balance
+      // );
     } catch (error) {
+      toast.error(`Error: ${error}`);
       console.error("Error claiming free tokens:", error);
     } finally {
       setLoading(false);
@@ -116,7 +119,7 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
           whileTap={{ scale: 0.95 }}
           className="bg-[#BA98D5] text-[#231C28] font-semibold py-2 px-6 rounded-lg shadow-md"
           onClick={() => {
-            router.push('/dashbaord');
+            router.push('/chat');
           }}
         >
           Launch App
@@ -135,7 +138,7 @@ const getUserTokenBalance = async (signedAccountId, viewFunction) => {
     // First try with view_js_func
     try {
       const result = await viewFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "view_js_func",
         args: {
           function_name: "get_user_token_balance",
@@ -158,7 +161,7 @@ const getUserTokenBalance = async (signedAccountId, viewFunction) => {
 
       // Try with get_user as fallback
       const userData = await viewFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "get_user",
         args: { account_id: signedAccountId },
       });
