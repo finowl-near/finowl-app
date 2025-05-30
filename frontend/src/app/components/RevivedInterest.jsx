@@ -5,8 +5,8 @@ import BigFireIcon from "./Icons/BigFireIcon";
 import useTableData from "../hooks/useTableData";
 import TopInfluencers from "./TopInfluencers";
 
-export default function TrendingMindshareScore() {
-  const trendingData = useTableData((state) => state.trendingData);
+export default function RevivedInterest() {
+  const revivedInterest = useTableData((state) => state.revivedInterest);
   const topInfluencers = useTableData((state) => state.topInfluencers);
 
   const renderSkeletonRow = (key) => (
@@ -27,12 +27,12 @@ export default function TrendingMindshareScore() {
   );
 
   return (
-    <div className="relative m-1 sm:m-4 border border-[#292929] rounded-[10px] overflow-hidden">
+    <div className="relative max-[1350px]:col-span-full m-1 sm:m-4 border border-[#292929] rounded-[10px] overflow-hidden">
       <div className="absolute top-2 right-0 w-32 h-8 bg-[var(--primary-color)] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
       <div className="flex items-center p-4 cursor-pointer justify-between">
         <div className="flex items-center">
           <FireIcon />
-          <p className="text-xl font-bold text-white ml-2">Fresh Mentions</p>
+          <p className="text-xl font-bold text-white ml-2">Revived Interest</p>
         </div>
         <ChevronRightIcon className="w-5" color="var(--primary-color)" />
       </div>
@@ -50,9 +50,9 @@ export default function TrendingMindshareScore() {
               </tr>
             </thead>
             <tbody>
-              {!trendingData
+              {!revivedInterest
                 ? Array.from({ length: 5 }).map((_, i) => renderSkeletonRow(i))
-                : trendingData.tickers.slice(0, 5).map((ticker, idx) => (
+                : revivedInterest.tickers.slice(0, 5).map((ticker, idx) => (
                     <tr key={ticker.ticker_symbol + idx}>
                       <td className="text-[var(--primary-color)] font-bold text-center px-3 py-3">
                         <div className="flex gap-4">
@@ -72,7 +72,7 @@ export default function TrendingMindshareScore() {
                       <td className="py-3">
                         <TopInfluencers
                           tickerSymbol={ticker.ticker_symbol}
-                          influencersData={trendingData}
+                          influencersData={revivedInterest}
                         />
                       </td>
                     </tr>

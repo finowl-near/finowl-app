@@ -3,6 +3,8 @@ import { create } from "zustand";
 const useTableData = create((set) => ({
   tableData: [],
   trendingData: null,
+  recentMomentum: null,
+  revivedInterest: null,
   topInfluencers: null,
   allInfluencers: null,
   onChainData: null,
@@ -16,6 +18,14 @@ const useTableData = create((set) => ({
   setTrendingMindshareScore: (data) => {
     console.log("trending", data);
     set({ trendingData: data });
+  },
+  setRecentMomentum: (data) => {
+    console.log("recent momentum", data);
+    set({ recentMomentum: data });
+  },
+  setRevivedInterest: (data) => {
+    console.log("revived interest", data);
+    set({ revivedInterest: data });
   },
   setTopInfluencers: (data) => {
     console.log("top inf", data);

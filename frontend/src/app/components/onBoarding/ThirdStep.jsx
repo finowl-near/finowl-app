@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { motion } from "motion/react";
+import { toast } from "sonner";
+import { CONTRACT_ID } from "@/app/Wallets/near";
 
 export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
 
@@ -13,7 +15,7 @@ export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
     try {
       setLoading(true);
       const result = await callFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "call_js_func",
         args: {
           function_name: "register_user",
@@ -22,9 +24,10 @@ export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
 
       console.log("User registration result:", result);
       setRegisterUser(true);
-      alert(
-        "Account registration successful! Your account is now fully set up to use Finowl."
-      );
+      toast.success("Account registration successful!")
+      // alert(
+      //   "Account registration successful! Your account is now fully set up to use Finowl."
+      // );
       localStorage.setItem(
         `finow_user_status_${signedAccountId}`,
         JSON.stringify({
@@ -35,7 +38,8 @@ export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
       );
     } catch (error) {
       console.error("Error registering user:", error);
-      alert(`Registration failed: ${error.message}`);
+      toast.error(`Error: ${error}`);
+      // alert(`Registration failed: ${error.message}`);
     } finally {
       setLoading(false);
     }

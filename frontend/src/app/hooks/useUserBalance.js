@@ -1,5 +1,6 @@
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { useCallback, useEffect, useState } from "react";
+import { CONTRACT_ID } from "../Wallets/near";
 
 export function useUserBlance() {
   const [balance, setBalance] = useState(0);
@@ -8,7 +9,7 @@ export function useUserBlance() {
   const refreshBalance = useCallback(async () => {
     try {
       const result = await viewFunction({
-        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || "finowl.testnet",
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "view_js_func",
         args: {
           function_name: "get_user_token_balance",

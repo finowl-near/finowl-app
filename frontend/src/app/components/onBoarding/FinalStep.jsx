@@ -5,7 +5,7 @@ import React, { useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 
-export default function FinalStep({ redirectTo = "/dashboard", delayMs = 1500 }) {
+export default function FinalStep({ redirectTo = "/chat", delayMs = 1500 }) {
   const router = useRouter();
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function FinalStep({ redirectTo = "/dashboard", delayMs = 1500 })
         aria-label="Redirecting spinner"
       />
       <h2 className="text-2xl font-bold text-white">All set!</h2>
-      <p className="text-white">Redirecting you to the app…</p>
+      <p className="text-white">Redirecting you to the Chat…</p>
     </motion.div>
   );
 }

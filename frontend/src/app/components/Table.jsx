@@ -12,8 +12,10 @@ import getOnchainActivity from "../api/getOnchainActivity";
 import { useRouter, useSearchParams } from "next/navigation";
 import getSummary from "../api/getSummary";
 import Pagination from "./Pagination";
+import getRecentMomentum from "../api/getRecentMomentum";
+import getRevivedInterest from "../api/getRevivedInterest";
 
-function parseInfluencers(data) {
+export function parseInfluencers(data) {
   const result = new Map();
 
   data.tickers.forEach((ticker) => {
@@ -41,13 +43,16 @@ export function extractCategories(markdown) {
   const categories = [
     { key: "featuredTickersAndProjects", tag: "FEATURED TICKERS AND PROJECTS" },
     { key: "keyInsightsFromInfluencers", tag: "KEY INSIGHTS FROM INFLUENCERS" },
-    { key: "marketSentimentAndDirections", tag: "MARKET SENTIMENT AND DIRECTIONS" }
+    {
+      key: "marketSentimentAndDirections",
+      tag: "MARKET SENTIMENT AND DIRECTIONS",
+    },
   ];
 
   for (const category of categories) {
     const tagPattern = new RegExp(
       `<!-- BEGIN ${category.tag} -->[\\s\\r\\n]*((?:.*\\n)*?)[\\s\\r\\n]*<!-- END ${category.tag} -->`,
-      'i'
+      "i"
     );
 
     const match = markdown.match(tagPattern);
@@ -55,18 +60,17 @@ export function extractCategories(markdown) {
       let content = match[1].trim();
 
       // Remove leading heading line if it matches the tag (e.g. "## FEATURED TICKERS AND PROJECTS")
-      const lines = content.split('\n');
+      const lines = content.split("\n");
       if (lines[0].toUpperCase().includes(category.tag)) {
         lines.shift();
       }
 
-      sections[category.key] = lines.join('\n').trim();
+      sections[category.key] = lines.join("\n").trim();
     }
   }
 
   return sections;
 }
-
 
 export default function Table() {
   const router = useRouter();
@@ -80,6 +84,8 @@ export default function Table() {
   const setTrendingMindshareScore = useTableData(
     (state) => state.setTrendingMindshareScore
   );
+  const setRecentMomentum = useTableData((state) => state.setRecentMomentum);
+  const setRevivedInterest = useTableData((state) => state.setRevivedInterest);
   const setTopInfluencers = useTableData((state) => state.setTopInfluencers);
   const setOnchainActivity = useTableData((state) => state.setOnchainActivity);
   const setAllInfluencers = useTableData((state) => state.setAllInfluencers);
@@ -91,6 +97,8 @@ export default function Table() {
       console.log("before fetching", page, feedId);
       const data = await getTableData(page);
       const trendingData = await getTrendingMindshareScore();
+      const recentMomentum = await getRecentMomentum();
+      const revivedInterest = await getRevivedInterest();
       const onChainData = await getOnchainActivity();
 
       const feedData = await getSummary();
@@ -102,9 +110,9 @@ export default function Table() {
       console.log("data", data);
       setTableData(data);
       setTrendingMindshareScore(trendingData);
-      const topInfluencers = parseInfluencers(trendingData);
+      setRecentMomentum(recentMomentum);
+      setRevivedInterest(revivedInterest);
       const allInfluencers = parseInfluencers(data);
-      setTopInfluencers(topInfluencers);
       setOnchainActivity(onChainData);
       setAllInfluencers(allInfluencers);
       return data;
@@ -145,19 +153,27 @@ export default function Table() {
           </table>
         </div>
       </div>
-      <div className="p-4 flex justify-center gap-10">
-        <div className="flex cursor-pointer" onClick={handlePreviousPage}>
+      <div className="p-4 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-10">
+        <div
+          className="flex items-center cursor-pointer"
+          onClick={handlePreviousPage}
+        >
           <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
-          <p className="text-[#D0D0D0]">Previous</p>
+          <p className="text-[#D0D0D0] ml-1">Previous</p>
         </div>
+
         <Pagination
           tableData={tableData}
           page={page}
           searchParams={searchParams}
           router={router}
         />
-        <div className="flex cursor-pointer" onClick={handleNextPage}>
-          <p className="text-[#D0D0D0]">Next</p>
+
+        <div
+          className="flex items-center cursor-pointer"
+          onClick={handleNextPage}
+        >
+          <p className="text-[#D0D0D0] mr-1">Next</p>
           <ChevronRightIcon className="w-4" color="var(--primary-color)" />
         </div>
       </div>

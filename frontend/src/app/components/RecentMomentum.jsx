@@ -5,8 +5,8 @@ import BigFireIcon from "./Icons/BigFireIcon";
 import useTableData from "../hooks/useTableData";
 import TopInfluencers from "./TopInfluencers";
 
-export default function TrendingMindshareScore() {
-  const trendingData = useTableData((state) => state.trendingData);
+export default function RecentMomentum() {
+  const recentMomentum = useTableData((state) => state.recentMomentum);
   const topInfluencers = useTableData((state) => state.topInfluencers);
 
   const renderSkeletonRow = (key) => (
@@ -32,7 +32,7 @@ export default function TrendingMindshareScore() {
       <div className="flex items-center p-4 cursor-pointer justify-between">
         <div className="flex items-center">
           <FireIcon />
-          <p className="text-xl font-bold text-white ml-2">Fresh Mentions</p>
+          <p className="text-xl font-bold text-white ml-2">Recent Momentum</p>
         </div>
         <ChevronRightIcon className="w-5" color="var(--primary-color)" />
       </div>
@@ -50,9 +50,9 @@ export default function TrendingMindshareScore() {
               </tr>
             </thead>
             <tbody>
-              {!trendingData
+              {!recentMomentum
                 ? Array.from({ length: 5 }).map((_, i) => renderSkeletonRow(i))
-                : trendingData.tickers.slice(0, 5).map((ticker, idx) => (
+                : recentMomentum.tickers.slice(0, 5).map((ticker, idx) => (
                     <tr key={ticker.ticker_symbol + idx}>
                       <td className="text-[var(--primary-color)] font-bold text-center px-3 py-3">
                         <div className="flex gap-4">
@@ -72,7 +72,7 @@ export default function TrendingMindshareScore() {
                       <td className="py-3">
                         <TopInfluencers
                           tickerSymbol={ticker.ticker_symbol}
-                          influencersData={trendingData}
+                          influencersData={recentMomentum}
                         />
                       </td>
                     </tr>

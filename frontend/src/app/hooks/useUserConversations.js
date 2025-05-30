@@ -1,6 +1,7 @@
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { useCallback, useEffect, useState } from "react";
 import useConversationId from "./useConversationId";
+import { CONTRACT_ID } from "../Wallets/near";
 
 export function useUserConversations() {
   const { signedAccountId, viewFunction, callFunction } = useWalletSelector();
@@ -26,7 +27,7 @@ export function useUserConversations() {
       // Try to get conversations using view method first
       try {
         const result = await viewFunction({
-          contractId: "finowl.testnet",
+          contractId: CONTRACT_ID,
           method: "view_js_func",
           args: {
             function_name: "get_user_conversations",
@@ -40,7 +41,7 @@ export function useUserConversations() {
           result.map(async (convId) => {
             try {
               const metadata = await viewFunction({
-                contractId: "finowl.testnet",
+                contractId: CONTRACT_ID,
                 method: "view_js_func",
                 args: {
                   function_name: "get_conversation_metadata",
@@ -82,7 +83,7 @@ export function useUserConversations() {
         console.log("View method failed, trying call method:", viewError);
 
         const result = await callFunction({
-          contractId: "finowl.testnet",
+          contractId: CONTRACT_ID,
           method: "call_js_func",
           args: {
             function_name: "get_user_conversations",
@@ -96,7 +97,7 @@ export function useUserConversations() {
           result.map(async (convId) => {
             try {
               const metadata = await callFunction({
-                contractId: "finowl.testnet",
+                contractId: CONTRACT_ID,
                 method: "call_js_func",
                 args: {
                   function_name: "get_conversation_metadata",

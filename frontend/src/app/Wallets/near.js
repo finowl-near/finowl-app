@@ -6,11 +6,14 @@ import { distinctUntilChanged, map } from 'rxjs';
 import '@near-wallet-selector/modal-ui/styles.css';
 import { setupModal } from '@near-wallet-selector/modal-ui';
 import { setupWalletSelector } from '@near-wallet-selector/core';
-import { setupHereWallet } from '@near-wallet-selector/here-wallet';
+// import { setupHereWallet } from '@near-wallet-selector/here-wallet';
 import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet';
 
 const THIRTY_TGAS = '30000000000000';
 const NO_DEPOSIT = '0';
+
+export const CONTRACT_ID = "finowl.near"
+export const NETWORK_ID = "mainnet"
 
 export class Wallet {
   /**
@@ -22,7 +25,7 @@ export class Wallet {
    * const wallet = new Wallet({ networkId: 'testnet', createAccessKeyFor: 'contractId' });
    * wallet.startUp((signedAccountId) => console.log(signedAccountId));
    */
-  constructor({ networkId = 'testnet', createAccessKeyFor = "finowl.testnet" }) {
+  constructor({ networkId = NETWORK_ID, createAccessKeyFor = CONTRACT_ID }) {
     this.createAccessKeyFor = createAccessKeyFor;
     this.networkId = networkId;
   }
@@ -35,7 +38,7 @@ export class Wallet {
   startUp = async (accountChangeHook) => {
     this.selector = setupWalletSelector({
       network: this.networkId,
-      modules: [setupMyNearWallet(), setupHereWallet()]
+      modules: [setupMyNearWallet()]
     });
 
     const walletSelector = await this.selector;

@@ -10,9 +10,12 @@ import Image from "next/image";
 import ChatListIcon from "./Icons/ChatListIcon";
 import WifiIcon from "./Icons/WifiIcon";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function TableSearch() {
   const { switchTabs, setSwitchTabs } = useSwitchTabs();
+  const pathName = usePathname();
+
   return (
     <div className="flex flex-col gap-2 md:flex-row  md:justify-between md:items-center">
       <div className="flex gap-5">
@@ -51,25 +54,27 @@ export default function TableSearch() {
             Feed
           </button>
         </div>
-        <Link href={'/chat'}>
-          <div
-            className={`${
-              switchTabs === "chat" &&
-              " bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content]"
-            } rounded-md p-px transition-all duration-300 ease-in-out`}
-          >
-            <button
+        {pathName !== "/trading" && (
+          <Link href={"/chat"}>
+            <div
               className={`${
-                switchTabs === "chat"
-                  ? "bg-black/80 rounded-md  text-white"
-                  : "text-[#9D9D9D]"
-              } font-normal px-2 py-px text-lg flex items-center`}
+                switchTabs === "chat" &&
+                " bg-gradient-to-r from-transparent from-30% to-[var(--primary-color)] w-[fit-content]"
+              } rounded-md p-px transition-all duration-300 ease-in-out`}
             >
-              <ChatListIcon />
-              Chat
-            </button>
-          </div>
-        </Link>
+              <button
+                className={`${
+                  switchTabs === "chat"
+                    ? "bg-black/80 rounded-md  text-white"
+                    : "text-[#9D9D9D]"
+                } font-normal px-2 py-px text-lg flex items-center`}
+              >
+                <ChatListIcon />
+                Chat
+              </button>
+            </div>
+          </Link>
+        )}
       </div>
       <div
         className={`flex justify-end items-center gap-5 ${

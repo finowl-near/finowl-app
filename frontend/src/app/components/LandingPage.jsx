@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useCallback, useState } from "react";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { usePathname, useRouter } from "next/navigation"; // Import useRouter
 import Header from "./Header";
 import TrendingMindshareScore from "./TrendingMindshareScore";
 import TrendingOnchainActivity from "./TrendingOnchainActivity";
@@ -16,6 +16,8 @@ import Feeds from "./Feeds";
 // import Chat from "./Chat";
 import OnBoarding from "./onboarding/OnBoarding";
 import Modal from "./Modal";
+import RecentMomentum from "./RecentMomentum";
+import RevivedInterest from "./RevivedInterest";
 
 export default function LandingPage() {
   const switchTabs = useSwitchTabs((state) => state.switchTabs);
@@ -38,16 +40,15 @@ export default function LandingPage() {
   return (
     <>
       <div
-        className={`grid grid-cols-[repeat(auto-fill,minmax(450px,1fr))] ${
+        className={`grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(450px,1fr))] ${
           switchTabs === "chat" && "hidden"
         }`}
       >
         <TrendingMindshareScore />
-        <TrendingOnchainActivity />
-        <div className="m-4 grid grid-rows-2 col-span-full br-col-span-1">
-          <PopularPost />
-          <NewPost />
-        </div>
+        {/*///Recent Momentum*/}
+        <RecentMomentum />
+        {/*///Revived Interest*/}
+        <RevivedInterest />
       </div>
       <div className="m-4">
         <TableSearch />

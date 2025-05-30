@@ -12,12 +12,26 @@ import { urbanist } from "@/app/fonts";
 import { Tooltip } from "antd";
 import { toast, Toaster } from "sonner";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
+import { CONTRACT_ID } from "@/app/Wallets/near";
+import {
+  detectTradeIntent,
+  generateTradeIntentResponse,
+  generateTradeIntentResponseWithQuote,
+} from "@/app/Wallets/utils/tradeIntentDestector";
+import TradeConfirmationModal from "./TradeConfirmationModal";
+import { initializeOneClickService } from "../../Wallets/utils/oneClickQuoteService";
+import { addPublicKeyIfNotExists, hasPublicKey, isStorageDeposited } from "./utils/isStorageDeposite";
 
+// TODO: need to be added in .env
+const JWT_TOKEN = process.env.NEXT_PUBLIC_JWT_TOKEN;
 export default function ChatMessages({ conversationHistory, refresh }) {
   console.log("inside", conversationHistory);
-  const { callFunction } = useWalletSelector();
+  const walletSelector = useWalletSelector();
+  const { signedAccountId, callFunction, getAccessKeys, viewFunction, wallet } = walletSelector;
   const convId = useConversationId((state) => state.convId);
   const tokensLeft = useConversationId((state) => state.tokensLeft);
+  const [tradeModalData, setTradeModalData] = useState(null);
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
 
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -31,7 +45,13 @@ export default function ChatMessages({ conversationHistory, refresh }) {
 
   // whenever the prop array changes, re‐build our internal messages
   useEffect(() => {
-    setMessages(conversationHistory.slice());
+    initializeOneClickService(JWT_TOKEN);
+    const mapped = conversationHistory.map(({ role, content }) => ({
+      sender: role === "user" ? "user" : "bot",
+      text: content,
+    }));
+
+    setMessages(mapped);
   }, [conversationHistory]);
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -44,7 +64,7 @@ export default function ChatMessages({ conversationHistory, refresh }) {
       // TODO: check if messages empty
       console.log("messages", messages);
       if (messages.length === 0) {
-        toast.error('cannot save empt conversation');
+        toast.error("cannot save empt conversation");
         setLoading(false);
         return;
       }
@@ -59,7 +79,7 @@ export default function ChatMessages({ conversationHistory, refresh }) {
         tokens_used: internalTokens,
       };
       const result = await callFunction({
-        contractId: "finowl.testnet",
+        contractId: CONTRACT_ID,
         method: "call_js_func",
         args: {
           function_name: "save_full_conversation",
@@ -72,13 +92,133 @@ export default function ChatMessages({ conversationHistory, refresh }) {
       if (!result) {
         throw new Error("Error while saving conversation");
       }
-      toast.success('Succesfully saved conversation');
+      toast.success("Succesfully saved conversation");
       refresh();
       setLoading(false);
     } catch (error) {
-      alert(`${error} in handle save full conversation`);
+      toast.error(`Error: ${error}`);
+      // alert(`${error} in handle save full conversation`);
       setLoading(false);
     }
+  }
+
+  function handleTradeCancel() {
+    const cancellationMessage = `## 🚫 Trade Cancelled\n \
+    **Trade Details:**\n- **Amount:** \
+    ${tradeModalData.tradeIntent.amount} ${tradeModalData.tradeIntent.originAsset}\n- \
+    **From:** ${tradeModalData.tradeIntent.originAsset}\n- \
+    **To:** ${tradeModalData.tradeIntent.destinationAsset}\n\n**Status:** Cancelled by user\n \
+    You can send a new message if you'd like to try a different trade or ask another question.`;
+    setMessages((prev) => {
+      const withoutLoading = prev.filter((m) => m.sender !== "loading");
+      return [...withoutLoading, { sender: "bot", text: cancellationMessage }];
+    });
+    setIsTradeModalOpen(false);
+    setTradeModalData(null);
+  }
+
+  async function handleTradeIntentMessage(tradeIntentResult, messageSent) {
+    console.log("trade result", tradeIntentResult);
+    // WORKFLOW 1: Template matched - handle front-side only with JSON response
+    console.log("Trade intent detected:", tradeIntentResult.data);
+
+    // Use quote-enabled response if 1Click service is available
+    console.log("Using 1Click service for enhanced trade response");
+    let tradeResponse;
+    try {
+      const quoteResponse = await generateTradeIntentResponseWithQuote(
+        tradeIntentResult.data,
+        {
+          slippageTolerance: 100, // 1% default slippage
+          connectedWallet: signedAccountId, // Pass connected wallet
+        }
+      );
+
+      // Check if the response contains a successful quote with deposit address
+      if (
+        quoteResponse.includes("Live Quote Retrieved!") &&
+        quoteResponse.includes("Deposit Address:")
+      ) {
+        // Extract formatted quote data for the modal
+        const formattedQuote = await (async () => {
+          try {
+            // Re-get the quote to access structured data
+            const {
+              generateTradeIntentResponseWithQuote,
+              formatQuoteForDisplay,
+            } = await import("../../Wallets/utils/tradeIntentDestector");
+            const { getQuoteForTradeIntent } = await import(
+              "../../Wallets/utils/oneClickQuoteService"
+            );
+
+            const quoteData = await getQuoteForTradeIntent(
+              tradeIntentResult.data,
+              {
+                slippageTolerance: 100,
+                connectedWallet: signedAccountId,
+              }
+            );
+
+            if (quoteData.success) {
+              const { formatQuoteForDisplay } = await import(
+                "../../Wallets/utils/oneClickQuoteService"
+              );
+              return formatQuoteForDisplay(quoteData);
+            }
+            return null;
+          } catch (error) {
+            toast.error(`Error extracting quote data for modal: ${error}`);
+            return null;
+          }
+        })();
+
+        // Show confirmation modal if we have valid quote data
+        if (
+          formattedQuote &&
+          formattedQuote.success &&
+          formattedQuote.depositAddress !== "N/A"
+        ) {
+          setTradeModalData({
+            tradeIntent: tradeIntentResult.data,
+            quote: formattedQuote,
+            fullResponse: quoteResponse,
+            message: messageSent,
+          });
+          setIsTradeModalOpen(true);
+          return; // Don't show the response immediately, wait for user confirmation
+        }
+      }
+
+      // If no valid quote or deposit address, show response normally
+      tradeResponse = quoteResponse;
+    } catch (quoteError) {
+      toast.error(
+        `Quote generation failed, falling back to basic response: ${quoteError}`
+      );
+      tradeResponse = generateTradeIntentResponse(tradeIntentResult.data);
+    }
+
+    // Calculate tokens for trade response
+    const tradeResponseTokens = calculateTokens(tradeResponse);
+    console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
+
+    // Create system message for the trade intent response
+    const tradeSystemMessage = {
+      sender: "bot",
+      text: tradeResponse,
+      timestamp: Math.floor(Date.now() / 1000),
+      metadata: {
+        type: "template_response",
+        isChargeable: false,
+        tradeIntent: true,
+      },
+    };
+
+    // Add to in-memory messages (no token deduction needed for template responses)
+    setMessages((prev) => [...prev, tradeSystemMessage]);
+    console.log(
+      "Trade intent response added to in-memory messages (FREE - no tokens charged)"
+    );
   }
 
   async function handleSend() {
@@ -93,15 +233,15 @@ export default function ChatMessages({ conversationHistory, refresh }) {
     setMessages((prev) => [...prev, { sender: "loading", text: "..." }]);
     setMessage("");
     try {
-      // Append user message
-      const timestamp = Math.floor(Date.now() / 1000);
-      // Create user message object
-      const userMessage = {
-        role: "user",
-        content: message,
-        timestamp: timestamp,
-      };
       console.log("message???", message);
+      // FIRST: Check if the message matches a trade intent template
+      const tradeIntentResult = detectTradeIntent(message);
+      if (tradeIntentResult.isTradeIntent) {
+        const publicKeys = await getAccessKeys(signedAccountId);
+        addPublicKeyIfNotExists(signedAccountId, publicKeys[0].public_key, viewFunction, callFunction)
+        handleTradeIntentMessage(tradeIntentResult, message);
+        return;
+      }
       const userMessageToken = calculateTokens(message);
       console.log(`User message uses ${userMessageToken} tokens`);
       const aiResponse = await analyzeMarket(message);
@@ -122,7 +262,8 @@ export default function ChatMessages({ conversationHistory, refresh }) {
       });
       refresh();
     } catch (error) {
-      alert("error catched in handle send", error);
+      toast.error(`Error: ${error}`);
+      // alert("error catched in handle send", error);
     }
 
     // reset textarea height
@@ -135,6 +276,15 @@ export default function ChatMessages({ conversationHistory, refresh }) {
     <>
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Messages list */}
+        <TradeConfirmationModal
+          isTradeModalOpen={isTradeModalOpen}
+          setIsTradeModalOpen={setIsTradeModalOpen}
+          tradeModalData={tradeModalData}
+          message={message}
+          onConfirm={() => console.log("confirm trade")}
+          onCancel={handleTradeCancel}
+          setMessages={setMessages}
+        />
         <div
           className={`flex-1 flex ${
             messages.length === 0 && "justify-center"
