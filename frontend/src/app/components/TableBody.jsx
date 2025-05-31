@@ -13,6 +13,8 @@ import whale from "@/app/assets/svg/whale.svg";
 import TopInfluencers from "./TopInfluencers";
 import moment from "moment";
 import Link from "next/link";
+import useFilter from "../hooks/useFilter";
+import DophinRow from "./DophinRow";
 
 const UnderRadar = (
   <div className="flex justify-center">
@@ -44,7 +46,8 @@ const Alpha = (
 export default function TableBody() {
   const tableData = useTableData((state) => state.tableData);
   const allInfluencers = useTableData((state) => state.allInfluencers);
-  console.log("body", tableData);
+  const filter = useFilter((state) => state.filter);
+  console.log("filter ->", filter);
   /// TODO dont forget to do spinner
   if (tableData.length === 0) {
     return (
@@ -102,34 +105,11 @@ export default function TableBody() {
               </p>
             </td>
             <td align="center" className="py-4 px-3">
-              <Tooltip above={true} text={<TradersVolume />}>
-                <div className="relative h-full flex items-center justify-center">
-                  <Image
-                    className="w-12 absolute left-1 z-10 "
-                    src={dophin}
-                    width={undefined}
-                    height={undefined}
-                    alt="dophin icon "
-                  />
-                  <Image
-                    className="w-12 absolute right-[23px] mask"
-                    src={whale}
-                    width={undefined}
-                    height={undefined}
-                    alt="dophin icon "
-                  />
-                  <span className="absolute top-2 right-[55%] z-10 h-5 w-5 p-1 flex items-center justify-center rounded-full border-2 border-black bg-[#B0DEF6] text-black font-semibold">
-                    5
-                  </span>
-                  <span className="absolute top-2 right-5 h-5 w-5 p-1 border-2 border-black flex items-center  justify-center rounded-full bg-[#356FF9] text-black font-semibold">
-                    5
-                  </span>
-                </div>
-              </Tooltip>
+              <DophinRow/>
             </td>
             <td align="center" className="py-4 px-3">
               <p className="text-[#D0D0D0] font-medium text-center">
-                {moment(info.first_mentioned_at).fromNow()}
+                {moment(info.last_mentioned_at).fromNow()}
               </p>
             </td>
             <td className="p-4">{tier}</td>

@@ -14,6 +14,7 @@ import getSummary from "../api/getSummary";
 import Pagination from "./Pagination";
 import getRecentMomentum from "../api/getRecentMomentum";
 import getRevivedInterest from "../api/getRevivedInterest";
+import useSortTable from "../hooks/useSortTable";
 
 export function parseInfluencers(data) {
   const result = new Map();
@@ -79,6 +80,7 @@ export default function Table() {
   const page = parseInt(searchParams.get("page"));
   const feedId = parseInt(searchParams.get("feedId"));
 
+  const { sort, sortDir } = useSortTable();
   const tableData = useTableData((state) => state.tableData);
   const setTableData = useTableData((state) => state.setTableData);
   const setTrendingMindshareScore = useTableData(
@@ -92,10 +94,10 @@ export default function Table() {
   const setFeed = useTableData((state) => state.setFeed);
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: ["tableData", page],
+    queryKey: ["tableData", page, sort, sortDir],
     queryFn: async () => {
       console.log("before fetching", page, feedId);
-      const data = await getTableData(page);
+      const data = await getTableData(page, sort, sortDir);
       const trendingData = await getTrendingMindshareScore();
       const recentMomentum = await getRecentMomentum();
       const revivedInterest = await getRevivedInterest();

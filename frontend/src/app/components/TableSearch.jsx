@@ -11,10 +11,44 @@ import ChatListIcon from "./Icons/ChatListIcon";
 import WifiIcon from "./Icons/WifiIcon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Dropdown } from "antd";
+import useFilter from "../hooks/useFilter";
 
 export default function TableSearch() {
   const { switchTabs, setSwitchTabs } = useSwitchTabs();
   const pathName = usePathname();
+  const { filter, setFilter } = useFilter();
+
+  const items = [
+    {
+      key: "1",
+      label: (
+        <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#3D2C4B] rounded-md">
+          <input
+            type="radio"
+            checked={filter === "Near"}
+            onChange={() => setFilter("Near")}
+            className="accent-[#BA98D5]"
+          />
+          <span className="text-white">Near Specific</span>
+        </label>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#3D2C4B] rounded-md">
+          <input
+            type="radio"
+            checked={filter === "All"}
+            onChange={() => setFilter("All")}
+            className="accent-[#BA98D5]"
+          />
+          <span className="text-white">All</span>
+        </label>
+      ),
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-2 md:flex-row  md:justify-between md:items-center">
@@ -89,13 +123,15 @@ export default function TableSearch() {
           <div className="absolute top-2 right-5 w-32 h-4 bg-[var(--primary-color)] -z-10 rounded-[20px_20px_100px_100px] blur-xl opacity-65"></div>
           <input
             className="bg-transparent outline-none w-full rounded-full pl-8 pr-2 py-2 border border-[#292929] text-white"
-            placeholder="Search icon"
+            placeholder="Search..."
           />
         </div>
         <div>
-          <button className="p-2 border border-[#292929] rounded-md">
-            <FunnelIcon />
-          </button>
+          <Dropdown menu={{ items }} trigger={["click"]}>
+            <button className="p-2 border border-[#292929] rounded-md">
+              <FunnelIcon />
+            </button>
+          </Dropdown>
         </div>
       </div>
     </div>

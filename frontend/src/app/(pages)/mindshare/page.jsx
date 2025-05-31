@@ -1,7 +1,8 @@
 import Header from "@/app/components/Header";
 import LandingPage from "@/app/components/LandingPage";
 import React from "react";
-import { FaEnvelope, FaTwitter } from "react-icons/fa";
+import { FaEnvelope } from "react-icons/fa";
+import { BsTwitterX } from "react-icons/bs";
 
 export default function page() {
   return (
@@ -32,7 +33,7 @@ export default function page() {
               rel="noopener noreferrer"
               className="hover:text-[#BA98D5]"
             >
-              <FaTwitter className="w-4 h-4" color="#FFFFFF" />
+              <BsTwitterX className="w-4 h-4" color="#FFFFFF" />
             </a>
           </div>
         </div>
