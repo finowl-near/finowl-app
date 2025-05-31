@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import CoinLogo from "../assets/svg/coinLogo.svg";
 import Image from "next/image";

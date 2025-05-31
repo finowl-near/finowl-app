@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useWalletSelector } from "@near-wallet-selector/react-hook";

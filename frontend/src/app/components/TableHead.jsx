@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import SortingIcon from "./Icons/SortingIcon";
 import { Tooltip } from "antd";

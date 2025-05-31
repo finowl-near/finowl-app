@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import FireIcon from "./Icons/FireIcon";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";

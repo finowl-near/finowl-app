@@ -2,32 +2,6 @@ import React, { useEffect, useState } from "react";
 import useTableData from "../hooks/useTableData";
 import { parseInfluencers } from "./Table";
 
-function countInfluencersByTier(influencers) {
-  const tierCount = {
-    influencer_tier_1: 0,
-    influencer_tier_2: 0,
-    influencer_tier_3: 0,
-  };
-
-  if (
-    
-    !influencers ||
-    typeof influencers !== "object"
-  ) {
-    return tierCount;
-  }
-
-  for (const influencer in influencers) {
-    const info = influencers[influencer];
-    const tier = info.tier;
-    console.log('influenser tier => ', tier);
-    if (typeof tier === "number" && tier >= 1 && tier <= 3) {
-      tierCount[`influencer_tier_${tier}`]++;
-    }
-  }
-
-  return tierCount;
-}
 
 export default function TopInfluencers({
   tickerSymbol,

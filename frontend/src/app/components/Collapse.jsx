@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";

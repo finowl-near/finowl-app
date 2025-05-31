@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import React, { useRef, useState } from "react";
 import calenderIcon from "@/app/assets/svg/calenderIcon.svg";
