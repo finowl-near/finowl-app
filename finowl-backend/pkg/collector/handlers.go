@@ -2,7 +2,6 @@ package collector
 
 import (
 	"finowl-backend/pkg/analyzer"
-	"finowl-backend/pkg/storer"
 	"fmt"
 	"log"
 
@@ -41,26 +40,10 @@ func (b *Bot) handleCategoryMessage(category string, m *discordgo.MessageCreate)
 	tweet := b.analyzer.ProcessMessage(m.Content, m.Author.Username, m.Timestamp)
 
 	if tweet.IsValid {
-		b.processValidTweet(category, m, tweet)
+		b.processValidTweetNEAR(category, m, tweet)
 	} else {
 		b.logInvalidTweet(category, tweet)
 	}
-}
-
-// processValidTweet handles the logic for valid tweets
-func (b *Bot) processValidTweet(category string, m *discordgo.MessageCreate, tweet *analyzer.Tweet) {
-
-	tt := storer.TransformToStorerTweet(*tweet)
-
-	b.storer.InsertTweet(tt)
-	tickers := storer.ConvertTweetsToTickers([]storer.Tweet{tt}, b.influencers)
-	b.storer.InsertTickersBatch(tickers)
-
-	b.logInfluencerInfo(tweet.Author)
-
-	// Collect the formatted tweet content
-	b.collectFormattedTweet(category, m)
-
 }
 
 // logInfluencerInfo logs information about the influencer

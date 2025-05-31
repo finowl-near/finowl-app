@@ -1,0 +1,48 @@
+version: '3.1'
+services:
+  near-server:
+    build:
+      context: ./finowl-backend
+      dockerfile: cmd/near/Dockerfile
+    container_name: finowl-near-server
+    depends_on:
+      - near-db
+    environment:
+      - FINOWL_DB_HOST=near-db
+      - FINOWL_DB_PORT=5432
+      - FINOWL_DB_USER=finowl_user
+      - FINOWL_DB_PASSWORD=finowl_pass
+      - FINOWL_DB_NAME=finowl_db
+      - FINOWL_DISCORD_TOKEN=${FINOWL_DISCORD_TOKEN}
+      - FINOWL_CHANNEL_ID=${FINOWL_CHANNEL_ID}
+      - FINOWL_CLAUDE_API_KEY=${FINOWL_CLAUDE_API_KEY}
+      - FINOWL_AI_GEN_SUMMARY_INTERVAL=${FINOWL_AI_GEN_SUMMARY_INTERVAL}
+    volumes:
+      - ./finowl-backend/config.yaml:/app/config.yaml
+      - ./finowl-backend/influencers.yaml:/app/influencers.yaml
+      - ./finowl-backend/prompt.txt:/app/prompt.txt
+    ports:
+      - "8081:8081"
+    networks:
+      - near-network
+
+  near-db:
+    image: postgres:15-alpine
+    container_name: finowl-near-db
+    environment:
+      - POSTGRES_USER=finowl_user
+      - POSTGRES_PASSWORD=finowl_pass
+      - POSTGRES_DB=finowl_db
+    volumes:
+      - near_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - near-network
+
+volumes:
+  near_postgres_data:
+
+networks:
+  near-network:
+    driver: bridge 
