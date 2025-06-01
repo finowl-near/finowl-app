@@ -89,7 +89,7 @@ export default function OnBoarding() {
       }
     })();
     // checkUserStatus();
-  }, [signedAccountId]);
+  }, [signedAccountId, viewFunction]);
 
   return (
     <>

@@ -7,7 +7,7 @@ import BigFireIcon from "./Icons/BigFireIcon";
 import useTableData from "../hooks/useTableData";
 import TopInfluencers from "./TopInfluencers";
 
-export default function TrendingMindshareScore() {
+export default function FreshMentions() {
   const trendingData = useTableData((state) => state.trendingData);
   const topInfluencers = useTableData((state) => state.topInfluencers);
 
@@ -38,10 +38,11 @@ export default function TrendingMindshareScore() {
         </div>
         <ChevronRightIcon className="w-5" color="var(--primary-color)" />
       </div>
-      <div className="px-4 relative">
-        <div className="absolute right-0 bottom-0">
+      <div className="absolute right-0 bottom-0">
           <BigFireIcon />
         </div>
+      <div className="px-4 relative">
+        
         <div>
           <table className="w-full">
             <thead>

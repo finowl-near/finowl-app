@@ -1,7 +1,7 @@
 const { create } = require("zustand");
 
 const useFilter = create((set) => ({
-    filter: "Near",
+    filter: "All",
     setFilter: (ft) => {
         set({ filter: ft })
     }

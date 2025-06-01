@@ -3,6 +3,7 @@ import "./globals.css";
 import { rethinkSans } from "./fonts";
 import Header from "./components/Header";
 import Provider from "./components/Provider";
+import Script from "next/script";
 
 const metadata = {
   title: "finowl",
@@ -16,6 +17,18 @@ export default function RootLayout({ children }) {
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
         <link rel="icon" href="/favicon.ico" />
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-9NJLN64937"
+        ></Script>
+        <Script id="googleAn">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-9NJLN64937');
+          `}
+        </Script>
       </head>
       <body className={` ${rethinkSans.className} bg-black antialiased`}>
         <div className="//bg-image//">

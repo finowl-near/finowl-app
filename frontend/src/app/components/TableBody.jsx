@@ -51,7 +51,7 @@ export default function TableBody() {
   const filter = useFilter((state) => state.filter);
   console.log("filter ->", filter);
   /// TODO dont forget to do spinner
-  if (tableData.length === 0) {
+  if (!tableData || tableData.length === 0) {
     return (
       <tbody className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <tr>

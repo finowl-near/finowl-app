@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export default async function getTrendingMindshareScore() {
+export default async function getFreshMentions() {
     const response = await axios.get('https://finowl.finance/api/v0/fresh-mentions');
     if (response.status === 200) {
         return response.data;

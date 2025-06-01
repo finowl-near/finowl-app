@@ -7,7 +7,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getTableData from "../api/getTableData";
 import useTableData from "../hooks/useTableData";
-import getTrendingMindshareScore from "../api/getTrendingMindshareScore";
+import getFreshMentions from "../api/getFreshMentions";
 import getOnchainActivity from "../api/getOnchainActivity";
 import { useRouter, useSearchParams } from "next/navigation";
 import getSummary from "../api/getSummary";
@@ -15,6 +15,7 @@ import Pagination from "./Pagination";
 import getRecentMomentum from "../api/getRecentMomentum";
 import getRevivedInterest from "../api/getRevivedInterest";
 import useSortTable from "../hooks/useSortTable";
+import useFilter from "../hooks/useFilter";
 
 export function parseInfluencers(data) {
   const result = new Map();
@@ -86,6 +87,7 @@ export default function Table() {
   const setTrendingMindshareScore = useTableData(
     (state) => state.setTrendingMindshareScore
   );
+  const filter = useFilter((state) => state.filter);
   const setRecentMomentum = useTableData((state) => state.setRecentMomentum);
   const setRevivedInterest = useTableData((state) => state.setRevivedInterest);
   const setTopInfluencers = useTableData((state) => state.setTopInfluencers);
@@ -94,30 +96,40 @@ export default function Table() {
   const setFeed = useTableData((state) => state.setFeed);
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: ["tableData", page, sort, sortDir],
+    queryKey: ["tableData", page, sort, sortDir, filter],
     queryFn: async () => {
-      console.log("before fetching", page, feedId);
-      const data = await getTableData(page, sort, sortDir);
-      const trendingData = await getTrendingMindshareScore();
-      const recentMomentum = await getRecentMomentum();
-      const revivedInterest = await getRevivedInterest();
-      const onChainData = await getOnchainActivity();
-
-      const feedData = await getSummary();
-      const section = extractCategories(feedData.summary.content);
-      setFeed(section, feedData, feedData.total);
-
-      console.log("summary content", feedData);
-      console.log("summary data", section);
-      console.log("data", data);
-      setTableData(data);
-      setTrendingMindshareScore(trendingData);
-      setRecentMomentum(recentMomentum);
-      setRevivedInterest(revivedInterest);
-      const allInfluencers = parseInfluencers(data);
-      setOnchainActivity(onChainData);
-      setAllInfluencers(allInfluencers);
-      return data;
+      try {
+        console.log("before fetching", page, feedId);
+        const data = await getTableData(page, sort, sortDir, filter);
+        const trendingData = await getFreshMentions();
+        const recentMomentum = await getRecentMomentum();
+        const revivedInterest = await getRevivedInterest();
+        const onChainData = await getOnchainActivity();
+        
+        const feedData = await getSummary(filter);
+        console.log("query refetched");
+        if (!feedData) {
+          throw new Error('cannot get feed data');
+        }
+        const section = extractCategories(feedData.summary.content);
+        setFeed(section, feedData, feedData.total);
+        console.log("summary content", feedData);
+        console.log("summary data", section);
+        console.log("data", data);
+        setTableData(data);
+        setTrendingMindshareScore(trendingData);
+        setRecentMomentum(recentMomentum);
+        setRevivedInterest(revivedInterest);
+        const allInfluencers = parseInfluencers(data);
+        setOnchainActivity(onChainData);
+        setAllInfluencers(allInfluencers);
+        return data;
+      } catch (error) {
+        console.log("Error catched", error);
+        setFeed(null, null, null)
+        setTableData(null);
+        return null;
+      }
     },
   });
 
@@ -137,7 +149,7 @@ export default function Table() {
     router.push(`?${newParams.toString()}`, { scroll: false });
   }
 
-  console.log("total page", tableData.total_page_cnt);
+  // console.log("total page", tableData.total_page_cnt);
   return (
     <div>
       <div className="relative overflow-hidden">
@@ -158,7 +170,11 @@ export default function Table() {
       <div className="p-4 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-10">
         <div
           className="flex items-center cursor-pointer"
-          onClick={handlePreviousPage}
+          onClick={() => {
+            if (tableData) {
+              handlePreviousPage();
+            }
+          }}
         >
           <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
           <p className="text-[#D0D0D0] ml-1">Previous</p>
@@ -173,7 +189,11 @@ export default function Table() {
 
         <div
           className="flex items-center cursor-pointer"
-          onClick={handleNextPage}
+          onClick={() => {
+            if (tableData) {
+              handleNextPage();
+            }
+          }}
         >
           <p className="text-[#D0D0D0] mr-1">Next</p>
           <ChevronRightIcon className="w-4" color="var(--primary-color)" />

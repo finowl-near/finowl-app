@@ -96,7 +96,7 @@ export default function ChatHeader({
                   `Secure`,
                   `SameSite=Lax`,
                 ].join("; ");
-                router.push("/");
+                router.push("/mindshare");
               }}
               className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[150px] font-bold p-2 rounded-xl"
               // title={label}

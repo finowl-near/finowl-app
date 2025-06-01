@@ -267,11 +267,11 @@ export default function TradeConfirmationModal({
           </h3>
           <p className="text-white text-sm sm:text-base mb-1">
             This trade was detected from your message:{" "}
-            <strong>"{tradeModalData.message}"</strong>
+            <strong>&quot;{tradeModalData.message}&quot;</strong>
           </p>
           <p className="text-white text-sm sm:text-base">
             The system has generated a live quote with real deposit addresses
-            and amounts. If you confirm, you'll receive detailed instructions on
+            and amounts. If you confirm, you&apos;ll receive detailed instructions on
             how to execute this trade.
           </p>
         </section>

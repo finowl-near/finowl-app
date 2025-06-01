@@ -12,6 +12,7 @@ import { extractCategories } from "./Table";
 import ReactMarkdown from "react-markdown";
 import CalendarIcon from "./Icons/CalendarIcon";
 import Collapse from "./Collapse";
+import { EyeIcon, InboxIcon } from "@heroicons/react/24/solid";
 
 export default function Feeds() {
   const feed = useTableData((state) => state.feed);
@@ -24,15 +25,15 @@ export default function Feeds() {
   const feedList = [
     {
       title: "Featured Tickers & Projects",
-      feed: feed["featuredTickersAndProjects"],
+      feed: feed && feed["featuredTickersAndProjects"],
     },
     {
       title: "Key Insights from Influencers",
-      feed: feed["keyInsightsFromInfluencers"],
+      feed: feed && feed["keyInsightsFromInfluencers"],
     },
     {
       title: "Market Sentiment & Direction",
-      feed: feed["marketSentimentAndDirections"],
+      feed: feed && feed["marketSentimentAndDirections"],
     },
   ];
   const [choose, setChoose] = useState(0);
@@ -95,9 +96,16 @@ export default function Feeds() {
             {feedList[2].title}
           </p>
         </div>
-        <div className="text-white p-5">
-          <ReactMarkdown>{feedList[choose].feed}</ReactMarkdown>
-        </div>
+        {!feedList[choose].feed ? (
+          <div className="flex flex-col items-center justify-center text-center h-64 w-full">
+            <InboxIcon className="w-16 h-16 text-[var(--primary-color)] mb-2" />
+            <p className="text-[#D5D5D5] font-semibold">No data</p>
+          </div>
+        ) : (
+          <div className="text-white p-5">
+            <ReactMarkdown>{feedList[choose].feed}</ReactMarkdown>
+          </div>
+        )}
       </div>
       <div className="block md:hidden">
         <Collapse
@@ -117,7 +125,11 @@ export default function Feeds() {
           {/* Previous Button */}
           <div
             className="flex items-center gap-1 cursor-pointer"
-            onClick={handlePreviousFeed}
+            onClick={() => {
+              if (feedList[choose].feed) {
+                handlePreviousFeed();
+              }
+            }}
           >
             <ChevronLeftIcon className="w-4" color="var(--primary-color)" />
             <p className="text-[#D0D0D0] text-sm sm:text-base">Previous</p>
@@ -126,7 +138,9 @@ export default function Feeds() {
           {/* Date Display & Picker */}
           <div className="flex items-center gap-3">
             <p className="text-black font-semibold text-xs sm:text-sm px-2 py-px rounded-md bg-[var(--primary-color)]">
-              {moment(feedData.summary.timestamp).format("MMMM Do, hA")}
+              {moment(feedData?.summary?.timestamp || new Date()).format(
+                "MMMM Do, hA"
+              )}
             </p>
             <input
               ref={inputRef}
@@ -148,7 +162,11 @@ export default function Feeds() {
           {/* Next Button */}
           <div
             className="flex items-center gap-1 cursor-pointer"
-            onClick={handleNextFeed}
+            onClick={() => {
+              if (feedList[choose].feed) {
+                handleNextFeed();
+              }
+            }}
           >
             <p className="text-[#D0D0D0] text-sm sm:text-base">Next</p>
             <ChevronRightIcon className="w-4" color="var(--primary-color)" />

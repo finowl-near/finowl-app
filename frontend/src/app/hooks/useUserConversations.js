@@ -2,6 +2,7 @@ import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { useCallback, useEffect, useState } from "react";
 import useConversationId from "./useConversationId";
 import { CONTRACT_ID } from "../Wallets/near";
+import { toast } from "sonner";
 
 export function useUserConversations() {
   const { signedAccountId, viewFunction, callFunction } = useWalletSelector();
@@ -121,7 +122,7 @@ export function useUserConversations() {
                 tokensRemaining: displayRemaining,
               };
             } catch (error) {
-              alert(`Error fetching metadata for conversation ${convId}:`);
+              toast.error(`Error fetching metadata for conversation ${convId}:`);
               return {
                 id: convId,
                 metadata: null,
@@ -134,7 +135,7 @@ export function useUserConversations() {
         setConversations(conversationsWithMetadata);
       }
     } catch (error) {
-      alert(`${error} Error fetching conversations:`);
+      toast.error(`Error fetching conversations: ${error}`);
     } finally {
       setTimeout(() => setLoading(false), 200); // Slight delay to avoid UI flash
     }

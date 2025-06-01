@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 export async function deductAiTokens(aiMessageTokens, convId) {
     try {
         // Calculate the total tokens needed for this AI response
@@ -37,7 +39,7 @@ export async function deductAiTokens(aiMessageTokens, convId) {
               `**Please add more tokens to continue.** You can do this by using the "Add Tokens to Conversation" panel.`,
             timestamp: Math.floor(Date.now() / 1000)
           };
-        alert(`Error in deduct token ${error}`);
+        toast.error(`Error: Insufficient Tokens`);
         return null;
     }
 }

@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 // Function to analyze the market using the AI analyzer service
 export async function analyzeMarket(question) {
     try {
@@ -26,8 +28,7 @@ export async function analyzeMarket(question) {
       console.log("AI market analysis result:", analysisResult);
       return analysisResult;
     } catch (error) {
-      alert("Error calling AI market analyzer:", error);
-  
+      toast.error(`Error calling AI market analyzer: ${error}`);
       // Return null to indicate analysis failed
       return null;
     }

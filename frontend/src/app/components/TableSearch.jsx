@@ -17,25 +17,13 @@ import useFilter from "../hooks/useFilter";
 export default function TableSearch() {
   const { switchTabs, setSwitchTabs } = useSwitchTabs();
   const pathName = usePathname();
-  const { filter, setFilter } = useFilter();
+  const setFilter = useFilter((state) => state.setFilter);
+  const filter = useFilter((state) => state.filter);
 
   const items = [
+    
     {
       key: "1",
-      label: (
-        <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#3D2C4B] rounded-md">
-          <input
-            type="radio"
-            checked={filter === "Near"}
-            onChange={() => setFilter("Near")}
-            className="accent-[#BA98D5]"
-          />
-          <span className="text-white">Near Specific</span>
-        </label>
-      ),
-    },
-    {
-      key: "2",
       label: (
         <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#3D2C4B] rounded-md">
           <input
@@ -45,6 +33,20 @@ export default function TableSearch() {
             className="accent-[#BA98D5]"
           />
           <span className="text-white">All</span>
+        </label>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#3D2C4B] rounded-md">
+          <input
+            type="radio"
+            checked={filter === "Near"}
+            onChange={() => setFilter("Near")}
+            className="accent-[#BA98D5]"
+          />
+          <span className="text-white">Near Specific</span>
         </label>
       ),
     },

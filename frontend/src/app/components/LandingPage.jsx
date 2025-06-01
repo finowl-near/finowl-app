@@ -3,7 +3,7 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { usePathname, useRouter } from "next/navigation"; // Import useRouter
 import Header from "./Header";
-import TrendingMindshareScore from "./TrendingMindshareScore";
+import FreshMentions from "./FreshMentions";
 import TrendingOnchainActivity from "./TrendingOnchainActivity";
 import PopularPost from "./PopularPost";
 import NewPost from "./NewPost";
@@ -44,7 +44,7 @@ export default function LandingPage() {
           switchTabs === "chat" && "hidden"
         }`}
       >
-        <TrendingMindshareScore />
+        <FreshMentions />
         {/*///Recent Momentum*/}
         <RecentMomentum />
         {/*///Revived Interest*/}

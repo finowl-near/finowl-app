@@ -1,6 +1,7 @@
 import { useWalletSelector } from "@near-wallet-selector/react-hook";
 import { useCallback, useEffect, useState } from "react";
 import { CONTRACT_ID } from "../Wallets/near";
+import { toast } from "sonner";
 
 export function useUserBlance() {
   const [balance, setBalance] = useState(0);
@@ -28,7 +29,7 @@ export function useUserBlance() {
           : 0;
       setBalance(computedBalence);
     } catch (error) {
-      alert(`${error} in tokenBalence`);
+      toast.error(`${error}`);
     } finally {
       setTimeout(() => setLoadingBalance(false), 200);
     }

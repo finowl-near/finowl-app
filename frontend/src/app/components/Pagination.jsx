@@ -1,9 +1,10 @@
 import { Fragment } from "react";
 
 const Pagination = ({ tableData, page, searchParams, router }) => {
-  const totalPages = tableData.total_page_cnt;
+  const totalPages = tableData?.total_page_cnt || 5;
   const currentPage = page;
   const maxVisiblePages = 5; // Adjust this number to control how many pages are visible
+  const isDisabled = !tableData;
 
   const renderPageNumbers = () => {
     const pages = [];
@@ -88,6 +89,7 @@ const Pagination = ({ tableData, page, searchParams, router }) => {
   };
 
   const handlePageClick = (pageIndex) => {
+    if (isDisabled) return;
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set("page", pageIndex.toString());
     router.push(`?${newParams.toString()}`, { scroll: false });

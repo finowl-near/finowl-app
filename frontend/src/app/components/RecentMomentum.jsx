@@ -38,10 +38,11 @@ export default function RecentMomentum() {
         </div>
         <ChevronRightIcon className="w-5" color="var(--primary-color)" />
       </div>
-      <div className="px-4 relative">
-        <div className="absolute right-0 bottom-0">
+      <div className="absolute right-0 bottom-0">
           <BigFireIcon />
         </div>
+      <div className="px-4 relative">
+        
         <div>
           <table className="w-full">
             <thead>

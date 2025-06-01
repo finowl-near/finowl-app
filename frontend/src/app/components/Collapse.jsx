@@ -4,6 +4,8 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import useTableData from "../hooks/useTableData";
+import { EyeIcon, InboxIcon } from "@heroicons/react/24/solid";
+
 
 export default function Collapse({ feedList, choose, handleShowFeed }) {
   const feed = useTableData((state) => state.feed);
@@ -82,13 +84,22 @@ export default function Collapse({ feedList, choose, handleShowFeed }) {
           </li>
         </div>
       </div>
-      <div
-        className={`p-2 text-white border border-[#292929] ${
-          collapsed ? "rounded-[15px]" : "rounded-b-[15px]"
-        } `}
-      >
-        <ReactMarkdown>{feedList[choose].feed}</ReactMarkdown>
-      </div>
+      {
+        !feedList[choose].feed ? (
+          <div className="flex flex-col items-center justify-center text-center h-64 w-full">
+            <InboxIcon className="w-16 h-16 text-[var(--primary-color)] mb-2" />
+            <p className="text-[#D5D5D5] font-semibold">No data</p>
+          </div>
+        ) :(
+          <div
+            className={`p-2 text-white border border-[#292929] ${
+              collapsed ? "rounded-[15px]" : "rounded-b-[15px]"
+            } `}
+          >
+            <ReactMarkdown>{feedList[choose].feed}</ReactMarkdown>
+          </div>
+        )
+      }
     </>
   );
 }
