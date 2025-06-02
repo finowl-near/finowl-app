@@ -34,7 +34,6 @@ export default function SecondStep({
         deposit: depositAmount,
       });
 
-      console.log("Storage registration result:", result);
       setRegisterStorage(true);
       toast.success("Storage registration successful!")
       // alert(

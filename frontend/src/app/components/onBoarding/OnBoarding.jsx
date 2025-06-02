@@ -23,7 +23,6 @@ export default function OnBoarding() {
   const [loadingStatus, setLoadingStatus] = useState(true);
 
   function handleNext() {
-    console.log("next step");
     setStep((prev) => Math.min(prev + 1, 5));
   }
 
@@ -45,7 +44,6 @@ export default function OnBoarding() {
             account_id: signedAccountId,
           },
         });
-        console.log("result after", result);
         if (!result) {
           setStep(2);
           return;
@@ -60,7 +58,6 @@ export default function OnBoarding() {
             account_id: signedAccountId,
           },
         });
-        console.log("result after2", result1);
         if (!result1.registered) {
           setStep(3);
           return;
@@ -75,7 +72,6 @@ export default function OnBoarding() {
             account_id: signedAccountId,
           },
         });
-        console.log("result after3", result2);
         if (!result2.received) {
           setStep(4);
           return;
@@ -83,7 +79,6 @@ export default function OnBoarding() {
         setStep(5);
       } catch (error) {
         toast.error(`Error: ${error}`);
-        console.log("error in useEffect", error);
       } finally {
         setLoadingStatus(false);
       }

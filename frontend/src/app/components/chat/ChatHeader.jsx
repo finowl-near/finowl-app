@@ -88,15 +88,16 @@ export default function ChatHeader({
           <Tooltip title={"Logout " + label} color="#1C1A22">
             <button
               onClick={async () => {
-                await action();
                 document.cookie = [
                   `nearAccount=`,
                   `Path=/`,
-                  `Max-Age=0`,
                   `Secure`,
                   `SameSite=Lax`,
                 ].join("; ");
-                router.push("/mindshare");
+                await action();
+                setTimeout(() => {
+                  window.location.href = "/mindshare";
+                }, 1000);
               }}
               className="text-white bg-[#1F1923] border border-[#BA98D5] truncate max-w-[150px] font-bold p-2 rounded-xl"
               // title={label}

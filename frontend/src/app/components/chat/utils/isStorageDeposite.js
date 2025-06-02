@@ -21,10 +21,8 @@ export async function isStorageDeposited(accountId, contractId) {
     if (!result) {
       throw new Error("Cannot get result");
     }
-    console.log("result inside => ", result);
     const decoded = Buffer.from(result.result).toString();
     const balance = JSON.parse(decoded);
-    console.log("result balance => ", balance && balance.total !== undefined);
 
     return balance && balance.total !== undefined;
   } catch (e) {
@@ -68,7 +66,6 @@ export async function addPublicKeyIfNotExists(
       gas,
       deposit: "1",
     });
-    console.log("✅ Public key successfully added:", result);
     toast.success(
       "Public key registered. You may receive rewards or NEAR shortly."
     );

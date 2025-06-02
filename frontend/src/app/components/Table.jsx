@@ -99,7 +99,6 @@ export default function Table() {
     queryKey: ["tableData", page, sort, sortDir, filter],
     queryFn: async () => {
       try {
-        console.log("before fetching", page, feedId);
         const data = await getTableData(page, sort, sortDir, filter);
         const trendingData = await getFreshMentions();
         const recentMomentum = await getRecentMomentum();
@@ -107,15 +106,11 @@ export default function Table() {
         const onChainData = await getOnchainActivity();
         
         const feedData = await getSummary(filter);
-        console.log("query refetched");
         if (!feedData) {
           throw new Error('cannot get feed data');
         }
         const section = extractCategories(feedData.summary.content);
         setFeed(section, feedData, feedData.total);
-        console.log("summary content", feedData);
-        console.log("summary data", section);
-        console.log("data", data);
         setTableData(data);
         setTrendingMindshareScore(trendingData);
         setRecentMomentum(recentMomentum);
@@ -125,7 +120,6 @@ export default function Table() {
         setAllInfluencers(allInfluencers);
         return data;
       } catch (error) {
-        console.log("Error catched", error);
         setFeed(null, null, null)
         setTableData(null);
         return null;
@@ -149,7 +143,6 @@ export default function Table() {
     router.push(`?${newParams.toString()}`, { scroll: false });
   }
 
-  // console.log("total page", tableData.total_page_cnt);
   return (
     <div>
       <div className="relative overflow-hidden">

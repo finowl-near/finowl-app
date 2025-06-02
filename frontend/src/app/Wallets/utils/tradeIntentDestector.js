@@ -305,7 +305,6 @@ export async function generateTradeIntentResponseWithQuote(tradeData, quoteOptio
   
   try {
     // Get quote from 1Click API
-    console.log('Requesting quote for trade intent:', tradeData);
     const quoteResponse = await getQuoteForTradeIntent(tradeData, quoteOptions);
     
     if (quoteResponse.success) {

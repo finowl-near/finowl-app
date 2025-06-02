@@ -13,7 +13,6 @@ export default function TopInfluencers({
   // const tierCount = countInfluencersByTier(influencers);
   const tickerMap = parsedInfluensers.get(tickerSymbol);
   const tickerArray = [...tickerMap];
-  console.log("debug", tickerSymbol, tickerArray);
 
   return (
     <div className="flex items-center justify-center">

@@ -53,7 +53,6 @@ export default function MyDropdown({
       if (!result) {
         throw new Error("cannot add tokens");
       }
-      console.log("success -> ", result);
       refresh();
       refreshBalance();
       setLoading(false);
@@ -85,7 +84,6 @@ export default function MyDropdown({
       if (!result) {
         throw new Error("cannot refund tokens");
       }
-      console.log("success -> ", result);
       refresh();
       refreshBalance();
       setLoading(false);
@@ -160,7 +158,6 @@ export default function MyDropdown({
             placeholder="0.00"
             className=" w-full bg-[#1F1923] text-white placeholder-white/40 border border-[#BA98D5] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#BA98D5] transition"
             onChange={(e) => {
-              console.log("amount", Number(e.target.value));
               setTokenAmount(Number(e.target.value));
             }}
           />

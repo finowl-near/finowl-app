@@ -20,7 +20,6 @@ export function useUserBlance() {
       if (!result) {
         throw new Error("Cannot view user balence");
       }
-      console.log("balence result", result);
       const computedBalence =
         typeof result === "string"
           ? parseInt(result) / 1000000
@@ -39,6 +38,6 @@ export function useUserBlance() {
     if (signedAccountId) {
       refreshBalance();
     }
-  }, [refreshBalance]);
+  }, [signedAccountId, refreshBalance]);
   return { balance, loadingBalance, refreshBalance };
 }

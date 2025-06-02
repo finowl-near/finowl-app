@@ -74,7 +74,6 @@ export class SwapTrackingService {
   
       const pollStatus = async () => {
         if (!isTracking || attempts >= maxAttempts) {
-          console.log(`🛑 Stopping tracking after ${attempts} attempts`);
           stopTracking();
           onStatusUpdate({
             status: 'timeout',
@@ -85,14 +84,12 @@ export class SwapTrackingService {
         }
   
         attempts++;
-        console.log(`📡 Polling swap status... (attempt ${attempts}/${maxAttempts})`);
   
         try {
           // NOTE: This would use the actual 1Click SDK
           // For now, we'll simulate the API call structure
           const response = await this.checkExecutionStatus(depositAddress);
           
-          console.log(`📊 Status check result:`, response);
   
           const statusInfo = this.STATUS_MESSAGES[response.status] || {
             title: '📊 Status Update',
@@ -106,7 +103,6 @@ export class SwapTrackingService {
           
           // Stop tracking immediately if completed to prevent duplicate calls
           if (isCompleted) {
-            console.log(`✅ Swap completed with status: ${response.status} - stopping tracking immediately`);
             stopTracking();
           }
   
@@ -119,7 +115,6 @@ export class SwapTrackingService {
           });
   
         } catch (error) {
-          console.error('❌ Error checking swap status:', error);
           
           onStatusUpdate({
             status: 'error',
@@ -137,7 +132,6 @@ export class SwapTrackingService {
   
       // Set up timeout
       timeoutTimer = setTimeout(() => {
-        console.log('⏰ Tracking timeout reached');
         stopTracking();
         onStatusUpdate({
           status: 'timeout',
@@ -164,7 +158,6 @@ export class SwapTrackingService {
      * @returns {Promise<Object>} Execution status response
      */
     static async checkExecutionStatus(depositAddress) {
-      console.log(`🔍 Checking execution status for: ${depositAddress}`);
       
       // For now, simulate the API response structure
       // In production, this would use:
@@ -184,7 +177,6 @@ export class SwapTrackingService {
       }
       
       const elapsedSeconds = Math.floor((Date.now() - trackingStartTime) / 1000);
-      console.log(`🕐 Swap tracking elapsed time: ${elapsedSeconds} seconds`);
       
       // Realistic progression: pending (0-10s) → processing (10-25s) → complete (25s+)
       if (elapsedSeconds < 10) {

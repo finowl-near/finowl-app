@@ -30,13 +30,13 @@ export default function LandingCopy() {
           <LogoIcon />
         </div>
         <Image
-          className="w-[28rem] sm:w-[35rem] blur-[5px] md:w-[45rem] rounded-full absolute mix-blend-hard-light top-4 sm:top-4 -right-2 z-0"
+          className="w-[28rem] sm:w-[32rem] blur-[5px] lg:blur-[0px] md:w-[42rem] rounded-full absolute mix-blend-hard-light top-4 sm:top-4 -right-2 z-0"
           src={owlLand}
           alt="owl land"
         />
         <div className="text-white py-16 sm:py-24 max-w-3xl relative z-20">
           <h1
-            className={`${urbanist.className} pb-8 font-semibold text-[38px] sm:text-[48px] md:text-[60px] leading-tight`}
+            className={`${urbanist.className} pb-8 font-semibold text-[38px] sm:text-[48px] md:text-[60px] leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,1)]`}
           >
             Spot Tomorrow’s <br className="hidden sm:block" />
             Crypto Winners, Today.
@@ -61,7 +61,6 @@ export default function LandingCopy() {
           </div>
         </div>
       </div>
-
       {/* Dashboard Preview */}
       <div className="relative z-10 flex justify-center px-4 pb-8 ">
         <div className="absolute top-[50%] left-[20%] -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-[#BA98D5]/30 blur-[150px] -z-10 pointer-events-none" />
@@ -116,7 +115,6 @@ export default function LandingCopy() {
           />
         </div>
       </div>
-
       {/* AI Overview */}
       <div className="px-6 relative py-20 text-white text-center max-w-5xl mx-auto">
         <div className="absolute top-[20%] left-[20%] -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-[#BA98D5]/30 blur-[150px] -z-10 pointer-events-none" />
@@ -135,7 +133,6 @@ export default function LandingCopy() {
           className="w-full max-w-4xl mx-auto rounded-xl shadow-lg"
         />
       </div>
-
       {/* Prompt Experience */}
       <div className="px-6 pt-8 pb-10 text-center relative">
         <div className="absolute top-[20%] left-[20%] -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-[#BA98D5]/30 blur-[150px] -z-10 pointer-events-none" />
@@ -145,23 +142,38 @@ export default function LandingCopy() {
           Prompt <span className="text-[#BA98D5]">Experience</span>
         </h2>
       </div>
-      <div className="px-6 pb-20 relative text-white max-w-7xl mx-auto grid gap-12 sm:grid-cols-2 flex-col-reverse sm:flex-row-reverse">
-        <div className="absolute top-[20%] left-[20%] -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-[#BA98D5]/30 blur-[150px] -z-10 pointer-events-none" />
-        <div className="flex flex-col justify-center">
-          <h3 className="text-3xl font-bold mb-4 text-white">
-            Ask Anything. <span className="text-[#BA98D5]">Get Context.</span>
-          </h3>
-          <p className="text-lg text-[#D0D0D0]">
-            Get instant answers to your crypto questions, sentiment breakdowns,
-            or risk analysis with FinOwl&apos;s AI chat. Fully integrated. Always
-            informed.
+      <div className="px-6 pb-20 text-white max-w-7xl mx-auto grid gap-12 sm:grid-cols-2 items-center">
+        {/* Text Section */}
+        <div className="flex flex-col justify-center leading-none">
+          <p
+            className={`text-white text-[40px] sm:text-[48px] md:text-[55px] ${urbanist.className} font-semibold`}
+          >
+            Ask <span className="text-[#BA98D5]">Anything</span>
+          </p>
+          <p
+            className={`text-white text-[40px] sm:text-[48px] md:text-[55px] ${urbanist.className} font-semibold`}
+          >
+            Get <span className="text-[#BA98D5]">Context</span>
+          </p>
+          <p
+            className={`${urbanist.className} text-white pt-4 font-light text-[18px] sm:text-[20px] md:text-[22px] leading-normal`}
+          >
+            Ask about trends, tokens, or sentiment. The AI delivers real-time
+            clarity — and even helps execute on-chain swaps with simple text
+            commands like:
+            <br />
+            <span className="italic text-[#D0D0D0]">
+              “Swap 0.1 USDC for NEAR”
+            </span>
           </p>
         </div>
-        <div>
+
+        {/* Image Section */}
+        <div className="w-full h-auto max-w-[600px] aspect-[16/9] overflow-hidden rounded-xl shadow-lg border border-[#2F2F2F]">
           <Image
             src={askAi}
             alt="AI Chat Prompt Screenshot"
-            className="w-full rounded-xl shadow-lg"
+            className="w-full h-full object-fill"
           />
         </div>
       </div>

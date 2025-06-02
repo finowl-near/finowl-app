@@ -3,7 +3,6 @@ import { toast } from "sonner";
 // Function to analyze the market using the AI analyzer service
 export async function analyzeMarket(question) {
     try {
-      console.log("Calling AI market analyzer with question:", question);
   
       // Set a longer timeout for the fetch (8 minutes)
       const controller = new AbortController();
@@ -25,7 +24,6 @@ export async function analyzeMarket(question) {
       }
   
       const analysisResult = await response.text(); // Changed from response.json() to response.text()
-      console.log("AI market analysis result:", analysisResult);
       return analysisResult;
     } catch (error) {
       toast.error(`Error calling AI market analyzer: ${error}`);

@@ -52,32 +52,12 @@ export default function TradeConfirmationModal({
 
   async function handleTradeConfirm() {
     setLoading(true);
-    console.log("✅ User confirmed trade:", tradeModalData.tradeIntent);
-    console.log("📋 Quote details:", tradeModalData.quote);
-    console.log("🚀 User wants to proceed with the token purchase");
 
     // Show the full response with quote details
     const tradeResponseTokens = calculateTokens(tradeModalData.fullResponse);
-    console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
-
-    // Debug: Log the complete quote structure
-    console.log(
-      "🔍 Complete tradeModalData.quote:",
-      JSON.stringify(tradeModalData.quote, null, 2)
-    );
-    console.log(
-      "🔍 tradeModalData.tradeIntent:",
-      JSON.stringify(tradeModalData.tradeIntent, null, 2)
-    );
 
     const { depositAddress, amountIn } = tradeModalData.quote;
     const { originAsset } = tradeModalData.tradeIntent;
-
-    console.log("📋 Extracted values:", {
-      depositAddress,
-      amountIn,
-      originAsset,
-    });
 
     if (depositAddress && depositAddress !== "N/A" && originAsset === "NEAR") {
       // Handle NEAR transfer with progress tracking
@@ -89,7 +69,6 @@ export default function TradeConfirmationModal({
         });
 
         if (transferResult.success) {
-          console.log("✅ Transfer successful, starting progress tracking");
 
           // Add transfer success message to chat
           setMessages((prev) => [...prev, transferResult.chatMessage]);
@@ -100,7 +79,6 @@ export default function TradeConfirmationModal({
             (update) => {
               // this callback runs on every poll
               setLoading(true);
-              console.log("📡 Tracking update:", update);
               // push update messages into chat
               // update comes with e.g. { status, statusInfo }
               setStatusInfo(update.statusInfo);
@@ -112,7 +90,6 @@ export default function TradeConfirmationModal({
                 trackingControllerRef.current?.stop();
                 setLoading(false);
                 setIsTradeModalOpen(false);
-                console.log("final => ", chatMessage);
                 setMessages((prev) => {
                   const withoutLoading = prev.filter(
                     (m) => m.sender !== "loading"
@@ -177,7 +154,6 @@ export default function TradeConfirmationModal({
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, manualTransferMessage]);
-      console.log(`ℹ️ Manual transfer message added for ${originAsset}`);
       setLoading(false);
       setIsTradeModalOpen(false);
     } else {

@@ -84,10 +84,6 @@ export function initializeOneClickService(jwtToken, baseUrl = ONE_CLICK_CONFIG.B
   OpenAPI.BASE = baseUrl;
   OpenAPI.TOKEN = jwtToken;
   
-  console.log('OneClick service initialized:', {
-    baseUrl,
-    hasToken: !!jwtToken
-  });
 }
 
 /**
@@ -166,7 +162,6 @@ function formatAmountForAPI(amount, tokenSymbol) {
       throw new Error(`Amount too large for practical use: ${formattedAmount}. Please use a smaller amount.`);
     }
     
-    console.log(`💰 Formatting amount: ${amount} ${tokenSymbol} with ${decimals} decimals = ${formattedAmount}`);
     
     return formattedAmount;
     
@@ -226,18 +221,6 @@ export function createQuoteRequest(tradeData, options = {}) {
     formattedAmount = formatAmountForAPI(tradeData.amount, amountTokenSymbol);
   }
 
-  console.log('🔧 Creating quote request with:', {
-    originalTradeData: tradeData,
-    mappedOriginAsset: originAsset,
-    mappedDestinationAsset: destinationAsset,
-    swapType,
-    amountTokenSymbol,
-    formattedAmount,
-    finalRefundTo,
-    finalRecipient,
-    slippageTolerance,
-    dry
-  });
 
   const quoteRequest = {
     dry: dry,
@@ -261,7 +244,6 @@ export function createQuoteRequest(tradeData, options = {}) {
     }
   });
 
-  console.log('📋 Final quote request being sent to API:', JSON.stringify(quoteRequest, null, 2));
 
   return quoteRequest;
 }
@@ -274,8 +256,6 @@ export function createQuoteRequest(tradeData, options = {}) {
  */
 export async function getQuoteForTradeIntent(tradeData, options = {}) {
   try {
-    console.log('🔄 Getting quote for trade intent:', tradeData);
-    console.log('🔧 Options provided:', options);
     
     // Validate input
     if (!tradeData) {
@@ -284,18 +264,15 @@ export async function getQuoteForTradeIntent(tradeData, options = {}) {
 
     // Create quote request
     const quoteRequest = createQuoteRequest(tradeData, options);
-    console.log('📋 Quote request created:', JSON.stringify(quoteRequest, null, 2));
 
     // Call the correct API method
     let quote;
     if (typeof OneClickService.getQuote === 'function') {
-      console.log('✅ Using getQuote method');
       quote = await OneClickService.getQuote(quoteRequest);
     } else {
       throw new Error('getQuote method not found in OneClickService. Available methods: ' + Object.getOwnPropertyNames(OneClickService).join(', '));
     }
 
-    console.log('📦 Quote received:', quote);
 
     return {
       success: true,
@@ -305,16 +282,6 @@ export async function getQuoteForTradeIntent(tradeData, options = {}) {
     };
 
   } catch (error) {
-    console.error('❌ Error getting quote:', error);
-    console.error('🔍 Error details:', {
-      name: error.name,
-      message: error.message,
-      status: error.status,
-      statusText: error.statusText,
-      body: error.body,
-      url: error.url,
-      stack: error.stack
-    });
     
     // Try to extract more detailed error information
     let detailedError = error.message;
@@ -330,7 +297,6 @@ export async function getQuoteForTradeIntent(tradeData, options = {}) {
           detailedError = errorBody.error;
         }
       } catch (parseError) {
-        console.error('❌ Could not parse error body:', parseError);
       }
     }
     
@@ -374,14 +340,13 @@ export async function getQuoteForTradeIntent(tradeData, options = {}) {
  */
 export async function getExecutionStatus(depositAddress) {
   try {
-    console.log('Getting execution status for:', depositAddress);
     
     if (!depositAddress) {
       throw new Error('Deposit address is required');
     }
 
     const status = await OneClickService.getExecutionStatus(depositAddress);
-    console.log('Execution status received:', status);
+
 
     return {
       success: true,
@@ -409,7 +374,6 @@ export async function getExecutionStatus(depositAddress) {
  */
 export async function submitDepositTransaction(txHash, depositAddress) {
   try {
-    console.log('Submitting deposit transaction:', { txHash, depositAddress });
     
     if (!txHash || !depositAddress) {
       throw new Error('Transaction hash and deposit address are required');
@@ -420,7 +384,6 @@ export async function submitDepositTransaction(txHash, depositAddress) {
       depositAddress: depositAddress
     });
     
-    console.log('Deposit transaction submitted:', result);
 
     return {
       success: true,

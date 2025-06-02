@@ -45,8 +45,6 @@ export default function Chat() {
       if (!result) {
         throw new Error("Error while starting new converstion");
       }
-      console.log("Conversation started successfully:", result);
-      console.log("New conversation ID:", generatedConversationId);
       setConvId(generatedConversationId, 1000);
       refresh();
       refreshBalance();

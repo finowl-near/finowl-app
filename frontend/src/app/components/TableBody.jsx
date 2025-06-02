@@ -49,7 +49,6 @@ export default function TableBody() {
   const tableData = useTableData((state) => state.tableData);
   const allInfluencers = useTableData((state) => state.allInfluencers);
   const filter = useFilter((state) => state.filter);
-  console.log("filter ->", filter);
   /// TODO dont forget to do spinner
   if (!tableData || tableData.length === 0) {
     return (

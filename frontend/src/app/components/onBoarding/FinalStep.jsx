@@ -11,7 +11,15 @@ export default function FinalStep({ redirectTo = "/chat", delayMs = 1500 }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       router.push(redirectTo);
+  
+      // Fallback: force redirect in case router.push fails silently
+      const forceRedirect = setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 3000);
+  
+      return () => clearTimeout(forceRedirect);
     }, delayMs);
+  
     return () => clearTimeout(timer);
   }, [redirectTo, delayMs, router]);
 

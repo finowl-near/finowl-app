@@ -14,7 +14,6 @@ import { useWalletSelector } from "@near-wallet-selector/react-hook";
 
 export default function TrendingOnchainActivity() {
   const onChainData = useTableData((state) => state.onChainData);
-  console.log("on chain", onChainData);
   const { signedAccountId, signIn, signOut } = useWalletSelector();
   const [blur, setBlur] = useState(true);
   useEffect(() => {

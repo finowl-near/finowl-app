@@ -13,13 +13,14 @@ import ReactMarkdown from "react-markdown";
 import CalendarIcon from "./Icons/CalendarIcon";
 import Collapse from "./Collapse";
 import { EyeIcon, InboxIcon } from "@heroicons/react/24/solid";
+import useFilter from "../hooks/useFilter";
 
 export default function Feeds() {
   const feed = useTableData((state) => state.feed);
   const feedData = useTableData((state) => state.feedData);
   const setFeed = useTableData((state) => state.setFeed);
   const feedId = useTableData((state) => state.feedId);
-  console.log("inside feed", feed, feedData);
+  const filter = useFilter((state) => state.filter);
   const inputRef = useRef(null);
 
   const feedList = [
@@ -45,21 +46,19 @@ export default function Feeds() {
   async function handleNextFeed() {
     if (feedId < feedData.total) {
       const newFeedId = feedId + 1;
-      const newFeedData = await getSummary(newFeedId);
+      const newFeedData = await getSummary(filter, newFeedId);
       const section = extractCategories(newFeedData.summary.content);
       setFeed(section, newFeedData, newFeedId);
     }
-    console.log("handle next", feedId, feedData);
   }
 
   async function handlePreviousFeed() {
     if (feedId > 1) {
       const newFeedId = feedId - 1;
-      const newFeedData = await getSummary(newFeedId);
+      const newFeedData = await getSummary(filter, newFeedId);
       const section = extractCategories(newFeedData.summary.content);
       setFeed(section, newFeedData, newFeedId);
     }
-    console.log("handle prev", feedId);
   }
   return (
     <>
@@ -138,9 +137,9 @@ export default function Feeds() {
           {/* Date Display & Picker */}
           <div className="flex items-center gap-3">
             <p className="text-black font-semibold text-xs sm:text-sm px-2 py-px rounded-md bg-[var(--primary-color)]">
-              {moment(feedData?.summary?.timestamp || new Date()).format(
-                "MMMM Do, hA"
-              )}
+              {feedData
+                ? moment(feedData.summary.timestamp).format("MMMM Do, hA")
+                : moment(new Date()).format("MMMM Do, hA")}
             </p>
             <input
               ref={inputRef}
@@ -148,7 +147,6 @@ export default function Feeds() {
               type="date"
               id="feeddate"
               onChange={(e) => {
-                console.log(e.target.value);
               }}
             />
             <button

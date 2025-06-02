@@ -22,7 +22,6 @@ export default function ThirdStep({ onNext, registerUser, setRegisterUser }) {
         },
       });
 
-      console.log("User registration result:", result);
       setRegisterUser(true);
       toast.success("Account registration successful!")
       // alert(

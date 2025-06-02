@@ -35,7 +35,6 @@ export function useUserConversations() {
             account_id: signedAccountId,
           },
         });
-        console.log("Conversations list (view method):", result);
 
         // Fetch metadata for each conversation
         const conversationsWithMetadata = await Promise.all(
@@ -78,10 +77,8 @@ export function useUserConversations() {
             }
           })
         );
-        console.log("converssations??? view", conversationsWithMetadata);
         setConversations(conversationsWithMetadata);
       } catch (viewError) {
-        console.log("View method failed, trying call method:", viewError);
 
         const result = await callFunction({
           contractId: CONTRACT_ID,
@@ -91,7 +88,6 @@ export function useUserConversations() {
             account_id: signedAccountId,
           },
         });
-        console.log("Conversations list (call method):", result);
 
         // Fetch metadata for each conversation
         const conversationsWithMetadata = await Promise.all(
@@ -131,7 +127,6 @@ export function useUserConversations() {
             }
           })
         );
-        console.log("converssations??? call", conversationsWithMetadata);
         setConversations(conversationsWithMetadata);
       }
     } catch (error) {

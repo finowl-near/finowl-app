@@ -14,28 +14,23 @@ export default class NearTransferService {
    * @returns {Promise<Object>} Transfer result with success/error status and transaction details
    */
   static async executeTransfer({ amountIn, depositAddress, walletSelector }) {
-    console.log('🚀 Starting NEAR transfer with params:', { amountIn, depositAddress, walletSelector: !!walletSelector });
 
     try {
       // Parse NEAR amount from quote (e.g., "1.2 NEAR" -> "1.2")
       const nearAmount = this.parseNearAmount(amountIn);
-      console.log('💰 Parsed NEAR amount:', nearAmount);
 
       if (!nearAmount || isNaN(nearAmount) || parseFloat(nearAmount) <= 0) {
-        console.error('❌ Invalid NEAR amount. Original amountIn:', amountIn, 'Parsed nearAmount:', nearAmount);
         throw new Error('Invalid NEAR amount in quote');
       }
 
       // Convert to yoctoNEAR (smallest unit)
       const amountInYocto = utils.format.parseNearAmount(nearAmount);
-      console.log('🔢 Amount in yoctoNEAR:', amountInYocto);
 
       if (!amountInYocto) {
         throw new Error('Failed to convert NEAR amount to yoctoNEAR');
       }
 
       // Execute wallet transfer using signAndSendTransactions
-      console.log('💸 Executing wallet transfer...');
       const transactions = [{
         receiverId: depositAddress,
         actions: [{
@@ -47,7 +42,6 @@ export default class NearTransferService {
       }];
 
       const result = await walletSelector.signAndSendTransactions({ transactions });
-      console.log('✅ Transfer successful:', result);
 
       // Return success result with all necessary data for tracking
       return {
@@ -66,7 +60,6 @@ export default class NearTransferService {
       };
 
     } catch (error) {
-      console.error('❌ Transfer failed:', error);
       
       return {
         success: false,
@@ -89,7 +82,6 @@ export default class NearTransferService {
    * @returns {string|null} Parsed amount or null if invalid
    */
   static parseNearAmount(amountText) {
-    console.log('🔍 Parsing NEAR amount from:', amountText, 'Type:', typeof amountText);
     
     if (!amountText || typeof amountText !== 'string') {
       console.warn('⚠️ Invalid input - not a string:', amountText);
@@ -104,16 +96,12 @@ export default class NearTransferService {
     ];
 
     for (const pattern of nearPatterns) {
-      console.log('🔎 Trying pattern:', pattern.toString());
       const match = amountText.match(pattern);
-      console.log('🎯 Match result:', match);
       
       if (match && match[1]) {
         const amount = match[1].trim();
-        console.log('✅ Extracted amount:', amount);
         
         if (!isNaN(amount) && parseFloat(amount) > 0) {
-          console.log('✅ Valid NEAR amount found:', amount);
           return amount;
         } else {
           console.warn('⚠️ Amount is not a valid number or is <= 0:', amount);

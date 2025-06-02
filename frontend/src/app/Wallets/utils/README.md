@@ -52,7 +52,6 @@ import { detectTradeIntent } from './tradeIntentDetector';
 
 // Valid trade intent
 const result = detectTradeIntent('buy 100 btc with usdt');
-console.log(result);
 // Output: {
 //   isTradeIntent: true,
 //   data: {

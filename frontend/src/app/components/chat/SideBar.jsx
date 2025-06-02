@@ -40,7 +40,6 @@ export default function SideBar({
   const handleGetConversationHistory = async (conversationId) => {
     //   setLoading(true);
     if (historyCache.current[conversationId]) {
-      console.log("cached");
       setConversationHistory(historyCache.current[conversationId]);
       return;
     }
@@ -53,12 +52,9 @@ export default function SideBar({
           conversation_id: conversationId,
         },
       });
-      console.log("Conversation history (view method):", result);
       historyCache.current[conversationId] = result;
       setConversationHistory(result);
     } catch (viewError) {
-      console.log("View method failed, trying call method:", viewError);
-
       const result = await callFunction({
         contractId: CONTRACT_ID,
         method: "view_js_func",
@@ -67,7 +63,6 @@ export default function SideBar({
           conversation_id: conversationId,
         },
       });
-      console.log("Conversation history (call method):", result);
       historyCache.current[conversationId] = result;
       setConversationHistory(result);
     }

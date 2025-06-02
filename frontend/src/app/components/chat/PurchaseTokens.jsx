@@ -20,9 +20,6 @@ export default function PurchaseTokens({
     setLoading(true);
     try {
       const depositInYocto = utils.format.parseNearAmount(purchaseAmount);
-      console.log(
-        `Purchasing tokens with ${purchaseAmount} NEAR (${depositInYocto} yoctoNEAR)`
-      );
       const result = await callFunction({
         contractId: process.env.NEXT_PUBLIC_CONTRACT_NAME || CONTRACT_ID,
         method: "call_js_func", // Call the dispatcher function
@@ -36,7 +33,6 @@ export default function PurchaseTokens({
       if (!result) {
         throw new Error("Cannot purchase");
       }
-      console.log("purchase done", result);
       /// TODO: need notification
       refreshBalance();
       setLoading(false);

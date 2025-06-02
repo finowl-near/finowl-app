@@ -31,8 +31,6 @@ export default function FourthStep({ onNext, tokensClaim, setTokensClaim }) {
         gas,
       });
 
-      console.log("Free tokens claim result:", result);
-
       // Check token balance to confirm tokens were received
       const balance = await getUserTokenBalance(signedAccountId, viewFunction);
 
@@ -146,8 +144,6 @@ const getUserTokenBalance = async (signedAccountId, viewFunction) => {
         },
       });
 
-      console.log("User token balance (view_js_func):", result);
-
       // The result might be an object with a balance property or just a string
       if (typeof result === "object" && result !== null && result.balance) {
         return result.balance;
@@ -157,7 +153,6 @@ const getUserTokenBalance = async (signedAccountId, viewFunction) => {
         return "0"; // Default to 0 if we can't parse the result
       }
     } catch (viewError) {
-      console.log("Error with view_js_func:", viewError);
 
       // Try with get_user as fallback
       const userData = await viewFunction({

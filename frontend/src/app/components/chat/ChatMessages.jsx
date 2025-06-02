@@ -25,7 +25,6 @@ import { addPublicKeyIfNotExists, hasPublicKey, isStorageDeposited } from "./uti
 // TODO: need to be added in .env
 const JWT_TOKEN = process.env.NEXT_PUBLIC_JWT_TOKEN;
 export default function ChatMessages({ conversationHistory, refresh }) {
-  console.log("inside", conversationHistory);
   const walletSelector = useWalletSelector();
   const { signedAccountId, callFunction, getAccessKeys, viewFunction, wallet } = walletSelector;
   const convId = useConversationId((state) => state.convId);
@@ -62,7 +61,6 @@ export default function ChatMessages({ conversationHistory, refresh }) {
     setLoading(true);
     try {
       // TODO: check if messages empty
-      console.log("messages", messages);
       if (messages.length === 0) {
         toast.error("cannot save empt conversation");
         setLoading(false);
@@ -71,7 +69,6 @@ export default function ChatMessages({ conversationHistory, refresh }) {
       // Get current timestamp
       const timestamp = Math.floor(Date.now() / 1000);
       const totalTokens = calculateTotalTokens(messages);
-      console.log(`Total tokens used for conversation: ${totalTokens}`);
       const internalTokens = (totalTokens * 1_000_000).toFixed(0);
       // Prepare metadata
       const metadata = {
@@ -118,12 +115,9 @@ export default function ChatMessages({ conversationHistory, refresh }) {
   }
 
   async function handleTradeIntentMessage(tradeIntentResult, messageSent) {
-    console.log("trade result", tradeIntentResult);
     // WORKFLOW 1: Template matched - handle front-side only with JSON response
-    console.log("Trade intent detected:", tradeIntentResult.data);
 
     // Use quote-enabled response if 1Click service is available
-    console.log("Using 1Click service for enhanced trade response");
     let tradeResponse;
     try {
       const quoteResponse = await generateTradeIntentResponseWithQuote(
@@ -200,7 +194,6 @@ export default function ChatMessages({ conversationHistory, refresh }) {
 
     // Calculate tokens for trade response
     const tradeResponseTokens = calculateTokens(tradeResponse);
-    console.log(`Trade intent response uses ${tradeResponseTokens} tokens`);
 
     // Create system message for the trade intent response
     const tradeSystemMessage = {
@@ -216,14 +209,10 @@ export default function ChatMessages({ conversationHistory, refresh }) {
 
     // Add to in-memory messages (no token deduction needed for template responses)
     setMessages((prev) => [...prev, tradeSystemMessage]);
-    console.log(
-      "Trade intent response added to in-memory messages (FREE - no tokens charged)"
-    );
   }
 
   async function handleSend() {
     if (!message.trim()) return;
-    console.log("crv=>", convId, tokensLeft);
     if (tokensLeft <= 0) {
       toast.error("Your conversation balance is empty add some");
       setMessage("");
@@ -233,7 +222,6 @@ export default function ChatMessages({ conversationHistory, refresh }) {
     setMessages((prev) => [...prev, { sender: "loading", text: "..." }]);
     setMessage("");
     try {
-      console.log("message???", message);
       // FIRST: Check if the message matches a trade intent template
       const tradeIntentResult = detectTradeIntent(message);
       if (tradeIntentResult.isTradeIntent) {
@@ -243,19 +231,15 @@ export default function ChatMessages({ conversationHistory, refresh }) {
         return;
       }
       const userMessageToken = calculateTokens(message);
-      console.log(`User message uses ${userMessageToken} tokens`);
       const aiResponse = await analyzeMarket(message);
       if (!aiResponse) {
         throw new Error("analysing market failed");
       }
-      console.log(`aiResponse`, aiResponse);
       const aiMessageTokens = calculateTokens(aiResponse);
-      console.log(`AI response uses ${aiMessageTokens} tokens`);
       const deductRes = await deductAiTokens(aiMessageTokens, convId);
       if (!deductRes) {
         throw new Error("deduct failed");
       }
-      console.log(`deductRes`, deductRes);
       setMessages((prev) => {
         const withoutLoading = prev.filter((m) => m.sender !== "loading");
         return [...withoutLoading, { sender: "bot", text: aiResponse }];
@@ -281,7 +265,7 @@ export default function ChatMessages({ conversationHistory, refresh }) {
           setIsTradeModalOpen={setIsTradeModalOpen}
           tradeModalData={tradeModalData}
           message={message}
-          onConfirm={() => console.log("confirm trade")}
+          onConfirm={() => {}}
           onCancel={handleTradeCancel}
           setMessages={setMessages}
         />

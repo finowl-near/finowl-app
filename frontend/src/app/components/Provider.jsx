@@ -36,7 +36,6 @@ const walletSelectorConfig = {
 const queryClient = new QueryClient();
 
 export default function Provider({ children }) {
-  console.log("💼 WalletSelectorProvider mounted");
   return (
     <>
       <QueryClientProvider client={queryClient}>

@@ -1,7 +1,6 @@
 import axios from "axios";
 
 export default async function getTableData(page, sort, sortDir, filter) {
-  console.log("inside page", page, sort, sortDir, filter);
   try {
     let response;
     if (filter === "All") {
