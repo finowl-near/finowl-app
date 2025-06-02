@@ -1,26 +1,24 @@
-"use client";
-
 import React from "react";
 import Head from "next/head";
 import { urbanist } from "@/app/fonts";
 import Header from "@/app/components/Header";
 
+export const metadata = {
+  title: "Privacy Policy | FinOwl",
+  description:
+    "Learn how FinOwl collects, uses, and protects your data. Your privacy is important to us.",
+  robots: "index, follow",
+  openGraph: {
+    title: "FinOwl Privacy Policy",
+    description:
+      "Privacy policy for FinOwl, the AI-powered crypto investment assistant built on NEAR Protocol.",
+    url: "https://finowl.finance/privacy-policy", // optional but good practice
+  },
+};
+
 export default function PrivacyPage() {
   return (
     <>
-      <Head>
-        <title>Privacy Policy | FinOwl</title>
-        <meta
-          name="description"
-          content="Learn how FinOwl collects, uses, and protects your data. Your privacy is important to us."
-        />
-        <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="FinOwl Privacy Policy" />
-        <meta
-          property="og:description"
-          content="Privacy policy for FinOwl, the AI-powered crypto investment assistant built on NEAR Protocol."
-        />
-      </Head>
       <Header/>
       <div className="relative min-h-screen bg-[#151515] text-white px-6 py-12 overflow-hidden">
         {/* Decorative blur circles */}

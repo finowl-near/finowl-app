@@ -1,26 +1,24 @@
-"use client";
-
 import Header from "@/app/components/Header";
 import { urbanist } from "@/app/fonts";
 import Head from "next/head";
 import React from "react";
 
+export const metadata = {
+  title: "Terms of Service | FinOwl",
+  description:
+    "Review the terms and conditions for using FinOwl, the AI-powered crypto trading and insights platform on NEAR Protocol.",
+  robots: "index, follow",
+  openGraph: {
+    title: "FinOwl Terms of Service",
+    description:
+      "Terms governing the use of FinOwl's AI financial assistant and NEAR blockchain trading features.",
+    url: "https://finowl.finance/terms", // optional, but recommended
+  },
+};
+
 export default function TermsPage() {
   return (
     <>
-      <Head>
-        <title>Terms of Service | FinOwl</title>
-        <meta
-          name="description"
-          content="Review the terms and conditions for using FinOwl, the AI-powered crypto trading and insights platform on NEAR Protocol."
-        />
-        <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="FinOwl Terms of Service" />
-        <meta
-          property="og:description"
-          content="Terms governing the use of FinOwl's AI financial assistant and NEAR blockchain trading features."
-        />
-      </Head>
       <Header/>
       <div className="relative min-h-screen bg-[#151515] text-white px-6 py-12 overflow-hidden">
         {/* Blurred decorative circles */}

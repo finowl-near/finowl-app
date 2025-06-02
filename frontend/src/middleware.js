@@ -6,7 +6,6 @@ export function middleware(request) {
     return NextResponse.redirect(new URL("/mindshare", request.url));
   }
   if (nearAccount && request.nextUrl.pathname === "/chat") {
-    console.log("entered here", nearAccount);
     return NextResponse.next();
   }
   if (!nearAccount && request.nextUrl.pathname === "/chat") {

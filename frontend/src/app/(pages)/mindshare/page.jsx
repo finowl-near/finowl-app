@@ -5,31 +5,25 @@ import { FaEnvelope } from "react-icons/fa";
 import { BsTwitterX } from "react-icons/bs";
 import Head from "next/head";
 
+export const metadata = {
+  title: "Top Trending Crypto Tokens | FinOwl Mindshare",
+  description:
+    "View the most talked-about crypto tokens ranked by influencer mentions, volume, and sentiment. Updated in real-time by FinOwl.",
+  keywords:
+    "crypto trending tokens, mindshare score, influencer crypto, FinOwl mindshare, token rankings, real-time crypto sentiment",
+  robots: "index, follow",
+  openGraph: {
+    title: "FinOwl Mindshare — Trending Tokens Ranked by Attention",
+    description:
+      "Track token popularity, sentiment, and social buzz across top influencers. Updated live.",
+    url: "https://finowl.finance/mindshare",
+  },
+};
+
+
 export default function page() {
   return (
     <>
-      <Head>
-        <title>Top Trending Crypto Tokens | FinOwl Mindshare</title>
-        <meta
-          name="description"
-          content="View the most talked-about crypto tokens ranked by influencer mentions, volume, and sentiment. Updated in real-time by FinOwl."
-        />
-        <meta
-          name="keywords"
-          content="crypto trending tokens, mindshare score, influencer crypto, FinOwl mindshare, token rankings, real-time crypto sentiment"
-        />
-        <meta name="robots" content="index, follow" />
-
-        <meta
-          property="og:title"
-          content="FinOwl Mindshare — Trending Tokens Ranked by Attention"
-        />
-        <meta
-          property="og:description"
-          content="Track token popularity, sentiment, and social buzz across top influencers. Updated live."
-        />
-        <meta property="og:url" content="https://finowl.finance/mindshare" />
-      </Head>
       <Header />
       <LandingPage />
       {/* Footer */}

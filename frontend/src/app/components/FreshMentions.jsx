@@ -6,6 +6,7 @@ import { ChevronRightIcon } from "@heroicons/react/24/solid";
 import BigFireIcon from "./Icons/BigFireIcon";
 import useTableData from "../hooks/useTableData";
 import TopInfluencers from "./TopInfluencers";
+import Link from "next/link";
 
 export default function FreshMentions() {
   const trendingData = useTableData((state) => state.trendingData);
@@ -31,7 +32,7 @@ export default function FreshMentions() {
   return (
     <div className="relative m-1 sm:m-4 border border-[#292929] rounded-[10px] overflow-hidden">
       <div className="absolute top-2 right-0 w-32 h-8 bg-[var(--primary-color)] -z-10 rounded-[0px_0px_10px_10px] blur-2xl opacity-65"></div>
-      <div className="flex items-center p-4 cursor-pointer justify-between">
+      <div className="flex items-center p-4 justify-between">
         <div className="flex items-center">
           <FireIcon />
           <p className="text-xl font-bold text-white ml-2">Fresh Mentions</p>
@@ -39,10 +40,9 @@ export default function FreshMentions() {
         <ChevronRightIcon className="w-5" color="var(--primary-color)" />
       </div>
       <div className="absolute right-0 bottom-0">
-          <BigFireIcon />
-        </div>
+        <BigFireIcon />
+      </div>
       <div className="px-4 relative">
-        
         <div>
           <table className="w-full">
             <thead>
@@ -55,31 +55,48 @@ export default function FreshMentions() {
             <tbody>
               {!trendingData
                 ? Array.from({ length: 5 }).map((_, i) => renderSkeletonRow(i))
-                : trendingData.tickers.slice(0, 5).map((ticker, idx) => (
-                    <tr key={ticker.ticker_symbol + idx}>
-                      <td className="text-[var(--primary-color)] font-bold text-center px-3 py-3">
-                        <div className="flex gap-4">
-                          <span className="text-[var(--primary-color)] text-base font-bold">
-                            {idx + 1}
-                          </span>
-                          <div>
-                            <span className="text-[#D0D0D0] text-base font-bold">
-                              {ticker.ticker_symbol}
+                : trendingData.tickers.slice(0, 5).map((ticker, idx) => {
+                    const length = Object.values(
+                      ticker.mention_details.influencers
+                    ).length;
+                    let linkToTweet = "";
+                    if (length > 0) {
+                      linkToTweet = Object.values(
+                        ticker.mention_details.influencers
+                      )[length - 1].tweet_link;
+                    }
+                    return (
+                      <tr key={ticker.ticker_symbol + idx}>
+                        <td className="text-[var(--primary-color)] font-bold text-center px-3 py-3">
+                          <div className="flex gap-4">
+                            <span className="text-[var(--primary-color)] text-base font-bold">
+                              {idx + 1}
                             </span>
+                            <Link
+                              href={linkToTweet}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <div>
+                                <span className="text-[#D0D0D0] text-base font-bold">
+                                  {ticker.ticker_symbol}
+                                </span>
+                              </div>
+                            </Link>
                           </div>
-                        </div>
-                      </td>
-                      <td className="text-[var(--primary-color)] font-bold text-center py-3">
-                        {ticker.mindshare_score}
-                      </td>
-                      <td className="py-3">
-                        <TopInfluencers
-                          tickerSymbol={ticker.ticker_symbol}
-                          influencersData={trendingData}
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="text-[var(--primary-color)] font-bold text-center py-3">
+                          {ticker.mindshare_score}
+                        </td>
+                        <td className="py-3">
+                          <TopInfluencers
+                            tickerSymbol={ticker.ticker_symbol}
+                            influencersData={trendingData}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
             </tbody>
           </table>
         </div>

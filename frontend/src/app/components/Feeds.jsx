@@ -14,8 +14,10 @@ import CalendarIcon from "./Icons/CalendarIcon";
 import Collapse from "./Collapse";
 import { EyeIcon, InboxIcon } from "@heroicons/react/24/solid";
 import useFilter from "../hooks/useFilter";
+import { toast, Toaster } from "sonner";
 
 export default function Feeds() {
+  const [loading, setLoading] = useState(false);
   const feed = useTableData((state) => state.feed);
   const feedData = useTableData((state) => state.feedData);
   const setFeed = useTableData((state) => state.setFeed);
@@ -45,23 +47,38 @@ export default function Feeds() {
 
   async function handleNextFeed() {
     if (feedId < feedData.total) {
-      const newFeedId = feedId + 1;
-      const newFeedData = await getSummary(filter, newFeedId);
-      const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, newFeedData, newFeedId);
+      setLoading(true);
+      try {
+        const newFeedId = feedId + 1;
+        const newFeedData = await getSummary(filter, newFeedId);
+        const section = extractCategories(newFeedData.summary.content);
+        setFeed(section, newFeedData, newFeedId);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      toast.info("There is no next");
     }
   }
 
   async function handlePreviousFeed() {
     if (feedId > 1) {
-      const newFeedId = feedId - 1;
-      const newFeedData = await getSummary(filter, newFeedId);
-      const section = extractCategories(newFeedData.summary.content);
-      setFeed(section, newFeedData, newFeedId);
+      setLoading(true);
+      try {
+        const newFeedId = feedId - 1;
+        const newFeedData = await getSummary(filter, newFeedId);
+        const section = extractCategories(newFeedData.summary.content);
+        setFeed(section, newFeedData, newFeedId);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      toast.info("There is no previous");
     }
   }
   return (
     <>
+      <Toaster theme="dark" richColors position="top-right" />
       <div className="text-white hidden md:block border border-[#292929] rounded-[15px]">
         <div className="grid grid-cols-3">
           <p
@@ -95,7 +112,14 @@ export default function Feeds() {
             {feedList[2].title}
           </p>
         </div>
-        {!feedList[choose].feed ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-64">
+            <div
+                className="w-10 h-10 border-4 border-[#BA98D5] border-t-white rounded-full animate-spin"
+                aria-label="Loading..."
+              />
+          </div>
+        ) : !feedList[choose].feed ? (
           <div className="flex flex-col items-center justify-center text-center h-64 w-full">
             <InboxIcon className="w-16 h-16 text-[var(--primary-color)] mb-2" />
             <p className="text-[#D5D5D5] font-semibold">No data</p>
@@ -125,7 +149,7 @@ export default function Feeds() {
           <div
             className="flex items-center gap-1 cursor-pointer"
             onClick={() => {
-              if (feedList[choose].feed) {
+              if (!loading && feedList[choose].feed) {
                 handlePreviousFeed();
               }
             }}
@@ -146,8 +170,7 @@ export default function Feeds() {
               className="invisible absolute w-0 h-0"
               type="date"
               id="feeddate"
-              onChange={(e) => {
-              }}
+              onChange={(e) => {}}
             />
             <button
               className="border border-[#292929] p-1 rounded-md"
@@ -161,7 +184,7 @@ export default function Feeds() {
           <div
             className="flex items-center gap-1 cursor-pointer"
             onClick={() => {
-              if (feedList[choose].feed) {
+              if (!loading && feedList[choose].feed) {
                 handleNextFeed();
               }
             }}
